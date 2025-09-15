@@ -7,6 +7,7 @@ import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { convertToUIMessages } from '@/lib/utils';
+import type { ClerkSession } from '@/lib/types';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -17,14 +18,23 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     notFound();
   }
 
-  const session = await auth();
+  const { userId } = await auth();
   const user = await currentUser();
 
   // Clerk middleware handles authentication, so this check is redundant
   // but kept for explicitness
-  if (!session.userId) {
+  if (!userId) {
     redirect('/login');
   }
+
+  // Create a session-like object for compatibility with existing Chat component
+  const session: ClerkSession = {
+    userId,
+    user: userId ? {
+      id: userId,
+      type: 'regular',
+    } : undefined,
+  };
 
   if (chat.visibility === 'private') {
     if (!user) {

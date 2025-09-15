@@ -28,7 +28,7 @@ async function fetcher(url: string) {
   // Data validation: Only keep valid models
   return (json.models as unknown[]).filter(
     (m): m is ChatModel =>
-      m && typeof m === 'object' && typeof (m as any).id === 'string' && typeof (m as any).name === 'string'
+      !!(m && typeof m === 'object' && typeof (m as any).id === 'string' && typeof (m as any).name === 'string')
   );
 }
 
@@ -121,7 +121,9 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
             variant="outline"
           >
             <span>{activeModel ? activeModel.name : 'Select model'}</span>
-            <ChevronDownIcon className="ml-2 w-4 h-4" />
+            <span className="ml-2">
+              <ChevronDownIcon size={16} />
+            </span>
             {saving && (
               <svg className="animate-spin ml-2 h-4 w-4 text-gray-400" viewBox="0 0 24 24">
                 <circle
@@ -148,7 +150,6 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
           <DropdownMenuRadioGroup
             value={selectedModel}
             onValueChange={handleModelChange}
-            disabled={saving}
           >
             {models.length === 0 ? (
               <DropdownMenuRadioItem value="" disabled>
@@ -156,7 +157,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
               </DropdownMenuRadioItem>
             ) : (
               models.map((model) => (
-                <DropdownMenuRadioItem key={model.id} value={model.id}>
+                <DropdownMenuRadioItem key={model.id} value={model.id} disabled={saving}>
                   <strong>{model.name}</strong>
                   <div className="text-xs text-muted-foreground">{model.description}</div>
                 </DropdownMenuRadioItem>

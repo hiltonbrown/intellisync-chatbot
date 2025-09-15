@@ -36,7 +36,7 @@ import {
 } from 'resumable-stream';
 import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
-import type { ChatMessage } from '@/lib/types';
+import type { ChatMessage, ClerkSession } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 
@@ -125,12 +125,12 @@ export async function POST(request: Request) {
     }
 
     // Create a session-like object for compatibility with existing tools
-    const session = {
+    const session: ClerkSession = {
+      userId,
       user: {
         id: userId,
         type: userType,
       },
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     };
 
     const messagesFromDb = await getMessagesByChatId({ id });

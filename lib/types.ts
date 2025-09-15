@@ -56,3 +56,13 @@ export interface Attachment {
   url: string;
   contentType: string;
 }
+
+// Clerk session type for compatibility with components
+export interface ClerkSession {
+  userId: string | null;
+  user?: {
+    id: string;
+    type?: 'regular' | 'guest';
+  };
+  expires?: string;
+}
