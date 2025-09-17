@@ -96,7 +96,7 @@ function PureMessages({
           {status === 'submitted' &&
             messages.length > 0 &&
             messages[messages.length - 1].role === 'user' &&
-            selectedModelId !== 'chat-model-reasoning' && <ThinkingMessage />}
+            selectedModelId !== 'mistralai/mistral-large-latest' && <ThinkingMessage />}
 
           <div
             ref={messagesEndRef}

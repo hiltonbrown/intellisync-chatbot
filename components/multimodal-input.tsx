@@ -410,7 +410,7 @@ function PureAttachmentsButton({
   status: UseChatHelpers<ChatMessage>['status'];
   selectedModelId: string;
 }) {
-  const isReasoningModel = selectedModelId === 'chat-model-reasoning';
+  const isReasoningModel = selectedModelId === 'mistralai/mistral-large-latest';
 
   return (
     <Button

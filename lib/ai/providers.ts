@@ -14,8 +14,9 @@ export const myProvider = isTestEnvironment
       } = require('./models.mock');
       return customProvider({
         languageModels: {
-          'chat-model': chatModel,
-          'chat-model-reasoning': reasoningModel,
+          'google/gemini-flash-1.5': chatModel,
+          'meta-llama/llama-3.1-8b-instruct': chatModel,
+          'mistralai/mistral-large-latest': reasoningModel,
           'title-model': titleModel,
           'artifact-model': artifactModel,
         },

@@ -2,6 +2,7 @@
 
 import { ChevronUp } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
@@ -18,7 +19,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { LoaderIcon } from './icons';
 
 export function SidebarUserNav() {
   const { user, isLoaded } = useUser();
@@ -65,7 +65,10 @@ export function SidebarUserNav() {
               className="h-10 bg-background data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Image
-                src={user.imageUrl || `https://avatar.vercel.sh/${user.primaryEmailAddress?.emailAddress}`}
+                src={
+                  user.imageUrl ||
+                  `https://avatar.vercel.sh/${user.primaryEmailAddress?.emailAddress}`
+                }
                 alt={user.primaryEmailAddress?.emailAddress ?? 'User Avatar'}
                 width={24}
                 height={24}
@@ -90,6 +93,28 @@ export function SidebarUserNav() {
               }
             >
               {`Toggle ${resolvedTheme === 'light' ? 'dark' : 'light'} mode`}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/settings/user-preferences">User Preferences</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/notification-settings">
+                Notification Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/integration-settings">
+                Integration Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/assistant-settings">
+                Assistant Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/billing-usage">Billing and Usage</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild data-testid="user-nav-item-auth">

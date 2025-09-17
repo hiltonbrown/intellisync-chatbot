@@ -85,11 +85,11 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
     // Network/error state for fetching models
     return (
       <div {...props}>
-        <div className="text-red-600 mb-2 flex items-center">
+        <div className='mb-2 flex items-center text-red-600'>
           Failed to load models.&nbsp;
           <button
             onClick={() => mutate()}
-            className="underline text-blue-700"
+            className='text-blue-700 underline'
             disabled={isLoading}
           >
             Retry
@@ -107,10 +107,10 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
   return (
     <div {...props}>
       {isLoading && (
-        <div className="text-sm text-neutral-500 mb-2">Loading available models…</div>
+        <div className='mb-2 text-neutral-500 text-sm'>Loading available models…</div>
       )}
       {saveError && (
-        <div className="text-red-600 mb-2">{saveError}</div>
+        <div className='mb-2 text-red-600'>{saveError}</div>
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -125,7 +125,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
               <ChevronDownIcon size={16} />
             </span>
             {saving && (
-              <svg className="animate-spin ml-2 h-4 w-4 text-gray-400" viewBox="0 0 24 24">
+              <svg className='ml-2 h-4 w-4 animate-spin text-gray-400' viewBox="0 0 24 24">
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -159,7 +159,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
               models.map((model) => (
                 <DropdownMenuRadioItem key={model.id} value={model.id} disabled={saving}>
                   <strong>{model.name}</strong>
-                  <div className="text-xs text-muted-foreground">{model.description}</div>
+                  <div className='text-muted-foreground text-xs'>{model.description}</div>
                 </DropdownMenuRadioItem>
               ))
             )}
@@ -167,7 +167,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
         </DropdownMenuContent>
       </DropdownMenu>
       {error && (
-        <div className="text-xs text-yellow-600 mt-2">
+        <div className='mt-2 text-xs text-yellow-600'>
           Showing static fallback models due to loading error.
         </div>
       )}
