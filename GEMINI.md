@@ -4,10 +4,10 @@ This is a Next.js and App Router-ready AI chatbot. It uses the Vercel AI SDK to 
 
 **Key Technologies:**
 
-*   **Framework:** Next.js 15.3.0-canary.31 (with App Router and React Server Components)
-*   **UI:** React 19.0.0-rc, shadcn/ui, Tailwind CSS
+*   **Framework:** Next.js 15.5.3 (with App Router and React Server Components)
+*   **UI:** React 19.1.1, shadcn/ui, Tailwind CSS
 *   **AI:** Vercel AI SDK, OpenRouter (Gemini Flash 1.5, Llama 3.1 8B, Mistral Large)
-*   **Authentication:** Auth.js 5.0.0-beta.25 (with guest mode support)
+*   **Authentication:** Clerk
 *   **Database:** Neon Serverless Postgres (via Drizzle ORM)
 *   **File Storage:** Vercel Blob
 *   **Linting and Formatting:** Biome
@@ -19,7 +19,6 @@ This is a Next.js and App Router-ready AI chatbot. It uses the Vercel AI SDK to 
 *   Document creation and editing (text, code, images, spreadsheets)
 *   Real-time collaboration suggestions
 *   File upload and processing
-*   Guest authentication mode
 *   Chat history persistence
 
 **Architecture:**
@@ -110,6 +109,8 @@ Database operations (Drizzle ORM):
 - `pnpm db:studio` - Open Drizzle Studio
 - `pnpm db:push` - Push schema changes to database
 - `pnpm db:pull` - Pull schema from database
+- `pnpm db:check` - Check the status of the database
+- `pnpm db:up` - Apply pending migrations
 
 # AI Tools
 
@@ -128,8 +129,7 @@ When working with this codebase, you can use context7 to fetch up-to-date docume
 - **Drizzle ORM**: Library ID `/drizzle-team/drizzle-orm` - Database schema, queries, migrations
 - **Neon Postgres**: Library ID `/neondatabase/neon` - Serverless PostgreSQL platform with branching
 - **Upstash Redis**: Library ID `/upstash/docs` - Serverless Redis for caching and rate limiting
-- **NextAuth.js**: Library ID `/nextauthjs/next-auth` - Authentication patterns and configuration
-- **Clerk**: Library ID `/clerk/clerk-docs` - Alternative authentication solution with user management
+- **Clerk**: Library ID `/clerk/clerk-docs` - Authentication and user management
 - **OpenRouter**: Library ID `/openrouter.ai/llmstxt` - Unified API for accessing multiple AI models
 - **Xero API**: Library ID `/websites/developer_xero` - Accounting integration and financial data management
 - **Vercel AI SDK**: Check latest docs for streaming, tools, and model integration patterns

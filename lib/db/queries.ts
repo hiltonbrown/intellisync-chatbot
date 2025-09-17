@@ -39,36 +39,20 @@ import type { LanguageModelV2Usage } from '@ai-sdk/provider';
 
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!, {
-  // Connection timeout in seconds
-  connect_timeout: 30,
-  // Idle connection timeout in seconds (close connections after 10 minutes of inactivity)
-  idle_timeout: 600,
-  // Maximum connection lifetime in seconds (24 hours)
-  max_lifetime: 60 * 60 * 24,
-  // Maximum number of connections in pool
-  max: 10,
+  // Optimized for serverless environments
+  connect_timeout: 10,
+  // Shorter idle timeout for serverless (2 minutes)
+  idle_timeout: 120,
+  // Shorter max lifetime for serverless (1 hour)
+  max_lifetime: 60 * 60,
+  // Reduced pool size for serverless
+  max: 3,
+  // Disable connection preparation for better serverless compatibility
+  prepare: false,
   // Enable logging notices in development only
   onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
 });
 const db = drizzle(client);
-
-// Graceful shutdown handler
-const gracefulShutdown = async () => {
-  console.log('Database: Shutting down gracefully...');
-  try {
-    await client.end({ timeout: 10 });
-    console.log('Database: Connections closed successfully');
-  } catch (error) {
-    console.error('Database: Error during shutdown:', error);
-  }
-};
-
-// Register shutdown handlers
-if (typeof process !== 'undefined') {
-  process.on('SIGTERM', gracefulShutdown);
-  process.on('SIGINT', gracefulShutdown);
-  process.on('beforeExit', gracefulShutdown);
-}
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
