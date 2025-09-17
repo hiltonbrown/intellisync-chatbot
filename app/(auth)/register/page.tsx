@@ -4,9 +4,9 @@ export default function Page() {
   return (
     <div className="flex h-dvh w-screen items-center justify-center bg-background">
       <SignUp
-        path="/sign-up"
+        path="/register"
         routing="path"
-        signInUrl="/sign-in"
+        signInUrl="/login"
         redirectUrl="/"
       />
     </div>

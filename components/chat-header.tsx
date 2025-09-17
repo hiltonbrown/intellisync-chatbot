@@ -4,9 +4,9 @@ import { useWindowSize } from 'usehooks-ts';
 
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, } from './icons';
-import { useSidebar } from './ui/sidebar';
+import { PlusIcon } from './icons';
 import { memo } from 'react';
+import { useSidebar } from './ui/sidebar';
 import { type VisibilityType, VisibilitySelector } from './visibility-selector';
 import type { ClerkSession } from '@/lib/types';
 

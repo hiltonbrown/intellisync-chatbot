@@ -63,31 +63,30 @@ const PurePreviewMessage = ({
       data-role={message.role}
     >
       <div
-        className={cn('flex w-full items-start gap-2 md:gap-3', {
+        className={cn('flex w-full items-start gap-3', {
           'justify-end': message.role === 'user' && mode !== 'edit',
           'justify-start': message.role === 'assistant',
         })}
       >
         {message.role === 'assistant' && (
-          <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#0FA47F] text-white">
             <SparklesIcon size={14} />
           </div>
         )}
 
         <div
           className={cn('flex flex-col', {
-            'gap-2 md:gap-4': message.parts?.some(
+            'gap-2': message.parts?.some(
               (p) => p.type === 'text' && p.text?.trim(),
             ),
             'min-h-96': message.role === 'assistant' && requiresScrollPadding,
-            'w-full':
+            'w-full max-w-[80%]':
               (message.role === 'assistant' &&
                 message.parts?.some(
                   (p) => p.type === 'text' && p.text?.trim(),
                 )) ||
               mode === 'edit',
-            'max-w-[calc(100%-2.5rem)] sm:max-w-[min(fit-content,80%)]':
-              message.role === 'user' && mode !== 'edit',
+            'max-w-[80%]': message.role === 'user' && mode !== 'edit',
           })}
         >
           {attachmentsFromMessage.length > 0 && (
@@ -129,9 +128,9 @@ const PurePreviewMessage = ({
                     <MessageContent
                       data-testid="message-content"
                       className={cn({
-                        'w-fit break-words rounded-2xl px-3 py-2 text-right text-white':
+                        'w-fit break-words rounded-2xl px-4 py-3 text-right text-white shadow-sm':
                           message.role === 'user',
-                        'bg-transparent px-0 py-0 text-left':
+                        'rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left shadow-sm':
                           message.role === 'assistant',
                       })}
                       style={
@@ -141,6 +140,12 @@ const PurePreviewMessage = ({
                       }
                     >
                       <Response>{sanitizeText(part.text)}</Response>
+                      <div className='mt-2 text-gray-500 text-xs opacity-70'>
+                        {new Date().toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
                     </MessageContent>
                   </div>
                 );

@@ -22,9 +22,9 @@ export default async function Layout({
         strategy="beforeInteractive"
       />
       <DataStreamProvider>
-        <SidebarProvider defaultOpen={!isCollapsed}>
+        <SidebarProvider defaultOpen={true}>
           <AppSidebar />
-          <SidebarInset>{children}</SidebarInset>
+          <SidebarInset className="bg-[#F7F7F8]">{children}</SidebarInset>
         </SidebarProvider>
       </DataStreamProvider>
     </>

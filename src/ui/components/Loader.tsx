@@ -24,10 +24,10 @@ const LoaderRoot = React.forwardRef<
   return (
     <SubframeCore.Loader
       className={SubframeUtils.twClassNames(
-        "group/f2e570c8 text-body font-body text-brand-600",
+        'group/f2e570c8 font-body text-body text-brand-600',
         {
-          "text-heading-2 font-heading-2": size === "large",
-          "text-caption font-caption": size === "small",
+          'font-heading-2 text-heading-2': size === "large",
+          'font-caption text-caption': size === "small",
         },
         className
       )}

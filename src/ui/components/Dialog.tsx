@@ -22,7 +22,7 @@ const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
     <SubframeCore.Dialog.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          "flex min-w-[320px] flex-col items-start gap-2 rounded-md border border-solid border-neutral-border bg-default-background shadow-lg max-h-[90vh] overflow-auto",
+          'flex max-h-[90vh] min-w-[320px] flex-col items-start gap-2 overflow-auto rounded-md border border-neutral-border border-solid bg-default-background shadow-lg',
           className
         )}
         ref={ref}

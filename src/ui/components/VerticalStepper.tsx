@@ -61,9 +61,9 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
           {stepNumber ? (
             <span
               className={SubframeUtils.twClassNames(
-                "text-body-bold font-body-bold text-subtext-color text-center",
+                'text-center font-body-bold text-body-bold text-subtext-color',
                 {
-                  "text-body-bold font-body-bold text-brand-700":
+                  'font-body-bold text-body-bold text-brand-700':
                     variant === "active",
                   hidden: variant === "completed",
                 }
@@ -74,32 +74,32 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
           ) : null}
           <FeatherCheck
             className={SubframeUtils.twClassNames(
-              "hidden text-heading-3 font-heading-3 text-default-font",
+              'hidden font-heading-3 text-default-font text-heading-3',
               { "inline-flex text-brand-700": variant === "completed" }
             )}
           />
         </div>
         <div
           className={SubframeUtils.twClassNames(
-            "flex min-h-[8px] w-0.5 grow shrink-0 basis-0 flex-col items-center gap-2 bg-neutral-border",
+            'flex min-h-[8px] w-0.5 shrink-0 grow basis-0 flex-col items-center gap-2 bg-neutral-border',
             { hidden: lastStep }
           )}
         />
       </div>
       <div
         className={SubframeUtils.twClassNames(
-          "flex grow shrink-0 basis-0 flex-col items-center gap-1 py-4",
+          'flex shrink-0 grow basis-0 flex-col items-center gap-1 py-4',
           { "px-0 pt-4 pb-1": lastStep, "px-0 pt-1 pb-4": firstStep }
         )}
       >
         {label ? (
           <span
             className={SubframeUtils.twClassNames(
-              "line-clamp-2 w-full text-body font-body text-subtext-color",
+              'line-clamp-2 w-full font-body text-body text-subtext-color',
               {
-                "text-body-bold font-body-bold text-default-font":
+                'font-body-bold text-body-bold text-default-font':
                   variant === "active",
-                "text-body font-body text-default-font":
+                'font-body text-body text-default-font':
                   variant === "completed",
               }
             )}

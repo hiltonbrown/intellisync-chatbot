@@ -36,12 +36,12 @@ const DropdownItem = React.forwardRef<HTMLDivElement, DropdownItemProps>(
           ref={ref}
         >
           {icon ? (
-            <SubframeCore.IconWrapper className="text-body font-body text-default-font">
+            <SubframeCore.IconWrapper className='font-body text-body text-default-font'>
               {icon}
             </SubframeCore.IconWrapper>
           ) : null}
           {children ? (
-            <span className="line-clamp-1 grow shrink-0 basis-0 text-body font-body text-default-font group-hover/adcae8d6:text-default-font">
+            <span className='line-clamp-1 shrink-0 grow basis-0 font-body text-body text-default-font group-hover/adcae8d6:text-default-font'>
               {children}
             </span>
           ) : null}
@@ -69,7 +69,7 @@ const DropdownDivider = React.forwardRef<HTMLDivElement, DropdownDividerProps>(
         ref={ref}
         {...otherProps}
       >
-        <div className="flex h-px grow shrink-0 basis-0 flex-col items-center gap-2 bg-neutral-200" />
+        <div className='flex h-px shrink-0 grow basis-0 flex-col items-center gap-2 bg-neutral-200' />
       </div>
     );
   }
@@ -90,7 +90,7 @@ const DropdownMenuRoot = React.forwardRef<
   return children ? (
     <div
       className={SubframeUtils.twClassNames(
-        "flex min-w-[192px] flex-col items-start rounded-md border border-solid border-neutral-border bg-default-background px-1 py-1 shadow-lg",
+        'flex min-w-[192px] flex-col items-start rounded-md border border-neutral-border border-solid bg-default-background px-1 py-1 shadow-lg',
         className
       )}
       ref={ref}

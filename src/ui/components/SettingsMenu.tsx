@@ -39,7 +39,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
       {icon ? (
         <SubframeCore.IconWrapper
           className={SubframeUtils.twClassNames(
-            "text-body font-body text-default-font",
+            'font-body text-body text-default-font',
             { "text-brand-700": selected }
           )}
         >
@@ -49,9 +49,9 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
       {label ? (
         <span
           className={SubframeUtils.twClassNames(
-            "line-clamp-1 grow shrink-0 basis-0 text-body font-body text-default-font",
+            'line-clamp-1 shrink-0 grow basis-0 font-body text-body text-default-font',
             {
-              "text-body-bold font-body-bold text-brand-700 group-hover/cd4ad3a1:text-brand-700 group-active/cd4ad3a1:text-brand-700":
+              'font-body-bold text-body-bold text-brand-700 group-hover/cd4ad3a1:text-brand-700 group-active/cd4ad3a1:text-brand-700':
                 selected,
             }
           )}
@@ -78,7 +78,7 @@ const SettingsMenuRoot = React.forwardRef<
   return children ? (
     <div
       className={SubframeUtils.twClassNames(
-        "group/786775dd flex h-full w-60 flex-col items-start gap-8 border-r border-solid border-neutral-border bg-default-background px-6 py-6",
+        'group/786775dd flex h-full w-60 flex-col items-start gap-8 border-neutral-border border-r border-solid bg-default-background px-6 py-6',
         className
       )}
       ref={ref}

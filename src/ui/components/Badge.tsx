@@ -31,15 +31,15 @@ const BadgeRoot = React.forwardRef<HTMLDivElement, BadgeRootProps>(
     return (
       <div
         className={SubframeUtils.twClassNames(
-          "group/97bdb082 flex h-6 items-center gap-1 rounded-md border border-solid border-brand-100 bg-brand-100 px-2",
+          'group/97bdb082 flex h-6 items-center gap-1 rounded-md border border-brand-100 border-solid bg-brand-100 px-2',
           {
-            "border border-solid border-success-100 bg-success-100":
+            'border border-success-100 border-solid bg-success-100':
               variant === "success",
-            "border border-solid border-warning-100 bg-warning-100":
+            'border border-warning-100 border-solid bg-warning-100':
               variant === "warning",
-            "border border-solid border-error-100 bg-error-100":
+            'border border-error-100 border-solid bg-error-100':
               variant === "error",
-            "border border-solid border-neutral-100 bg-neutral-100":
+            'border border-neutral-100 border-solid bg-neutral-100':
               variant === "neutral",
           },
           className
@@ -50,7 +50,7 @@ const BadgeRoot = React.forwardRef<HTMLDivElement, BadgeRootProps>(
         {icon ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              "text-caption font-caption text-brand-700",
+              'font-caption text-brand-700 text-caption',
               {
                 "text-success-800": variant === "success",
                 "text-warning-800": variant === "warning",
@@ -65,7 +65,7 @@ const BadgeRoot = React.forwardRef<HTMLDivElement, BadgeRootProps>(
         {children ? (
           <span
             className={SubframeUtils.twClassNames(
-              "whitespace-nowrap text-caption font-caption text-brand-800",
+              'whitespace-nowrap font-caption text-brand-800 text-caption',
               {
                 "text-success-800": variant === "success",
                 "text-warning-800": variant === "warning",
@@ -80,7 +80,7 @@ const BadgeRoot = React.forwardRef<HTMLDivElement, BadgeRootProps>(
         {iconRight ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              "text-caption font-caption text-brand-700",
+              'font-caption text-brand-700 text-caption',
               {
                 "text-success-800": variant === "success",
                 "text-warning-800": variant === "warning",

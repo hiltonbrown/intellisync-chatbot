@@ -20,16 +20,18 @@ function PureSuggestedActions({
   selectedVisibilityType,
 }: SuggestedActionsProps) {
   const suggestedActions = [
-    'What are the advantages of using Next.js?',
-    "Write code to demonstrate Dijkstra's algorithm",
-    'Help me write an essay about Silicon Valley',
-    'What is the weather in San Francisco?',
+    'Explain quantum computing in simple terms',
+    'Write a Python function to reverse a string',
+    'Help me plan a healthy meal prep for the week',
+    'What are the latest developments in AI?',
+    'Create a creative story about time travel',
+    'Explain how photosynthesis works',
   ];
 
   return (
     <div
       data-testid="suggested-actions"
-      className="grid w-full gap-2 sm:grid-cols-2"
+      className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3"
     >
       {suggestedActions.map((suggestedAction, index) => (
         <motion.div

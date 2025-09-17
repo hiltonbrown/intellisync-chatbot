@@ -48,7 +48,7 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
     return (
       <button
         className={SubframeUtils.twClassNames(
-          "group/3b777358 flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md border-none bg-brand-600 px-3 hover:bg-brand-500 active:bg-brand-600 disabled:cursor-default disabled:bg-neutral-200 hover:disabled:cursor-default hover:disabled:bg-neutral-200 active:disabled:cursor-default active:disabled:bg-neutral-200",
+          'group/3b777358 flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md border-none bg-brand-600 px-3 hover:bg-brand-500 active:bg-brand-600 disabled:cursor-default disabled:bg-neutral-200 active:disabled:cursor-default active:disabled:bg-neutral-200 hover:disabled:cursor-default hover:disabled:bg-neutral-200',
           {
             "h-6 w-auto flex-row flex-nowrap gap-1 px-2 py-0": size === "small",
             "h-10 w-auto px-4 py-0": size === "large",
@@ -62,7 +62,7 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
               variant === "destructive-primary",
             "bg-transparent hover:bg-neutral-100 active:bg-neutral-200":
               variant === "neutral-tertiary",
-            "border border-solid border-neutral-border bg-default-background hover:bg-neutral-50 active:bg-default-background":
+            'border border-neutral-border border-solid bg-default-background hover:bg-neutral-50 active:bg-default-background':
               variant === "neutral-secondary",
             "bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-100":
               variant === "neutral-primary",
@@ -80,11 +80,11 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
         {icon ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              "text-body font-body text-white group-disabled/3b777358:text-neutral-400",
+              'font-body text-body text-white group-disabled/3b777358:text-neutral-400',
               {
                 hidden: loading,
-                "text-body font-body": size === "small",
-                "text-heading-3 font-heading-3": size === "large",
+                'font-body text-body': size === "small",
+                'font-heading-3 text-heading-3': size === "large",
                 "text-white": variant === "inverse",
                 "text-error-700":
                   variant === "destructive-tertiary" ||
@@ -109,11 +109,11 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
         >
           <SubframeCore.Loader
             className={SubframeUtils.twClassNames(
-              "text-caption font-caption text-white group-disabled/3b777358:text-neutral-400",
+              'font-caption text-caption text-white group-disabled/3b777358:text-neutral-400',
               {
-                "inline-block font-['Inter'] text-[12px] font-[400] leading-[20px] tracking-normal":
+                'inline-block font-["Inter"] font-[400] text-[12px] leading-[20px] tracking-normal':
                   loading,
-                "text-caption font-caption": size === "small",
+                'font-caption text-caption': size === "small",
                 "text-error-700":
                   variant === "destructive-tertiary" ||
                   variant === "destructive-secondary",
@@ -130,11 +130,11 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
         {children ? (
           <span
             className={SubframeUtils.twClassNames(
-              "whitespace-nowrap text-body-bold font-body-bold text-white group-disabled/3b777358:text-neutral-400",
+              'whitespace-nowrap font-body-bold text-body-bold text-white group-disabled/3b777358:text-neutral-400',
               {
                 hidden: loading,
-                "text-caption-bold font-caption-bold": size === "small",
-                "text-body-bold font-body-bold": size === "large",
+                'font-caption-bold text-caption-bold': size === "small",
+                'font-body-bold text-body-bold': size === "large",
                 "text-white": variant === "inverse",
                 "text-error-700":
                   variant === "destructive-tertiary" ||
@@ -154,10 +154,10 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
         {iconRight ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              "text-body font-body text-white group-disabled/3b777358:text-neutral-400",
+              'font-body text-body text-white group-disabled/3b777358:text-neutral-400',
               {
-                "text-body font-body": size === "small",
-                "text-heading-3 font-heading-3": size === "large",
+                'font-body text-body': size === "small",
+                'font-heading-3 text-heading-3': size === "large",
                 "text-white": variant === "inverse",
                 "text-error-700":
                   variant === "destructive-tertiary" ||

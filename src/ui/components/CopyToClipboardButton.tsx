@@ -52,7 +52,7 @@ const CopyToClipboardButtonRoot = React.forwardRef<
               ref={ref}
             >
               {icon ? (
-                <SubframeCore.IconWrapper className="text-body font-body text-subtext-color group-hover/e8c76626:text-default-font">
+                <SubframeCore.IconWrapper className='font-body text-body text-subtext-color group-hover/e8c76626:text-default-font'>
                   {icon}
                 </SubframeCore.IconWrapper>
               ) : null}

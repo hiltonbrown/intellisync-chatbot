@@ -32,7 +32,7 @@ const AvatarRoot = React.forwardRef<HTMLDivElement, AvatarRootProps>(
     return (
       <div
         className={SubframeUtils.twClassNames(
-          "group/bec25ae6 flex h-8 w-8 flex-col items-center justify-center gap-2 overflow-hidden rounded-full bg-brand-100 relative",
+          'group/bec25ae6 relative flex h-8 w-8 flex-col items-center justify-center gap-2 overflow-hidden rounded-full bg-brand-100',
           {
             "rounded-md": square,
             "h-5 w-5": size === "x-small",
@@ -52,13 +52,13 @@ const AvatarRoot = React.forwardRef<HTMLDivElement, AvatarRootProps>(
         {children ? (
           <span
             className={SubframeUtils.twClassNames(
-              "line-clamp-1 w-full font-['Inter'] text-[14px] font-[500] leading-[14px] text-brand-800 text-center absolute",
+              'absolute line-clamp-1 w-full text-center font-["Inter"] font-[500] text-[14px] text-brand-800 leading-[14px]',
               {
-                "font-['Inter'] text-[10px] font-[500] leading-[10px] tracking-normal":
+                'font-["Inter"] font-[500] text-[10px] leading-[10px] tracking-normal':
                   size === "x-small" || size === "small",
-                "font-['Inter'] text-[18px] font-[500] leading-[18px] tracking-normal":
+                'font-["Inter"] font-[500] text-[18px] leading-[18px] tracking-normal':
                   size === "large",
-                "font-['Inter'] text-[24px] font-[500] leading-[24px] tracking-normal":
+                'font-["Inter"] font-[500] text-[24px] leading-[24px] tracking-normal':
                   size === "x-large",
                 "text-warning-800": variant === "warning",
                 "text-success-800": variant === "success",
@@ -73,7 +73,7 @@ const AvatarRoot = React.forwardRef<HTMLDivElement, AvatarRootProps>(
         {image ? (
           <img
             className={SubframeUtils.twClassNames(
-              "h-8 w-8 flex-none object-cover absolute",
+              'absolute h-8 w-8 flex-none object-cover',
               {
                 "h-5 w-5 flex-none": size === "x-small",
                 "h-6 w-6 flex-none": size === "small",

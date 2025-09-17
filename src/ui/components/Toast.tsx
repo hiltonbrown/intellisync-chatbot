@@ -44,7 +44,7 @@ const ToastRoot = React.forwardRef<HTMLDivElement, ToastRootProps>(
         {icon ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              "text-heading-3 font-heading-3 text-neutral-700",
+              'font-heading-3 text-heading-3 text-neutral-700',
               {
                 "text-success-700": variant === "success",
                 "text-error-700": variant === "error",
@@ -55,11 +55,11 @@ const ToastRoot = React.forwardRef<HTMLDivElement, ToastRootProps>(
             {icon}
           </SubframeCore.IconWrapper>
         ) : null}
-        <div className="flex grow shrink-0 basis-0 flex-col items-start">
+        <div className='flex shrink-0 grow basis-0 flex-col items-start'>
           {title ? (
             <span
               className={SubframeUtils.twClassNames(
-                "w-full text-body-bold font-body-bold text-default-font",
+                'w-full font-body-bold text-body-bold text-default-font',
                 {
                   "text-success-700": variant === "success",
                   "text-error-700": variant === "error",
@@ -71,7 +71,7 @@ const ToastRoot = React.forwardRef<HTMLDivElement, ToastRootProps>(
             </span>
           ) : null}
           {description ? (
-            <span className="w-full text-caption font-caption text-subtext-color">
+            <span className='w-full font-caption text-caption text-subtext-color'>
               {description}
             </span>
           ) : null}

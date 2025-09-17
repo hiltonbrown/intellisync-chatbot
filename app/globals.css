@@ -1,5 +1,5 @@
 /* set base path to root directory to include utility classes from app, components, pages, etc. */
-@import "tailwindcss" source("..");
+@import "tailwindcss";
 
 /* include utility classes in streamdown */
 @source '../node_modules/streamdown/dist/index.js';
@@ -37,14 +37,21 @@
   --chart-3: hsl(197 37% 24%);
   --chart-4: hsl(43 74% 66%);
   --chart-5: hsl(27 87% 67%);
-  --sidebar-background: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(240 5.3% 26.1%);
-  --sidebar-primary: hsl(240 5.9% 10%);
-  --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
-  --sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --sidebar-background: #353740;
+  --sidebar-foreground: hsl(0 0% 95%);
+  --sidebar-primary: #0FA47F;
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: #40414F;
+  --sidebar-accent-foreground: hsl(0 0% 95%);
+  --sidebar-border: #565869;
+  --sidebar-ring: #0FA47F;
+  --chat-background: #F7F7F8;
+  --chat-foreground: hsl(240 10% 3.9%);
+  --user-message-bg: hsl(240 5.9% 10%);
+  --user-message-fg: hsl(0 0% 98%);
+  --ai-message-bg: hsl(0 0% 100%);
+  --ai-message-fg: hsl(240 10% 3.9%);
+  --cta-color: #0FA47F;
   /* border radius unit */
   --radius: 0.5rem;
 }

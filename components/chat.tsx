@@ -4,7 +4,6 @@ import { DefaultChatTransport, type LanguageModelUsage } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
-import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
 import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
 import { Artifact } from './artifact';
@@ -136,14 +135,7 @@ export function Chat({
 
   return (
     <>
-      <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background">
-        <ChatHeader
-          chatId={id}
-          selectedVisibilityType={initialVisibilityType}
-          isReadonly={isReadonly}
-          session={session}
-        />
-
+      <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-[#F7F7F8]">
         <Messages
           chatId={id}
           status={status}
@@ -156,7 +148,7 @@ export function Chat({
           selectedModelId={initialChatModel}
         />
 
-        <div className="sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-t-0 bg-background px-2 pb-3 md:px-4 md:pb-4">
+        <div className='sticky bottom-0 z-1 mx-auto flex w-full max-w-4xl gap-2 border-gray-200 border-t bg-[#F7F7F8] px-2 pb-3 md:px-4 md:pb-4'>
           {!isReadonly && (
             <MultimodalInput
               chatId={id}

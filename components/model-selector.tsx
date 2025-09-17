@@ -88,6 +88,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
         <div className='mb-2 flex items-center text-red-600'>
           Failed to load models.&nbsp;
           <button
+            type="button"
             onClick={() => mutate()}
             className='text-blue-700 underline'
             disabled={isLoading}

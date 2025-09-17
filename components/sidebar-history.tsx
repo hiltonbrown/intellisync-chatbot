@@ -47,7 +47,12 @@ const groupChatsByDate = (chats: Chat[]): GroupedChats => {
   const oneWeekAgo = subWeeks(now, 1);
   const oneMonthAgo = subMonths(now, 1);
 
-  return chats.reduce(
+  // First sort all chats by most recent
+  const sortedChats = chats.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+  return sortedChats.reduce(
     (groups, chat) => {
       const chatDate = new Date(chat.createdAt);
 

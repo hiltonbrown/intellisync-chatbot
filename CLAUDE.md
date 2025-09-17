@@ -31,9 +31,9 @@ This is a Next.js AI chatbot application built with:
 
 ### Core Stack
 - **Next.js 15** with App Router and React Server Components
-- **AI SDK** for LLM integration via OpenRouter
-- **OpenRouter Models** - Gemini Flash 1.5 (default), Llama 3.1 8B, Mistral Large
-- **NextAuth.js** for authentication with guest mode support
+- **AI SDK** for LLM integration via Vercel AI Gateway
+- **xAI Models** - Grok 2 Vision (default), Grok 3 Mini, and other models via AI Gateway
+- **Clerk** for authentication with guest mode support
 - **Drizzle ORM** with PostgreSQL (Neon Serverless)
 - **Vercel Blob** for file storage
 - **shadcn/ui** components with Tailwind CSS
@@ -57,9 +57,10 @@ This is a Next.js AI chatbot application built with:
 - Chat history persistence
 
 ### Authentication Flow
-- Guest users are automatically created via `/api/auth/guest`
-- Middleware redirects unauthenticated users to guest auth
-- Regular users can sign in/register at `/login` and `/register`
+- **Clerk Authentication** with automatic user management
+- Guest mode support for unauthenticated users
+- Sign in/register pages at `/login` and `/register`
+- Middleware handles authentication redirects
 
 ### Database Schema
 - Users, chats, messages with voting system
@@ -69,7 +70,8 @@ This is a Next.js AI chatbot application built with:
 
 ### AI Integration
 - Models configured in `lib/ai/models.ts` and selected via `lib/ai/get-model.ts`
-- OpenRouter API integration with model prefix handling (`openrouter/` prefix)
+- Vercel AI Gateway integration for accessing multiple AI providers
+- xAI models (Grok 2 Vision, Grok 3 Mini) as primary providers
 - Tools for document creation, weather, and suggestions
 - Streaming responses via AI SDK
 - Usage tracking and context management
@@ -88,8 +90,8 @@ Uses **Biome** for linting and formatting with these key rules:
 
 Required environment variables (see `.env.example`):
 - OpenRouter: `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` (default: `google/gemini-flash-1.5`)
+- Clerk Auth: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `AUTH_SECRET`
 - Database: `POSTGRES_URL`
-- Authentication: `AUTH_SECRET` (generate with `openssl rand -base64 32`)
 - AI Gateway: `AI_GATEWAY_API_KEY` (for non-Vercel deployments)
 - Blob storage: `BLOB_READ_WRITE_TOKEN`
 
@@ -133,8 +135,7 @@ When working with this codebase, you can use context7 to fetch up-to-date docume
 - **Drizzle ORM**: Library ID `/drizzle-team/drizzle-orm` - Database schema, queries, migrations
 - **Neon Postgres**: Library ID `/neondatabase/neon` - Serverless PostgreSQL platform with branching
 - **Upstash Redis**: Library ID `/upstash/docs` - Serverless Redis for caching and rate limiting
-- **NextAuth.js**: Library ID `/nextauthjs/next-auth` - Authentication patterns and configuration
-- **Clerk**: Library ID `/clerk/clerk-docs` - Alternative authentication solution with user management
+- **Clerk**: Library ID `/clerk/clerk-docs` - Authentication solution with user management
 - **OpenRouter**: Library ID `/openrouter.ai/llmstxt` - Unified API for accessing multiple AI models
 - **Xero API**: Library ID `/websites/developer_xero` - Accounting integration and financial data management
 - **Vercel AI SDK**: Check latest docs for streaming, tools, and model integration patterns

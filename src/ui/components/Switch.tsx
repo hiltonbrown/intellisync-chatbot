@@ -43,7 +43,7 @@ const SwitchRoot = React.forwardRef<HTMLDivElement, SwitchRootProps>(
       <SubframeCore.Switch.Root asChild={true} {...otherProps}>
         <div
           className={SubframeUtils.twClassNames(
-            "group/7a464794 flex h-5 w-8 cursor-pointer flex-col items-start justify-center gap-2 rounded-full border border-solid border-neutral-200 bg-neutral-200 px-0.5 py-0.5 aria-[checked=true]:border aria-[checked=true]:border-solid aria-[checked=true]:border-brand-600 aria-[checked=true]:bg-brand-600",
+            'group/7a464794 flex h-5 w-8 cursor-pointer flex-col items-start justify-center gap-2 rounded-full border border-neutral-200 border-solid bg-neutral-200 px-0.5 py-0.5 aria-[checked=true]:border aria-[checked=true]:border-brand-600 aria-[checked=true]:border-solid aria-[checked=true]:bg-brand-600',
             className
           )}
           ref={ref}

@@ -22,7 +22,7 @@ const Chevron = React.forwardRef<
     <SubframeCore.Collapsible.Chevron {...otherProps}>
       <FeatherChevronDown
         className={SubframeUtils.twClassNames(
-          "text-body font-body text-default-font",
+          'font-body text-body text-default-font',
           className
         )}
         ref={ref}
@@ -104,14 +104,14 @@ const AccordionRoot = React.forwardRef<HTMLDivElement, AccordionRootProps>(
         >
           <Trigger>
             {trigger ? (
-              <div className="flex w-full grow shrink-0 basis-0 flex-col items-start group-data-[state=open]/d2e81e20:h-auto group-data-[state=open]/d2e81e20:w-full group-data-[state=open]/d2e81e20:flex-none">
+              <div className='flex w-full shrink-0 grow basis-0 flex-col items-start group-data-[state=open]/d2e81e20:h-auto group-data-[state=open]/d2e81e20:w-full group-data-[state=open]/d2e81e20:flex-none'>
                 {trigger}
               </div>
             ) : null}
           </Trigger>
           <Content>
             {children ? (
-              <div className="flex w-full grow shrink-0 basis-0 flex-col items-start">
+              <div className='flex w-full shrink-0 grow basis-0 flex-col items-start'>
                 {children}
               </div>
             ) : null}
