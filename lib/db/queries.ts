@@ -31,6 +31,7 @@ import {
 import type { ArtifactKind } from '@/components/artifact';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { ChatSDKError } from '../errors';
+import { generateUUID } from '../utils';
 import type { LanguageModelV2Usage } from '@ai-sdk/provider';
 
 // Optionally, if not using email/pass login, you can
@@ -47,8 +48,6 @@ const client = postgres(process.env.POSTGRES_URL!, {
   max_lifetime: 60 * 60,
   // Reduced pool size for serverless
   max: 3,
-  // Disable connection preparation for better serverless compatibility
-  prepare: false,
   // Enable logging notices in development only
   onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
 });
@@ -65,9 +64,21 @@ export async function getUser(email: string): Promise<Array<User>> {
   }
 }
 
-export async function createUser(email: string) {
+export async function getUserById(id: string): Promise<Array<User>> {
   try {
-    return await db.insert(user).values({ email });
+    return await db.select().from(user).where(eq(user.id, id));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get user by id',
+    );
+  }
+}
+
+export async function createUser(email: string, id?: string) {
+  try {
+    const userData = id ? { id, email } : { id: generateUUID(), email };
+    return await db.insert(user).values(userData);
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to create user');
   }
@@ -75,9 +86,10 @@ export async function createUser(email: string) {
 
 export async function createGuestUser() {
   const email = `guest-${Date.now()}`;
+  const id = generateUUID();
 
   try {
-    return await db.insert(user).values({ email }).returning({
+    return await db.insert(user).values({ id, email }).returning({
       id: user.id,
       email: user.email,
     });
@@ -101,6 +113,7 @@ export async function saveChat({
   visibility: VisibilityType;
 }) {
   try {
+    console.log('saveChat called with:', { id, userId, title, visibility });
     return await db.insert(chat).values({
       id,
       createdAt: new Date(),
@@ -109,6 +122,8 @@ export async function saveChat({
       visibility,
     });
   } catch (error) {
+    console.error('Database error in saveChat:', error);
+    console.error('Failed to save chat with data:', { id, userId, title, visibility });
     throw new ChatSDKError('bad_request:database', 'Failed to save chat');
   }
 }
@@ -528,6 +543,7 @@ export async function getMessageCountByUserId({
 
     return stats?.count ?? 0;
   } catch (error) {
+    console.error('Database error in getMessageCountByUserId:', error);
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get message count by user id',

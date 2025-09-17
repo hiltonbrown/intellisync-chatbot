@@ -11,8 +11,7 @@ export const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
   headers: {
-    'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://app.intellisync.com.au',
     'X-Title': 'IntelliSync Chatbot',
   },
 });

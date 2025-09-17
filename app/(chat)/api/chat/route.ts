@@ -11,10 +11,12 @@ import { auth } from '@clerk/nextjs/server';
 import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
+  createUser,
   deleteChatById,
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
+  getUserById,
   saveChat,
   saveMessages,
 } from '@/lib/db/queries';
@@ -95,6 +97,14 @@ export async function POST(request: Request) {
 
     // For Clerk, all authenticated users are regular users
     const userType = 'regular' as const;
+
+    // Ensure user exists in database
+    const existingUsers = await getUserById(userId);
+    if (existingUsers.length === 0) {
+      console.log('Creating new user:', userId);
+      // For Clerk users, we use the userId as both id and email (or a placeholder email)
+      await createUser(`${userId}@clerk.local`, userId);
+    }
 
     const messageCount = await getMessageCountByUserId({
       id: userId,
@@ -253,6 +263,9 @@ export async function POST(request: Request) {
     }
 
     console.error('Unhandled error in chat API:', error);
+    console.error('Error name:', (error as any)?.name);
+    console.error('Error message:', (error as any)?.message);
+    console.error('Error stack:', (error as any)?.stack);
     return new ChatSDKError('offline:chat').toResponse();
   }
 }
