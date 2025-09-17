@@ -21,7 +21,7 @@ const Row = React.forwardRef<HTMLTableRowElement, RowProps>(function Row(
   return (
     <tr
       className={SubframeUtils.twClassNames(
-        'group/5d119f8d border-neutral-border border-t border-solid',
+        "group/5d119f8d border-t border-solid border-neutral-border",
         { "hover:bg-neutral-50": clickable },
         className
       )}
@@ -97,12 +97,12 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellProps>(
           ref={ref}
         >
           {children ? (
-            <span className='whitespace-nowrap font-caption-bold text-caption-bold text-subtext-color'>
+            <span className="whitespace-nowrap text-caption-bold font-caption-bold text-subtext-color">
               {children}
             </span>
           ) : null}
           {icon ? (
-            <SubframeCore.IconWrapper className='font-caption text-caption text-subtext-color'>
+            <SubframeCore.IconWrapper className="text-caption font-caption text-subtext-color">
               {icon}
             </SubframeCore.IconWrapper>
           ) : null}
@@ -130,7 +130,7 @@ const TableRoot = React.forwardRef<HTMLTableElement, TableRootProps>(
         {...otherProps}
       >
         <thead>{header}</thead>
-        <tbody className='border-neutral-border border-b border-solid'>
+        <tbody className="border-b border-solid border-neutral-border">
           {children}
         </tbody>
       </table>

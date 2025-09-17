@@ -44,7 +44,7 @@ const CheckboxGroupRoot = React.forwardRef<
       {label ? (
         <span
           className={SubframeUtils.twClassNames(
-            'font-body-bold text-body-bold text-default-font',
+            "text-body-bold font-body-bold text-default-font",
             { "text-default-font": error }
           )}
         >
@@ -64,7 +64,7 @@ const CheckboxGroupRoot = React.forwardRef<
       {helpText ? (
         <span
           className={SubframeUtils.twClassNames(
-            'font-caption text-caption text-subtext-color',
+            "text-caption font-caption text-subtext-color",
             { "text-error-700": error }
           )}
         >

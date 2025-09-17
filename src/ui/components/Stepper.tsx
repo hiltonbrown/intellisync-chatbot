@@ -45,7 +45,7 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
       >
         <div
           className={SubframeUtils.twClassNames(
-            'flex h-px shrink-0 grow basis-0 flex-col items-center gap-2 bg-neutral-300',
+            "flex h-px grow shrink-0 basis-0 flex-col items-center gap-2 bg-neutral-300",
             { "bg-transparent": firstStep }
           )}
         />
@@ -58,7 +58,7 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
           {stepNumber ? (
             <span
               className={SubframeUtils.twClassNames(
-                'font-caption-bold text-caption-bold text-subtext-color',
+                "text-caption-bold font-caption-bold text-subtext-color",
                 {
                   "text-brand-700":
                     variant === "active" || variant === "completed",
@@ -71,7 +71,7 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
         </div>
         <div
           className={SubframeUtils.twClassNames(
-            'flex h-px shrink-0 grow basis-0 flex-col items-center gap-2 bg-neutral-300',
+            "flex h-px grow shrink-0 basis-0 flex-col items-center gap-2 bg-neutral-300",
             { "bg-transparent": lastStep }
           )}
         />
@@ -79,9 +79,9 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
       {label ? (
         <span
           className={SubframeUtils.twClassNames(
-            'font-body text-body text-subtext-color group-hover/c1145464:text-default-font',
+            "text-body font-body text-subtext-color group-hover/c1145464:text-default-font",
             {
-              'font-body-bold text-body-bold text-default-font':
+              "text-body-bold font-body-bold text-default-font":
                 variant === "active",
               "text-subtext-color": variant === "completed",
             }

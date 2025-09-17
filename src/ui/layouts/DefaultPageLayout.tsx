@@ -61,15 +61,15 @@ const DefaultPageLayoutRoot = React.forwardRef<
         }
         footer={
           <>
-            <div className='flex shrink-0 grow basis-0 items-start gap-2'>
+            <div className="flex grow shrink-0 basis-0 items-start gap-2">
               <Avatar image="https://res.cloudinary.com/subframe/image/upload/v1711417513/shared/kwut7rhuyivweg8tmyzl.jpg">
                 A
               </Avatar>
               <div className="flex flex-col items-start">
-                <span className='font-caption-bold text-caption-bold text-default-font'>
+                <span className="text-caption-bold font-caption-bold text-default-font">
                   Irvin
                 </span>
-                <span className='font-caption text-caption text-subtext-color'>
+                <span className="text-caption font-caption text-subtext-color">
                   Founder
                 </span>
               </div>
@@ -135,7 +135,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
         </SidebarWithSections.NavSection>
       </SidebarWithSections>
       {children ? (
-        <div className='flex shrink-0 grow basis-0 flex-col items-start gap-4 self-stretch overflow-y-auto bg-default-background'>
+        <div className="flex grow shrink-0 basis-0 flex-col items-start gap-4 self-stretch overflow-y-auto bg-default-background">
           {children}
         </div>
       ) : null}

@@ -23,7 +23,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <input
       className={SubframeUtils.twClassNames(
-        'h-full w-full border-none bg-transparent font-body text-body text-default-font outline-none placeholder:text-neutral-400',
+        "h-full w-full border-none bg-transparent text-body font-body text-default-font outline-none placeholder:text-neutral-400",
         className
       )}
       placeholder={placeholder as string}
@@ -72,35 +72,35 @@ const TextFieldRoot = React.forwardRef<HTMLLabelElement, TextFieldRootProps>(
         {...otherProps}
       >
         {label ? (
-          <span className='font-caption-bold text-caption-bold text-default-font'>
+          <span className="text-caption-bold font-caption-bold text-default-font">
             {label}
           </span>
         ) : null}
         <div
           className={SubframeUtils.twClassNames(
-            'flex h-8 w-full flex-none items-center gap-1 rounded-md border border-neutral-border border-solid bg-default-background px-2 group-focus-within/be48ca43:border group-focus-within/be48ca43:border-brand-primary group-focus-within/be48ca43:border-solid',
+            "flex h-8 w-full flex-none items-center gap-1 rounded-md border border-solid border-neutral-border bg-default-background px-2 group-focus-within/be48ca43:border group-focus-within/be48ca43:border-solid group-focus-within/be48ca43:border-brand-primary",
             {
-              'border border-neutral-100 border-solid bg-neutral-100 group-focus-within/be48ca43:bg-default-background group-hover/be48ca43:border group-hover/be48ca43:border-neutral-border group-hover/be48ca43:border-solid':
+              "border border-solid border-neutral-100 bg-neutral-100 group-hover/be48ca43:border group-hover/be48ca43:border-solid group-hover/be48ca43:border-neutral-border group-focus-within/be48ca43:bg-default-background":
                 variant === "filled",
-              'border border-error-600 border-solid': error,
-              'border border-neutral-200 border-solid bg-neutral-200': disabled,
+              "border border-solid border-error-600": error,
+              "border border-solid border-neutral-200 bg-neutral-200": disabled,
             }
           )}
         >
           {icon ? (
-            <SubframeCore.IconWrapper className='font-body text-body text-subtext-color'>
+            <SubframeCore.IconWrapper className="text-body font-body text-subtext-color">
               {icon}
             </SubframeCore.IconWrapper>
           ) : null}
           {children ? (
-            <div className='flex shrink-0 grow basis-0 flex-col items-start self-stretch px-1'>
+            <div className="flex grow shrink-0 basis-0 flex-col items-start self-stretch px-1">
               {children}
             </div>
           ) : null}
           {iconRight ? (
             <SubframeCore.IconWrapper
               className={SubframeUtils.twClassNames(
-                'font-body text-body text-subtext-color',
+                "text-body font-body text-subtext-color",
                 { "text-error-500": error }
               )}
             >
@@ -111,7 +111,7 @@ const TextFieldRoot = React.forwardRef<HTMLLabelElement, TextFieldRootProps>(
         {helpText ? (
           <span
             className={SubframeUtils.twClassNames(
-              'font-caption text-caption text-subtext-color',
+              "text-caption font-caption text-subtext-color",
               { "text-error-700": error }
             )}
           >

@@ -34,10 +34,10 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
         )}
         ref={ref}
       >
-        <Select.ItemText className='h-auto shrink-0 grow basis-0'>
+        <Select.ItemText className="h-auto grow shrink-0 basis-0">
           {children || value}
         </Select.ItemText>
-        <FeatherCheck className='hidden font-body text-body text-default-font group-hover/969e345b:hidden group-data-[state=checked]/969e345b:inline-flex group-data-[state=checked]/969e345b:text-brand-600' />
+        <FeatherCheck className="hidden text-body font-body text-default-font group-hover/969e345b:hidden group-data-[state=checked]/969e345b:inline-flex group-data-[state=checked]/969e345b:text-brand-600" />
       </div>
     </SubframeCore.Select.Item>
   );
@@ -59,7 +59,7 @@ const TriggerValue = React.forwardRef<
   return (
     <SubframeCore.Select.Value
       className={SubframeUtils.twClassNames(
-        'w-full whitespace-nowrap font-body text-body text-default-font',
+        "w-full whitespace-nowrap text-body font-body text-default-font",
         className
       )}
       ref={ref}
@@ -85,7 +85,7 @@ const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
     <SubframeCore.Select.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          'flex w-full flex-col items-start overflow-hidden rounded-md border border-neutral-border border-solid bg-white px-1 py-1 shadow-lg',
+          "flex w-full flex-col items-start overflow-hidden rounded-md border border-solid border-neutral-border bg-white px-1 py-1 shadow-lg",
           className
         )}
         ref={ref}
@@ -120,12 +120,12 @@ const Trigger = React.forwardRef<HTMLDivElement, TriggerProps>(function Trigger(
         ref={ref}
       >
         {icon ? (
-          <SubframeCore.IconWrapper className='font-body text-body text-neutral-400'>
+          <SubframeCore.IconWrapper className="text-body font-body text-neutral-400">
             {icon}
           </SubframeCore.IconWrapper>
         ) : null}
         <Select.TriggerValue placeholder={placeholder as string} />
-        <FeatherChevronDown className='font-body text-body text-subtext-color' />
+        <FeatherChevronDown className="text-body font-body text-subtext-color" />
       </div>
     </SubframeCore.Select.Trigger>
   );
@@ -146,7 +146,7 @@ const ItemText = React.forwardRef<HTMLSpanElement, ItemTextProps>(
       <SubframeCore.Select.ItemText {...otherProps}>
         <span
           className={SubframeUtils.twClassNames(
-            'font-body text-body text-default-font',
+            "text-body font-body text-default-font",
             className
           )}
           ref={ref}
@@ -224,17 +224,17 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
           {...otherProps}
         >
           {label ? (
-            <span className='font-caption-bold text-caption-bold text-default-font'>
+            <span className="text-caption-bold font-caption-bold text-default-font">
               {label}
             </span>
           ) : null}
           <div
             className={SubframeUtils.twClassNames(
-              'flex h-8 w-full flex-none flex-col items-start rounded-md border border-neutral-border border-solid bg-default-background group-focus-within/bb88f90b:border group-focus-within/bb88f90b:border-brand-primary group-focus-within/bb88f90b:border-solid',
+              "flex h-8 w-full flex-none flex-col items-start rounded-md border border-solid border-neutral-border bg-default-background group-focus-within/bb88f90b:border group-focus-within/bb88f90b:border-solid group-focus-within/bb88f90b:border-brand-primary",
               {
-                'border border-neutral-100 border-solid bg-neutral-100 group-hover/bb88f90b:border group-hover/bb88f90b:border-neutral-border group-hover/bb88f90b:border-solid group-hover/bb88f90b:bg-neutral-100':
+                "border border-solid border-neutral-100 bg-neutral-100 group-hover/bb88f90b:border group-hover/bb88f90b:border-solid group-hover/bb88f90b:border-neutral-border group-hover/bb88f90b:bg-neutral-100":
                   variant === "filled",
-                'border border-error-600 border-solid': error,
+                "border border-solid border-error-600": error,
                 "bg-neutral-200": disabled,
               }
             )}
@@ -244,7 +244,7 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
           {helpText ? (
             <span
               className={SubframeUtils.twClassNames(
-                'font-caption text-caption text-subtext-color',
+                "text-caption font-caption text-subtext-color",
                 { "text-error-700": error }
               )}
             >
@@ -253,7 +253,7 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
           ) : null}
           <Content>
             {children ? (
-              <div className='flex w-full shrink-0 grow basis-0 flex-col items-start'>
+              <div className="flex w-full grow shrink-0 basis-0 flex-col items-start">
                 {children}
               </div>
             ) : null}

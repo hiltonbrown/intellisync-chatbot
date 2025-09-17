@@ -31,7 +31,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
     <SubframeCore.ToggleGroup.Item asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          'group/56dea6ed flex h-7 w-full cursor-pointer items-center justify-center gap-2 rounded-md px-2 py-1 active:bg-neutral-100 aria-[checked=true]:bg-default-background aria-[checked=true]:shadow-sm active:aria-[checked=true]:bg-default-background hover:aria-[checked=true]:bg-default-background',
+          "group/56dea6ed flex h-7 w-full cursor-pointer items-center justify-center gap-2 rounded-md px-2 py-1 active:bg-neutral-100 aria-[checked=true]:bg-default-background aria-[checked=true]:shadow-sm hover:aria-[checked=true]:bg-default-background active:aria-[checked=true]:bg-default-background",
           { "hover:bg-transparent active:bg-transparent": disabled },
           className
         )}
@@ -40,7 +40,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
         {icon ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              'font-body text-body text-subtext-color group-hover/56dea6ed:text-default-font group-active/56dea6ed:text-default-font group-aria-[checked=true]/56dea6ed:text-default-font',
+              "text-body font-body text-subtext-color group-hover/56dea6ed:text-default-font group-active/56dea6ed:text-default-font group-aria-[checked=true]/56dea6ed:text-default-font",
               {
                 "text-neutral-400 group-hover/56dea6ed:text-neutral-400 group-active/56dea6ed:text-neutral-400":
                   disabled,
@@ -53,7 +53,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
         {children ? (
           <span
             className={SubframeUtils.twClassNames(
-              'whitespace-nowrap font-caption-bold text-caption-bold text-subtext-color group-hover/56dea6ed:text-default-font group-active/56dea6ed:text-default-font group-aria-[checked=true]/56dea6ed:text-default-font',
+              "whitespace-nowrap text-caption-bold font-caption-bold text-subtext-color group-hover/56dea6ed:text-default-font group-active/56dea6ed:text-default-font group-aria-[checked=true]/56dea6ed:text-default-font",
               {
                 "text-neutral-400 group-hover/56dea6ed:text-neutral-400 group-active/56dea6ed:text-neutral-400":
                   disabled,

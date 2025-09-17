@@ -30,9 +30,9 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
   return (
     <div
       className={SubframeUtils.twClassNames(
-        'group/d5612535 flex h-10 cursor-pointer items-center justify-center gap-2 border-neutral-border border-b border-solid px-2.5 py-0.5',
+        "group/d5612535 flex h-10 cursor-pointer items-center justify-center gap-2 border-b border-solid border-neutral-border px-2.5 py-0.5",
         {
-          'border-brand-600 border-b-2 border-solid px-2.5 pt-0.5 pb-px hover:border-brand-600 hover:border-b-2 hover:border-solid':
+          "border-b-2 border-solid border-brand-600 px-2.5 pt-0.5 pb-px hover:border-b-2 hover:border-solid hover:border-brand-600":
             active,
         },
         className
@@ -43,7 +43,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
       {icon ? (
         <SubframeCore.IconWrapper
           className={SubframeUtils.twClassNames(
-            'font-body text-body text-subtext-color group-hover/d5612535:text-default-font',
+            "text-body font-body text-subtext-color group-hover/d5612535:text-default-font",
             {
               "text-neutral-400 group-hover/d5612535:text-neutral-400":
                 disabled,
@@ -57,7 +57,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
       {children ? (
         <span
           className={SubframeUtils.twClassNames(
-            'font-body-bold text-body-bold text-subtext-color group-hover/d5612535:text-default-font',
+            "text-body-bold font-body-bold text-subtext-color group-hover/d5612535:text-default-font",
             {
               "text-neutral-400 group-hover/d5612535:text-neutral-400":
                 disabled,
@@ -94,7 +94,7 @@ const TabsRoot = React.forwardRef<HTMLDivElement, TabsRootProps>(
         {children ? (
           <div className="flex items-start self-stretch">{children}</div>
         ) : null}
-        <div className='flex shrink-0 grow basis-0 flex-col items-start gap-2 self-stretch border-neutral-border border-b border-solid' />
+        <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch border-b border-solid border-neutral-border" />
       </div>
     );
   }

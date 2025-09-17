@@ -18,11 +18,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 export function SidebarUserNav() {
   const { user, isLoaded } = useUser();
   const { setTheme, resolvedTheme } = useTheme();
+  const { setOpenMobile } = useSidebar();
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -96,25 +98,44 @@ export function SidebarUserNav() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/settings/user-preferences">User Preferences</Link>
+              <Link
+                href="/settings/user-preferences"
+                onClick={() => setOpenMobile(false)}
+              >
+                User Preferences
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings/notification-settings">
+              <Link
+                href="/settings/notification-settings"
+                onClick={() => setOpenMobile(false)}
+              >
                 Notification Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings/integration-settings">
+              <Link
+                href="/settings/integration-settings"
+                onClick={() => setOpenMobile(false)}
+              >
                 Integration Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings/assistant-settings">
+              <Link
+                href="/settings/assistant-settings"
+                onClick={() => setOpenMobile(false)}
+              >
                 Assistant Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/settings/billing-usage">Billing and Usage</Link>
+              <Link
+                href="/settings/billing-usage"
+                onClick={() => setOpenMobile(false)}
+              >
+                Billing and Usage
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild data-testid="user-nav-item-auth">

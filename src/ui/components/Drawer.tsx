@@ -22,7 +22,7 @@ const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
     <SubframeCore.Drawer.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          'flex h-full min-w-[320px] flex-col items-start gap-2 border-neutral-border border-l border-solid bg-default-background',
+          "flex h-full min-w-[320px] flex-col items-start gap-2 border-l border-solid border-neutral-border bg-default-background",
           className
         )}
         ref={ref}

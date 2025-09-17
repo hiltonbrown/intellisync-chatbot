@@ -7,6 +7,7 @@
 
 import React from "react";
 import { Drawer } from "../components/Drawer";
+import * as SubframeUtils from "../utils";
 
 interface DrawerLayoutRootProps extends React.ComponentProps<typeof Drawer> {
   children?: React.ReactNode;
@@ -24,7 +25,7 @@ const DrawerLayoutRoot = React.forwardRef<
     <Drawer className={className} ref={ref} {...otherProps}>
       <Drawer.Content>
         {children ? (
-          <div className='flex w-full shrink-0 grow basis-0 flex-col items-start gap-8'>
+          <div className="flex w-full grow shrink-0 basis-0 flex-col items-start gap-8">
             {children}
           </div>
         ) : null}

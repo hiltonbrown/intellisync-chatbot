@@ -41,12 +41,12 @@ const Folder = React.forwardRef<
       trigger={
         <div className="flex w-full items-center gap-2 rounded-md px-3 py-2 group-hover/c841484c:bg-neutral-50">
           {icon ? (
-            <SubframeCore.IconWrapper className='font-body text-body text-default-font'>
+            <SubframeCore.IconWrapper className="text-body font-body text-default-font">
               {icon}
             </SubframeCore.IconWrapper>
           ) : null}
           {label ? (
-            <span className='line-clamp-1 shrink-0 grow basis-0 font-body text-body text-default-font'>
+            <span className="line-clamp-1 grow shrink-0 basis-0 text-body font-body text-default-font">
               {label}
             </span>
           ) : null}
@@ -58,7 +58,7 @@ const Folder = React.forwardRef<
       {...otherProps}
     >
       {children ? (
-        <div className='flex w-full flex-col items-start gap-1 pt-1 pl-6'>
+        <div className="flex w-full flex-col items-start gap-1 pl-6 pt-1">
           {children}
         </div>
       ) : null}
@@ -96,7 +96,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
       {icon ? (
         <SubframeCore.IconWrapper
           className={SubframeUtils.twClassNames(
-            'font-body text-body text-default-font',
+            "text-body font-body text-default-font",
             { "text-brand-700": selected }
           )}
         >
@@ -106,7 +106,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
       {label ? (
         <span
           className={SubframeUtils.twClassNames(
-            'line-clamp-1 shrink-0 grow basis-0 font-body text-body text-default-font',
+            "line-clamp-1 grow shrink-0 basis-0 text-body font-body text-default-font",
             { "text-brand-700": selected }
           )}
         >

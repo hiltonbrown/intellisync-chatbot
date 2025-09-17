@@ -41,7 +41,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
       {icon ? (
         <SubframeCore.IconWrapper
           className={SubframeUtils.twClassNames(
-            'font-heading-3 text-heading-3 text-neutral-600',
+            "text-heading-3 font-heading-3 text-neutral-600",
             { "text-brand-700": selected }
           )}
         >
@@ -51,7 +51,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
       {children ? (
         <span
           className={SubframeUtils.twClassNames(
-            'line-clamp-1 shrink-0 grow basis-0 font-body-bold text-body-bold text-neutral-600',
+            "line-clamp-1 grow shrink-0 basis-0 text-body-bold font-body-bold text-neutral-600",
             { "text-brand-700": selected }
           )}
         >
@@ -85,13 +85,13 @@ const NavSection = React.forwardRef<HTMLDivElement, NavSectionProps>(
       >
         <div className="flex w-full flex-col items-start gap-4 px-3 py-1">
           {label ? (
-            <span className='w-full font-caption-bold text-caption-bold text-subtext-color'>
+            <span className="w-full text-caption-bold font-caption-bold text-subtext-color">
               {label}
             </span>
           ) : null}
         </div>
         {children ? (
-          <div className='flex w-full shrink-0 grow basis-0 flex-col items-start gap-1'>
+          <div className="flex w-full grow shrink-0 basis-0 flex-col items-start gap-1">
             {children}
           </div>
         ) : null}
@@ -124,7 +124,7 @@ const SidebarWithSectionsRoot = React.forwardRef<
   return (
     <nav
       className={SubframeUtils.twClassNames(
-        'flex h-full w-60 flex-col items-start border-neutral-border border-r border-solid bg-default-background',
+        "flex h-full w-60 flex-col items-start border-r border-solid border-neutral-border bg-default-background",
         className
       )}
       ref={ref}
@@ -136,12 +136,12 @@ const SidebarWithSectionsRoot = React.forwardRef<
         </div>
       ) : null}
       {children ? (
-        <div className='flex w-full shrink-0 grow basis-0 flex-col items-start overflow-auto px-4 py-4'>
+        <div className="flex w-full grow shrink-0 basis-0 flex-col items-start px-4 py-4 overflow-auto">
           {children}
         </div>
       ) : null}
       {footer ? (
-        <div className='flex w-full items-center gap-4 border-neutral-border border-t border-solid px-6 py-6'>
+        <div className="flex w-full items-center gap-4 border-t border-solid border-neutral-border px-6 py-6">
           {footer}
         </div>
       ) : null}

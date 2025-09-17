@@ -47,10 +47,10 @@ const LinkButtonRoot = React.forwardRef<HTMLButtonElement, LinkButtonRootProps>(
         {icon ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              'font-body text-body text-neutral-700 group-hover/a4ee726a:text-brand-700 group-disabled/a4ee726a:text-neutral-400 group-hover/a4ee726a:group-disabled/a4ee726a:text-neutral-400',
+              "text-body font-body text-neutral-700 group-hover/a4ee726a:text-brand-700 group-disabled/a4ee726a:text-neutral-400 group-hover/a4ee726a:group-disabled/a4ee726a:text-neutral-400",
               {
-                'font-caption text-caption': size === "small",
-                'font-heading-3 text-heading-3': size === "large",
+                "text-caption font-caption": size === "small",
+                "text-heading-3 font-heading-3": size === "large",
                 "text-white group-hover/a4ee726a:text-white":
                   variant === "inverse",
                 "text-brand-700 group-hover/a4ee726a:text-brand-700":
@@ -64,10 +64,10 @@ const LinkButtonRoot = React.forwardRef<HTMLButtonElement, LinkButtonRootProps>(
         {children ? (
           <span
             className={SubframeUtils.twClassNames(
-              'font-body text-body text-neutral-700 group-hover/a4ee726a:text-brand-700 group-hover/a4ee726a:underline group-disabled/a4ee726a:text-neutral-400 group-hover/a4ee726a:group-disabled/a4ee726a:text-neutral-400 group-hover/a4ee726a:group-disabled/a4ee726a:no-underline',
+              "text-body font-body text-neutral-700 group-hover/a4ee726a:text-brand-700 group-hover/a4ee726a:underline group-disabled/a4ee726a:text-neutral-400 group-hover/a4ee726a:group-disabled/a4ee726a:text-neutral-400 group-hover/a4ee726a:group-disabled/a4ee726a:no-underline",
               {
-                'font-caption text-caption': size === "small",
-                'font-heading-3 text-heading-3': size === "large",
+                "text-caption font-caption": size === "small",
+                "text-heading-3 font-heading-3": size === "large",
                 "text-white group-hover/a4ee726a:text-white":
                   variant === "inverse",
                 "text-brand-700 group-hover/a4ee726a:text-brand-700":
@@ -81,10 +81,10 @@ const LinkButtonRoot = React.forwardRef<HTMLButtonElement, LinkButtonRootProps>(
         {iconRight ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              'font-body text-body text-neutral-700 group-hover/a4ee726a:text-brand-700 group-disabled/a4ee726a:text-neutral-400 group-hover/a4ee726a:group-disabled/a4ee726a:text-neutral-400',
+              "text-body font-body text-neutral-700 group-hover/a4ee726a:text-brand-700 group-disabled/a4ee726a:text-neutral-400 group-hover/a4ee726a:group-disabled/a4ee726a:text-neutral-400",
               {
-                'font-caption text-caption': size === "small",
-                'font-heading-3 text-heading-3': size === "large",
+                "text-caption font-caption": size === "small",
+                "text-heading-3 font-heading-3": size === "large",
                 "text-white group-hover/a4ee726a:text-white":
                   variant === "inverse",
                 "text-brand-700 group-hover/a4ee726a:text-brand-700":

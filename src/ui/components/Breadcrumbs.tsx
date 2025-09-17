@@ -21,7 +21,7 @@ const Item = React.forwardRef<HTMLSpanElement, ItemProps>(function Item(
   return children ? (
     <span
       className={SubframeUtils.twClassNames(
-        'group/bbdc1640 line-clamp-1 cursor-pointer break-words font-body text-body text-subtext-color hover:text-default-font',
+        "group/bbdc1640 line-clamp-1 cursor-pointer break-words text-body font-body text-subtext-color hover:text-default-font",
         { "text-default-font": active },
         className
       )}
@@ -45,7 +45,7 @@ const Divider = React.forwardRef<
   return (
     <FeatherChevronRight
       className={SubframeUtils.twClassNames(
-        'font-body text-body text-subtext-color',
+        "text-body font-body text-subtext-color",
         className
       )}
       ref={ref}

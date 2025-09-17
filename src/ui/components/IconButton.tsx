@@ -45,7 +45,7 @@ const IconButtonRoot = React.forwardRef<HTMLButtonElement, IconButtonRootProps>(
     return (
       <button
         className={SubframeUtils.twClassNames(
-          'group/af9405b1 flex h-8 w-8 cursor-pointer items-center justify-center gap-2 rounded-md border-none bg-transparent hover:bg-neutral-100 active:bg-neutral-50 disabled:cursor-default disabled:bg-neutral-100 active:disabled:cursor-default active:disabled:bg-neutral-100 hover:disabled:cursor-default hover:disabled:bg-neutral-100',
+          "group/af9405b1 flex h-8 w-8 cursor-pointer items-center justify-center gap-2 rounded-md border-none bg-transparent hover:bg-neutral-100 active:bg-neutral-50 disabled:cursor-default disabled:bg-neutral-100 hover:disabled:cursor-default hover:disabled:bg-neutral-100 active:disabled:cursor-default active:disabled:bg-neutral-100",
           {
             "h-6 w-6": size === "small",
             "h-10 w-10": size === "large",
@@ -56,7 +56,7 @@ const IconButtonRoot = React.forwardRef<HTMLButtonElement, IconButtonRootProps>(
               variant === "destructive-secondary",
             "bg-error-600 hover:bg-error-500 active:bg-error-600":
               variant === "destructive-primary",
-            'border border-neutral-border border-solid bg-white hover:bg-neutral-100 active:bg-white':
+            "border border-solid border-neutral-border bg-white hover:bg-neutral-100 active:bg-white":
               variant === "neutral-secondary",
             "bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-100":
               variant === "neutral-primary",
@@ -76,11 +76,11 @@ const IconButtonRoot = React.forwardRef<HTMLButtonElement, IconButtonRootProps>(
         {icon ? (
           <SubframeCore.IconWrapper
             className={SubframeUtils.twClassNames(
-              'font-heading-3 text-heading-3 text-neutral-700 group-disabled/af9405b1:text-neutral-400',
+              "text-heading-3 font-heading-3 text-neutral-700 group-disabled/af9405b1:text-neutral-400",
               {
                 hidden: loading,
-                'font-body text-body': size === "small",
-                'font-heading-3 text-heading-3': size === "large",
+                "text-body font-body": size === "small",
+                "text-heading-3 font-heading-3": size === "large",
                 "text-white group-hover/af9405b1:text-white":
                   variant === "inverse",
                 "text-error-700 group-hover/af9405b1:text-error-700 group-active/af9405b1:text-error-700":
@@ -102,10 +102,10 @@ const IconButtonRoot = React.forwardRef<HTMLButtonElement, IconButtonRootProps>(
         ) : null}
         <SubframeCore.Loader
           className={SubframeUtils.twClassNames(
-            'hidden font-caption text-caption text-neutral-700 group-disabled/af9405b1:text-neutral-400',
+            "hidden text-caption font-caption text-neutral-700 group-disabled/af9405b1:text-neutral-400",
             {
               "inline-block": loading,
-              'font-caption text-caption': size === "small",
+              "text-caption font-caption": size === "small",
               "text-white":
                 variant === "inverse" ||
                 variant === "destructive-primary" ||

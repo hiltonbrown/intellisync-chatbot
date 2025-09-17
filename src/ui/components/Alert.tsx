@@ -35,15 +35,15 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
     return (
       <div
         className={SubframeUtils.twClassNames(
-          'group/3a65613d flex w-full flex-col items-start gap-2 rounded-md border border-neutral-200 border-solid bg-neutral-50 py-3 pr-3 pl-4',
+          "group/3a65613d flex w-full flex-col items-start gap-2 rounded-md border border-solid border-neutral-200 bg-neutral-50 pl-4 pr-3 py-3",
           {
-            'border border-warning-100 border-solid bg-warning-50':
+            "border border-solid border-warning-100 bg-warning-50":
               variant === "warning",
-            'border border-success-100 border-solid bg-success-50':
+            "border border-solid border-success-100 bg-success-50":
               variant === "success",
-            'border border-error-100 border-solid bg-error-50':
+            "border border-solid border-error-100 bg-error-50":
               variant === "error",
-            'border border-brand-100 border-solid bg-brand-50':
+            "border border-solid border-brand-100 bg-brand-50":
               variant === "brand",
           },
           className
@@ -55,7 +55,7 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
           {icon ? (
             <SubframeCore.IconWrapper
               className={SubframeUtils.twClassNames(
-                'font-heading-3 text-heading-3 text-neutral-800',
+                "text-heading-3 font-heading-3 text-neutral-800",
                 {
                   "text-warning-800": variant === "warning",
                   "text-success-800": variant === "success",
@@ -67,11 +67,11 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
               {icon}
             </SubframeCore.IconWrapper>
           ) : null}
-          <div className='flex shrink-0 grow basis-0 flex-col items-start'>
+          <div className="flex grow shrink-0 basis-0 flex-col items-start">
             {title ? (
               <span
                 className={SubframeUtils.twClassNames(
-                  'w-full whitespace-pre-wrap font-body-bold text-body-bold text-default-font',
+                  "w-full whitespace-pre-wrap text-body-bold font-body-bold text-default-font",
                   {
                     "text-warning-900": variant === "warning",
                     "text-success-900": variant === "success",
@@ -86,7 +86,7 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
             {description ? (
               <span
                 className={SubframeUtils.twClassNames(
-                  'w-full whitespace-pre-wrap font-caption text-caption text-subtext-color',
+                  "w-full whitespace-pre-wrap text-caption font-caption text-subtext-color",
                   {
                     "text-warning-800": variant === "warning",
                     "text-success-800": variant === "success",
