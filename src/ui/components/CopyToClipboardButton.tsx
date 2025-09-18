@@ -1,20 +1,20 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Copy to clipboard button — https://app.subframe.com/84ec9af13098/library?component=Copy+to+clipboard+button_e8c76626-6462-4f2f-b595-38d530d427e8
  * Tooltip — https://app.subframe.com/84ec9af13098/library?component=Tooltip_ccebd1e9-f6ac-4737-8376-0dfacd90c9f3
  */
 
-import React from "react";
-import { FeatherClipboard } from "@subframe/core";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
-import { Tooltip } from "./Tooltip";
+import React from 'react';
+import { FeatherClipboard } from '@subframe/core';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
+import { Tooltip } from './Tooltip';
 
 interface CopyToClipboardButtonRootProps
   extends Omit<
     React.ComponentProps<typeof SubframeCore.CopyToClipboard.Root>,
-    "clipboardText"
+    'clipboardText'
   > {
   clipboardText?: React.ReactNode;
   tooltipText?: React.ReactNode;
@@ -34,7 +34,7 @@ const CopyToClipboardButtonRoot = React.forwardRef<
     className,
     ...otherProps
   }: CopyToClipboardButtonRootProps,
-  ref
+  ref,
 ) {
   return (
     <SubframeCore.Tooltip.Provider>
@@ -46,13 +46,13 @@ const CopyToClipboardButtonRoot = React.forwardRef<
           >
             <div
               className={SubframeUtils.twClassNames(
-                "group/e8c76626 flex h-6 w-6 cursor-pointer flex-col items-center justify-center gap-2 rounded-md hover:bg-neutral-100",
-                className
+                'group/e8c76626 flex h-6 w-6 cursor-pointer flex-col items-center justify-center gap-2 rounded-md hover:bg-neutral-100',
+                className,
               )}
               ref={ref}
             >
               {icon ? (
-                <SubframeCore.IconWrapper className='font-body text-body text-subtext-color group-hover/e8c76626:text-default-font'>
+                <SubframeCore.IconWrapper className="font-body text-body text-subtext-color group-hover/e8c76626:text-default-font">
                   {icon}
                 </SubframeCore.IconWrapper>
               ) : null}

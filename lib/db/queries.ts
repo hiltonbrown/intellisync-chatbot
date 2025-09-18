@@ -68,10 +68,7 @@ export async function getUserById(id: string): Promise<Array<User>> {
   try {
     return await db.select().from(user).where(eq(user.id, id));
   } catch (error) {
-    throw new ChatSDKError(
-      'bad_request:database',
-      'Failed to get user by id',
-    );
+    throw new ChatSDKError('bad_request:database', 'Failed to get user by id');
   }
 }
 
@@ -123,7 +120,12 @@ export async function saveChat({
     });
   } catch (error) {
     console.error('Database error in saveChat:', error);
-    console.error('Failed to save chat with data:', { id, userId, title, visibility });
+    console.error('Failed to save chat with data:', {
+      id,
+      userId,
+      title,
+      visibility,
+    });
     throw new ChatSDKError('bad_request:database', 'Failed to save chat');
   }
 }

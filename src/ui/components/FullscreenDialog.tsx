@@ -1,12 +1,12 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Fullscreen Dialog — https://app.subframe.com/84ec9af13098/library?component=Fullscreen+Dialog_3f094173-71de-4378-a09a-05c482f7a137
  */
 
-import React from "react";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface FullscreenDialogRootProps
   extends React.ComponentProps<typeof SubframeCore.FullScreenDialog.Root> {
@@ -21,14 +21,14 @@ const FullscreenDialogRoot = React.forwardRef<
   FullscreenDialogRootProps
 >(function FullscreenDialogRoot(
   { children, className, ...otherProps }: FullscreenDialogRootProps,
-  ref
+  ref,
 ) {
   return children ? (
     <SubframeCore.FullScreenDialog.Root asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          "flex h-full w-full flex-col items-start bg-default-background",
-          className
+          'flex h-full w-full flex-col items-start bg-default-background',
+          className,
         )}
         ref={ref}
       >

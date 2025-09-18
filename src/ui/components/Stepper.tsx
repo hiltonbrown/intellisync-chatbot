@@ -1,14 +1,14 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Stepper — https://app.subframe.com/84ec9af13098/library?component=Stepper_3c5d47dc-1b1a-45d9-b244-18422d7bfb56
  */
 
-import React from "react";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import * as SubframeUtils from '../utils';
 
 interface StepProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "completed" | "active";
+  variant?: 'default' | 'completed' | 'active';
   firstStep?: boolean;
   lastStep?: boolean;
   stepNumber?: React.ReactNode;
@@ -18,7 +18,7 @@ interface StepProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
   {
-    variant = "default",
+    variant = 'default',
     firstStep = false,
     lastStep = false,
     stepNumber,
@@ -26,33 +26,33 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
     className,
     ...otherProps
   }: StepProps,
-  ref
+  ref,
 ) {
   return (
     <div
       className={SubframeUtils.twClassNames(
-        "group/c1145464 flex w-full cursor-pointer flex-col items-center justify-center gap-1",
-        className
+        'group/c1145464 flex w-full cursor-pointer flex-col items-center justify-center gap-1',
+        className,
       )}
       ref={ref}
       {...otherProps}
     >
       <div
         className={SubframeUtils.twClassNames(
-          "flex w-full items-center justify-center gap-2",
-          { "flex-row flex-nowrap gap-2": firstStep }
+          'flex w-full items-center justify-center gap-2',
+          { 'flex-row flex-nowrap gap-2': firstStep },
         )}
       >
         <div
           className={SubframeUtils.twClassNames(
             'flex h-px shrink-0 grow basis-0 flex-col items-center gap-2 bg-neutral-300',
-            { "bg-transparent": firstStep }
+            { 'bg-transparent': firstStep },
           )}
         />
         <div
           className={SubframeUtils.twClassNames(
-            "flex h-7 w-7 flex-none flex-col items-center justify-center gap-2 rounded-full bg-neutral-100",
-            { "bg-brand-100": variant === "active" || variant === "completed" }
+            'flex h-7 w-7 flex-none flex-col items-center justify-center gap-2 rounded-full bg-neutral-100',
+            { 'bg-brand-100': variant === 'active' || variant === 'completed' },
           )}
         >
           {stepNumber ? (
@@ -60,9 +60,9 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
               className={SubframeUtils.twClassNames(
                 'font-caption-bold text-caption-bold text-subtext-color',
                 {
-                  "text-brand-700":
-                    variant === "active" || variant === "completed",
-                }
+                  'text-brand-700':
+                    variant === 'active' || variant === 'completed',
+                },
               )}
             >
               {stepNumber}
@@ -72,7 +72,7 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
         <div
           className={SubframeUtils.twClassNames(
             'flex h-px shrink-0 grow basis-0 flex-col items-center gap-2 bg-neutral-300',
-            { "bg-transparent": lastStep }
+            { 'bg-transparent': lastStep },
           )}
         />
       </div>
@@ -82,9 +82,9 @@ const Step = React.forwardRef<HTMLDivElement, StepProps>(function Step(
             'font-body text-body text-subtext-color group-hover/c1145464:text-default-font',
             {
               'font-body-bold text-body-bold text-default-font':
-                variant === "active",
-              "text-subtext-color": variant === "completed",
-            }
+                variant === 'active',
+              'text-subtext-color': variant === 'completed',
+            },
           )}
         >
           {label}
@@ -102,13 +102,13 @@ interface StepperRootProps extends React.HTMLAttributes<HTMLDivElement> {
 const StepperRoot = React.forwardRef<HTMLDivElement, StepperRootProps>(
   function StepperRoot(
     { children, className, ...otherProps }: StepperRootProps,
-    ref
+    ref,
   ) {
     return children ? (
       <div
         className={SubframeUtils.twClassNames(
-          "flex w-full items-start justify-center",
-          className
+          'flex w-full items-start justify-center',
+          className,
         )}
         ref={ref}
         {...otherProps}
@@ -116,7 +116,7 @@ const StepperRoot = React.forwardRef<HTMLDivElement, StepperRootProps>(
         {children}
       </div>
     ) : null;
-  }
+  },
 );
 
 export const Stepper = Object.assign(StepperRoot, {

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Avatar — https://app.subframe.com/84ec9af13098/library?component=Avatar_bec25ae6-5010-4485-b46b-cf79e3943ab2
@@ -8,26 +8,26 @@
  * Sidebar with sections — https://app.subframe.com/84ec9af13098/library?component=Sidebar+with+sections_f4047c8b-cfb4-4761-b9cf-fbcae8a9b9b5
  */
 
-import React from "react";
-import { FeatherBarChart2 } from "@subframe/core";
-import { FeatherBuilding } from "@subframe/core";
-import { FeatherDollarSign } from "@subframe/core";
-import { FeatherGauge } from "@subframe/core";
-import { FeatherHome } from "@subframe/core";
-import { FeatherInbox } from "@subframe/core";
-import { FeatherLogOut } from "@subframe/core";
-import { FeatherMoreHorizontal } from "@subframe/core";
-import { FeatherRocket } from "@subframe/core";
-import { FeatherSettings } from "@subframe/core";
-import { FeatherTent } from "@subframe/core";
-import { FeatherUser } from "@subframe/core";
-import { FeatherWebhook } from "@subframe/core";
-import * as SubframeCore from "@subframe/core";
-import { Avatar } from "../components/Avatar";
-import { DropdownMenu } from "../components/DropdownMenu";
-import { IconButton } from "../components/IconButton";
-import { SidebarWithSections } from "../components/SidebarWithSections";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import { FeatherBarChart2 } from '@subframe/core';
+import { FeatherBuilding } from '@subframe/core';
+import { FeatherDollarSign } from '@subframe/core';
+import { FeatherGauge } from '@subframe/core';
+import { FeatherHome } from '@subframe/core';
+import { FeatherInbox } from '@subframe/core';
+import { FeatherLogOut } from '@subframe/core';
+import { FeatherMoreHorizontal } from '@subframe/core';
+import { FeatherRocket } from '@subframe/core';
+import { FeatherSettings } from '@subframe/core';
+import { FeatherTent } from '@subframe/core';
+import { FeatherUser } from '@subframe/core';
+import { FeatherWebhook } from '@subframe/core';
+import * as SubframeCore from '@subframe/core';
+import { Avatar } from '../components/Avatar';
+import { DropdownMenu } from '../components/DropdownMenu';
+import { IconButton } from '../components/IconButton';
+import { SidebarWithSections } from '../components/SidebarWithSections';
+import * as SubframeUtils from '../utils';
 
 interface DefaultPageLayoutRootProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -40,13 +40,13 @@ const DefaultPageLayoutRoot = React.forwardRef<
   DefaultPageLayoutRootProps
 >(function DefaultPageLayoutRoot(
   { children, className, ...otherProps }: DefaultPageLayoutRootProps,
-  ref
+  ref,
 ) {
   return (
     <div
       className={SubframeUtils.twClassNames(
-        "flex h-screen w-full items-start",
-        className
+        'flex h-screen w-full items-start',
+        className,
       )}
       ref={ref}
       {...otherProps}
@@ -57,19 +57,20 @@ const DefaultPageLayoutRoot = React.forwardRef<
           <img
             className="h-6 flex-none object-cover"
             src="https://res.cloudinary.com/subframe/image/upload/v1711417507/shared/y2rsnhq3mex4auk54aye.png"
+            alt="Logo"
           />
         }
         footer={
           <>
-            <div className='flex shrink-0 grow basis-0 items-start gap-2'>
+            <div className="flex shrink-0 grow basis-0 items-start gap-2">
               <Avatar image="https://res.cloudinary.com/subframe/image/upload/v1711417513/shared/kwut7rhuyivweg8tmyzl.jpg">
                 A
               </Avatar>
               <div className="flex flex-col items-start">
-                <span className='font-caption-bold text-caption-bold text-default-font'>
+                <span className="font-caption-bold text-caption-bold text-default-font">
                   Irvin
                 </span>
-                <span className='font-caption text-caption text-subtext-color'>
+                <span className="font-caption text-caption text-subtext-color">
                   Founder
                 </span>
               </div>
@@ -135,7 +136,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
         </SidebarWithSections.NavSection>
       </SidebarWithSections>
       {children ? (
-        <div className='flex shrink-0 grow basis-0 flex-col items-start gap-4 self-stretch overflow-y-auto bg-default-background'>
+        <div className="flex shrink-0 grow basis-0 flex-col items-start gap-4 self-stretch overflow-y-auto bg-default-background">
           {children}
         </div>
       ) : null}

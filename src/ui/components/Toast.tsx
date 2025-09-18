@@ -1,17 +1,17 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Toast — https://app.subframe.com/84ec9af13098/library?component=Toast_2c7966c2-a95d-468a-83fe-bf196b95be7a
  */
 
-import React from "react";
-import { FeatherInfo } from "@subframe/core";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import { FeatherInfo } from '@subframe/core';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface ToastRootProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
-  variant?: "brand" | "neutral" | "error" | "success";
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+  variant?: 'brand' | 'neutral' | 'error' | 'success';
   icon?: React.ReactNode;
   title?: React.ReactNode;
   description?: React.ReactNode;
@@ -22,7 +22,7 @@ interface ToastRootProps
 const ToastRoot = React.forwardRef<HTMLDivElement, ToastRootProps>(
   function ToastRoot(
     {
-      variant = "neutral",
+      variant = 'neutral',
       icon = <FeatherInfo />,
       title,
       description,
@@ -30,13 +30,13 @@ const ToastRoot = React.forwardRef<HTMLDivElement, ToastRootProps>(
       className,
       ...otherProps
     }: ToastRootProps,
-    ref
+    ref,
   ) {
     return (
       <div
         className={SubframeUtils.twClassNames(
-          "group/2c7966c2 flex w-80 items-center gap-4 rounded-md bg-default-background px-4 py-3 shadow-lg",
-          className
+          'group/2c7966c2 flex w-80 items-center gap-4 rounded-md bg-default-background px-4 py-3 shadow-lg',
+          className,
         )}
         ref={ref}
         {...otherProps}
@@ -46,32 +46,32 @@ const ToastRoot = React.forwardRef<HTMLDivElement, ToastRootProps>(
             className={SubframeUtils.twClassNames(
               'font-heading-3 text-heading-3 text-neutral-700',
               {
-                "text-success-700": variant === "success",
-                "text-error-700": variant === "error",
-                "text-brand-600": variant === "brand",
-              }
+                'text-success-700': variant === 'success',
+                'text-error-700': variant === 'error',
+                'text-brand-600': variant === 'brand',
+              },
             )}
           >
             {icon}
           </SubframeCore.IconWrapper>
         ) : null}
-        <div className='flex shrink-0 grow basis-0 flex-col items-start'>
+        <div className="flex shrink-0 grow basis-0 flex-col items-start">
           {title ? (
             <span
               className={SubframeUtils.twClassNames(
                 'w-full font-body-bold text-body-bold text-default-font',
                 {
-                  "text-success-700": variant === "success",
-                  "text-error-700": variant === "error",
-                  "text-brand-800": variant === "brand",
-                }
+                  'text-success-700': variant === 'success',
+                  'text-error-700': variant === 'error',
+                  'text-brand-800': variant === 'brand',
+                },
               )}
             >
               {title}
             </span>
           ) : null}
           {description ? (
-            <span className='w-full font-caption text-caption text-subtext-color'>
+            <span className="w-full font-caption text-caption text-subtext-color">
               {description}
             </span>
           ) : null}
@@ -81,7 +81,7 @@ const ToastRoot = React.forwardRef<HTMLDivElement, ToastRootProps>(
         ) : null}
       </div>
     );
-  }
+  },
 );
 
 export const Toast = ToastRoot;

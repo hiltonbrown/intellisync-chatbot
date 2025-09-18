@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { Chat } from '@/components/chat';
+import { FloatingThemeToggle } from '@/components/floating-theme-toggle';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
@@ -30,10 +31,12 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   // Create a session-like object for compatibility with existing Chat component
   const session: ClerkSession = {
     userId,
-    user: userId ? {
-      id: userId,
-      type: 'regular',
-    } : undefined,
+    user: userId
+      ? {
+          id: userId,
+          type: 'regular',
+        }
+      : undefined,
   };
 
   if (chat.visibility === 'private') {
@@ -58,6 +61,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   if (!chatModelFromCookie) {
     return (
       <>
+        <FloatingThemeToggle />
         <Chat
           id={chat.id}
           initialMessages={uiMessages}
@@ -75,6 +79,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   return (
     <>
+      <FloatingThemeToggle />
       <Chat
         id={chat.id}
         initialMessages={uiMessages}

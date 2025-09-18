@@ -21,7 +21,11 @@ export const postRequestBodySchema = z.object({
     role: z.enum(['user']),
     parts: z.array(partSchema),
   }),
-  selectedChatModel: z.enum(['google/gemini-flash-1.5', 'meta-llama/llama-3.1-8b-instruct', 'mistralai/mistral-large-latest']),
+  selectedChatModel: z.enum([
+    'openai/gpt-oss-120b:free',
+    'meta-llama/llama-4-maverick:free',
+    'google/gemma-3-27b-it:free',
+  ]),
   selectedVisibilityType: z.enum(['public', 'private']),
 });
 

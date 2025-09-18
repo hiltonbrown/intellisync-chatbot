@@ -1,17 +1,17 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Select — https://app.subframe.com/84ec9af13098/library?component=Select_bb88f90b-8c43-4b73-9c2f-3558ce7838f3
  */
 
-import React from "react";
-import { FeatherCheck } from "@subframe/core";
-import { FeatherChevronDown } from "@subframe/core";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import { FeatherCheck } from '@subframe/core';
+import { FeatherChevronDown } from '@subframe/core';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface ItemProps
-  extends Omit<React.ComponentProps<typeof SubframeCore.Select.Item>, "value"> {
+  extends Omit<React.ComponentProps<typeof SubframeCore.Select.Item>, 'value'> {
   value: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
@@ -19,7 +19,7 @@ interface ItemProps
 
 const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
   { value, children, className, ...otherProps }: ItemProps,
-  ref
+  ref,
 ) {
   return (
     <SubframeCore.Select.Item
@@ -29,15 +29,15 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
     >
       <div
         className={SubframeUtils.twClassNames(
-          "group/969e345b flex h-8 w-full cursor-pointer items-center gap-1 rounded-md px-3 hover:bg-neutral-100 active:bg-neutral-50 data-[highlighted]:bg-brand-50",
-          className
+          'group/969e345b flex h-8 w-full cursor-pointer items-center gap-1 rounded-md px-3 hover:bg-neutral-100 active:bg-neutral-50 data-[highlighted]:bg-brand-50',
+          className,
         )}
         ref={ref}
       >
-        <Select.ItemText className='h-auto shrink-0 grow basis-0'>
+        <Select.ItemText className="h-auto shrink-0 grow basis-0">
           {children || value}
         </Select.ItemText>
-        <FeatherCheck className='hidden font-body text-body text-default-font group-hover/969e345b:hidden group-data-[state=checked]/969e345b:inline-flex group-data-[state=checked]/969e345b:text-brand-600' />
+        <FeatherCheck className="hidden font-body text-body text-default-font group-hover/969e345b:hidden group-data-[state=checked]/969e345b:inline-flex group-data-[state=checked]/969e345b:text-brand-600" />
       </div>
     </SubframeCore.Select.Item>
   );
@@ -54,13 +54,13 @@ const TriggerValue = React.forwardRef<
   TriggerValueProps
 >(function TriggerValue(
   { placeholder, className, ...otherProps }: TriggerValueProps,
-  ref
+  ref,
 ) {
   return (
     <SubframeCore.Select.Value
       className={SubframeUtils.twClassNames(
         'w-full whitespace-nowrap font-body text-body text-default-font',
-        className
+        className,
       )}
       ref={ref}
       placeholder={placeholder}
@@ -79,14 +79,14 @@ interface ContentProps
 
 const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
   { children, className, ...otherProps }: ContentProps,
-  ref
+  ref,
 ) {
   return children ? (
     <SubframeCore.Select.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
           'flex w-full flex-col items-start overflow-hidden rounded-md border border-neutral-border border-solid bg-white px-1 py-1 shadow-lg',
-          className
+          className,
         )}
         ref={ref}
       >
@@ -99,7 +99,7 @@ const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
 interface TriggerProps
   extends Omit<
     React.ComponentProps<typeof SubframeCore.Select.Trigger>,
-    "placeholder"
+    'placeholder'
   > {
   placeholder?: React.ReactNode;
   icon?: React.ReactNode;
@@ -108,24 +108,24 @@ interface TriggerProps
 
 const Trigger = React.forwardRef<HTMLDivElement, TriggerProps>(function Trigger(
   { placeholder, icon = null, className, ...otherProps }: TriggerProps,
-  ref
+  ref,
 ) {
   return (
     <SubframeCore.Select.Trigger asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          "flex h-full w-full items-center gap-2 px-3",
-          className
+          'flex h-full w-full items-center gap-2 px-3',
+          className,
         )}
         ref={ref}
       >
         {icon ? (
-          <SubframeCore.IconWrapper className='font-body text-body text-neutral-400'>
+          <SubframeCore.IconWrapper className="font-body text-body text-neutral-400">
             {icon}
           </SubframeCore.IconWrapper>
         ) : null}
         <Select.TriggerValue placeholder={placeholder as string} />
-        <FeatherChevronDown className='font-body text-body text-subtext-color' />
+        <FeatherChevronDown className="font-body text-body text-subtext-color" />
       </div>
     </SubframeCore.Select.Trigger>
   );
@@ -140,14 +140,14 @@ interface ItemTextProps
 const ItemText = React.forwardRef<HTMLSpanElement, ItemTextProps>(
   function ItemText(
     { children, className, ...otherProps }: ItemTextProps,
-    ref
+    ref,
   ) {
     return children ? (
       <SubframeCore.Select.ItemText {...otherProps}>
         <span
           className={SubframeUtils.twClassNames(
             'font-body text-body text-default-font',
-            className
+            className,
           )}
           ref={ref}
         >
@@ -155,14 +155,14 @@ const ItemText = React.forwardRef<HTMLSpanElement, ItemTextProps>(
         </span>
       </SubframeCore.Select.ItemText>
     ) : null;
-  }
+  },
 );
 
 interface SelectRootProps
   extends React.ComponentProps<typeof SubframeCore.Select.Root> {
   disabled?: boolean;
   error?: boolean;
-  variant?: "outline" | "filled";
+  variant?: 'outline' | 'filled';
   label?: React.ReactNode;
   placeholder?: React.ReactNode;
   helpText?: React.ReactNode;
@@ -178,7 +178,7 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
     {
       disabled = false,
       error = false,
-      variant = "outline",
+      variant = 'outline',
       label,
       placeholder,
       helpText,
@@ -198,7 +198,7 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
       form,
       ...otherProps
     }: SelectRootProps,
-    ref
+    ref,
   ) {
     return (
       <SubframeCore.Select.Root
@@ -217,14 +217,14 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
       >
         <div
           className={SubframeUtils.twClassNames(
-            "group/bb88f90b flex cursor-pointer flex-col items-start gap-1",
-            className
+            'group/bb88f90b flex cursor-pointer flex-col items-start gap-1',
+            className,
           )}
           ref={ref}
           {...otherProps}
         >
           {label ? (
-            <span className='font-caption-bold text-caption-bold text-default-font'>
+            <span className="font-caption-bold text-caption-bold text-default-font">
               {label}
             </span>
           ) : null}
@@ -233,10 +233,10 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
               'flex h-8 w-full flex-none flex-col items-start rounded-md border border-neutral-border border-solid bg-default-background group-focus-within/bb88f90b:border group-focus-within/bb88f90b:border-brand-primary group-focus-within/bb88f90b:border-solid',
               {
                 'border border-neutral-100 border-solid bg-neutral-100 group-hover/bb88f90b:border group-hover/bb88f90b:border-neutral-border group-hover/bb88f90b:border-solid group-hover/bb88f90b:bg-neutral-100':
-                  variant === "filled",
+                  variant === 'filled',
                 'border border-error-600 border-solid': error,
-                "bg-neutral-200": disabled,
-              }
+                'bg-neutral-200': disabled,
+              },
             )}
           >
             <Trigger placeholder={placeholder} icon={icon} />
@@ -245,7 +245,7 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
             <span
               className={SubframeUtils.twClassNames(
                 'font-caption text-caption text-subtext-color',
-                { "text-error-700": error }
+                { 'text-error-700': error },
               )}
             >
               {helpText}
@@ -253,7 +253,7 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
           ) : null}
           <Content>
             {children ? (
-              <div className='flex w-full shrink-0 grow basis-0 flex-col items-start'>
+              <div className="flex w-full shrink-0 grow basis-0 flex-col items-start">
                 {children}
               </div>
             ) : null}
@@ -261,7 +261,7 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
         </div>
       </SubframeCore.Select.Root>
     );
-  }
+  },
 );
 
 export const Select = Object.assign(SelectRoot, {

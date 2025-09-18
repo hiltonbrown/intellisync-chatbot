@@ -1,13 +1,13 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Sidebar with sections — https://app.subframe.com/84ec9af13098/library?component=Sidebar+with+sections_f4047c8b-cfb4-4761-b9cf-fbcae8a9b9b5
  */
 
-import React from "react";
-import { FeatherCircleDashed } from "@subframe/core";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import { FeatherCircleDashed } from '@subframe/core';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface NavItemProps extends React.HTMLAttributes<HTMLDivElement> {
   icon?: React.ReactNode;
@@ -26,14 +26,14 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
     className,
     ...otherProps
   }: NavItemProps,
-  ref
+  ref,
 ) {
   return (
     <div
       className={SubframeUtils.twClassNames(
-        "group/2713e17b flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 hover:bg-neutral-50 active:bg-neutral-100",
-        { "bg-brand-50 hover:bg-brand-50 active:bg-brand-100": selected },
-        className
+        'group/2713e17b flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 hover:bg-neutral-50 active:bg-neutral-100',
+        { 'bg-brand-50 hover:bg-brand-50 active:bg-brand-100': selected },
+        className,
       )}
       ref={ref}
       {...otherProps}
@@ -42,7 +42,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
         <SubframeCore.IconWrapper
           className={SubframeUtils.twClassNames(
             'font-heading-3 text-heading-3 text-neutral-600',
-            { "text-brand-700": selected }
+            { 'text-brand-700': selected },
           )}
         >
           {icon}
@@ -52,7 +52,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
         <span
           className={SubframeUtils.twClassNames(
             'line-clamp-1 shrink-0 grow basis-0 font-body-bold text-body-bold text-neutral-600',
-            { "text-brand-700": selected }
+            { 'text-brand-700': selected },
           )}
         >
           {children}
@@ -72,32 +72,32 @@ interface NavSectionProps extends React.HTMLAttributes<HTMLDivElement> {
 const NavSection = React.forwardRef<HTMLDivElement, NavSectionProps>(
   function NavSection(
     { children, label, className, ...otherProps }: NavSectionProps,
-    ref
+    ref,
   ) {
     return (
       <div
         className={SubframeUtils.twClassNames(
-          "flex w-full flex-col items-start gap-1 pt-6",
-          className
+          'flex w-full flex-col items-start gap-1 pt-6',
+          className,
         )}
         ref={ref}
         {...otherProps}
       >
         <div className="flex w-full flex-col items-start gap-4 px-3 py-1">
           {label ? (
-            <span className='w-full font-caption-bold text-caption-bold text-subtext-color'>
+            <span className="w-full font-caption-bold text-caption-bold text-subtext-color">
               {label}
             </span>
           ) : null}
         </div>
         {children ? (
-          <div className='flex w-full shrink-0 grow basis-0 flex-col items-start gap-1'>
+          <div className="flex w-full shrink-0 grow basis-0 flex-col items-start gap-1">
             {children}
           </div>
         ) : null}
       </div>
     );
-  }
+  },
 );
 
 interface SidebarWithSectionsRootProps
@@ -119,13 +119,13 @@ const SidebarWithSectionsRoot = React.forwardRef<
     className,
     ...otherProps
   }: SidebarWithSectionsRootProps,
-  ref
+  ref,
 ) {
   return (
     <nav
       className={SubframeUtils.twClassNames(
         'flex h-full w-60 flex-col items-start border-neutral-border border-r border-solid bg-default-background',
-        className
+        className,
       )}
       ref={ref}
       {...otherProps}
@@ -136,12 +136,12 @@ const SidebarWithSectionsRoot = React.forwardRef<
         </div>
       ) : null}
       {children ? (
-        <div className='flex w-full shrink-0 grow basis-0 flex-col items-start overflow-auto px-4 py-4'>
+        <div className="flex w-full shrink-0 grow basis-0 flex-col items-start overflow-auto px-4 py-4">
           {children}
         </div>
       ) : null}
       {footer ? (
-        <div className='flex w-full items-center gap-4 border-neutral-border border-t border-solid px-6 py-6'>
+        <div className="flex w-full items-center gap-4 border-neutral-border border-t border-solid px-6 py-6">
           {footer}
         </div>
       ) : null}

@@ -1,12 +1,12 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Dialog — https://app.subframe.com/84ec9af13098/library?component=Dialog_ca59db17-43fb-4247-8094-3c55162e902d
  */
 
-import React from "react";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface ContentProps
   extends React.ComponentProps<typeof SubframeCore.Dialog.Content> {
@@ -16,14 +16,14 @@ interface ContentProps
 
 const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
   { children, className, ...otherProps }: ContentProps,
-  ref
+  ref,
 ) {
   return children ? (
     <SubframeCore.Dialog.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
           'flex max-h-[90vh] min-w-[320px] flex-col items-start gap-2 overflow-auto rounded-md border border-neutral-border border-solid bg-default-background shadow-lg',
-          className
+          className,
         )}
         ref={ref}
       >
@@ -44,14 +44,14 @@ interface DialogRootProps
 const DialogRoot = React.forwardRef<HTMLDivElement, DialogRootProps>(
   function DialogRoot(
     { children, className, ...otherProps }: DialogRootProps,
-    ref
+    ref,
   ) {
     return children ? (
       <SubframeCore.Dialog.Root asChild={true} {...otherProps}>
         <div
           className={SubframeUtils.twClassNames(
-            "flex h-full w-full flex-col items-center justify-center gap-2 bg-[#00000099]",
-            className
+            'flex h-full w-full flex-col items-center justify-center gap-2 bg-[#00000099]',
+            className,
           )}
           ref={ref}
         >
@@ -59,7 +59,7 @@ const DialogRoot = React.forwardRef<HTMLDivElement, DialogRootProps>(
         </div>
       </SubframeCore.Dialog.Root>
     ) : null;
-  }
+  },
 );
 
 export const Dialog = Object.assign(DialogRoot, {

@@ -15,23 +15,34 @@ export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  console.log('Stream API: Received GET request');
   const { id: chatId } = await params;
+  console.log('Stream API: Chat ID:', chatId);
 
   const streamContext = getStreamContext();
   const resumeRequestedAt = new Date();
 
   if (!streamContext) {
+    console.log('Stream API: No stream context available');
     return new Response(null, { status: 204 });
   }
 
   if (!chatId) {
+    console.log('Stream API: No chatId provided');
     return new ChatSDKError('bad_request:api').toResponse();
   }
 
   const { userId } = await auth();
+  console.log('Stream API: Auth result - userId:', userId);
+
+  let finalUserId = userId;
 
   if (!userId) {
-    return new ChatSDKError('unauthorized:chat').toResponse();
+    console.log('Stream API: No authenticated user, allowing for guest access');
+    // For guest users, we don't have a userId, but we'll allow the request
+    // The chat ownership check will handle access control
+  } else {
+    finalUserId = userId;
   }
 
   let chat: Chat | null;
@@ -46,7 +57,7 @@ export async function GET(
     return new ChatSDKError('not_found:chat').toResponse();
   }
 
-  if (chat.visibility === 'private' && chat.userId !== userId) {
+  if (chat.visibility === 'private' && chat.userId !== finalUserId) {
     return new ChatSDKError('forbidden:chat').toResponse();
   }
 

@@ -54,12 +54,12 @@ export function UserProfileModal({
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className='relative mx-4 w-full max-w-md rounded-lg bg-white shadow-xl'
+        className="relative mx-4 w-full max-w-md rounded-lg bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
-          <div className='mb-6 flex items-center justify-between'>
-            <h2 className='flex items-center gap-2 font-semibold text-lg'>
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-semibold text-lg">
               <UserIcon />
               Profile & Settings
             </h2>
@@ -184,7 +184,7 @@ export function UserProfileModal({
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className='w-full justify-start'
+                className="w-full justify-start"
                 size="sm"
               >
                 <div className="mr-2">
@@ -194,7 +194,7 @@ export function UserProfileModal({
               </Button>
               <Button
                 variant="outline"
-                className='w-full justify-start'
+                className="w-full justify-start"
                 size="sm"
               >
                 <div className="mr-2">
@@ -209,7 +209,7 @@ export function UserProfileModal({
             {/* Logout */}
             <Button
               variant="outline"
-              className='w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700'
+              className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
               onClick={handleLogout}
             >
               <div className="mr-2">

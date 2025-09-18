@@ -121,7 +121,7 @@ function PureArtifact({
 
   useEffect(() => {
     mutateDocuments();
-  }, [artifact.status, mutateDocuments]);
+  }, [mutateDocuments]);
 
   const { mutate } = useSWRConfig();
   const [isContentDirty, setIsContentDirty] = useState(false);
@@ -450,7 +450,7 @@ function PureArtifact({
               />
             </div>
 
-            <div className="h-full max-w-full! items-center overflow-y-scroll bg-background dark:bg-muted">
+            <div className="h-full max-w-full! items-center overflow-y-scroll bg-background text-foreground dark:bg-muted dark:text-foreground">
               <artifactDefinition.content
                 title={artifact.title}
                 content={

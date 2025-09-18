@@ -1,11 +1,11 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Checkbox Group — https://app.subframe.com/84ec9af13098/library?component=Checkbox+Group_f9f1b596-c6b3-4d60-aa9a-f34b353f8aa5
  */
 
-import React from "react";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import * as SubframeUtils from '../utils';
 
 interface CheckboxGroupRootProps extends React.HTMLAttributes<HTMLDivElement> {
   label?: React.ReactNode;
@@ -29,14 +29,14 @@ const CheckboxGroupRoot = React.forwardRef<
     className,
     ...otherProps
   }: CheckboxGroupRootProps,
-  ref
+  ref,
 ) {
   return (
     <div
       className={SubframeUtils.twClassNames(
-        "group/f9f1b596 flex flex-col items-start gap-2",
-        { "flex-col flex-nowrap gap-2": horizontal },
-        className
+        'group/f9f1b596 flex flex-col items-start gap-2',
+        { 'flex-col flex-nowrap gap-2': horizontal },
+        className,
       )}
       ref={ref}
       {...otherProps}
@@ -45,7 +45,7 @@ const CheckboxGroupRoot = React.forwardRef<
         <span
           className={SubframeUtils.twClassNames(
             'font-body-bold text-body-bold text-default-font',
-            { "text-default-font": error }
+            { 'text-default-font': error },
           )}
         >
           {label}
@@ -54,8 +54,8 @@ const CheckboxGroupRoot = React.forwardRef<
       {children ? (
         <div
           className={SubframeUtils.twClassNames(
-            "flex flex-col items-start gap-2",
-            { "flex-row flex-nowrap gap-6": horizontal }
+            'flex flex-col items-start gap-2',
+            { 'flex-row flex-nowrap gap-6': horizontal },
           )}
         >
           {children}
@@ -65,7 +65,7 @@ const CheckboxGroupRoot = React.forwardRef<
         <span
           className={SubframeUtils.twClassNames(
             'font-caption text-caption text-subtext-color',
-            { "text-error-700": error }
+            { 'text-error-700': error },
           )}
         >
           {helpText}

@@ -12,6 +12,7 @@ import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
   createUser,
+  createGuestUser,
   deleteChatById,
   getChatById,
   getMessageCountByUserId,
@@ -67,12 +68,15 @@ export function getStreamContext() {
 }
 
 export async function POST(request: Request) {
+  console.log('Chat API: Received POST request');
   let requestBody: PostRequestBody;
 
   try {
     const json = await request.json();
     requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
+    console.log('Chat API: Parsed request body successfully');
+  } catch (error) {
+    console.log('Chat API: Failed to parse request body', error);
     return new ChatSDKError('bad_request:api').toResponse();
   }
 
@@ -89,25 +93,43 @@ export async function POST(request: Request) {
       selectedVisibilityType: VisibilityType;
     } = requestBody;
 
+    console.log(
+      'Chat API: Extracted request data - id:',
+      id,
+      'model:',
+      selectedChatModel,
+    );
     const { userId } = await auth();
+    console.log('Chat API: Auth result - userId:', userId);
+
+    let finalUserId = userId;
+    let userType: 'regular' | 'guest' = 'regular';
 
     if (!userId) {
-      return new ChatSDKError('unauthorized:chat').toResponse();
+      console.log('Chat API: No authenticated user, creating guest user');
+      // Create guest user for unauthenticated requests
+      const guestUser = await createGuestUser();
+      finalUserId = guestUser[0].id;
+      userType = 'guest';
+      console.log('Chat API: Created guest user:', finalUserId);
+    } else {
+      // For Clerk, all authenticated users are regular users
+      finalUserId = userId;
+      userType = 'regular';
     }
 
-    // For Clerk, all authenticated users are regular users
-    const userType = 'regular' as const;
-
-    // Ensure user exists in database
-    const existingUsers = await getUserById(userId);
-    if (existingUsers.length === 0) {
-      console.log('Creating new user:', userId);
-      // For Clerk users, we use the userId as both id and email (or a placeholder email)
-      await createUser(`${userId}@clerk.local`, userId);
+    // Ensure user exists in database (only for authenticated users)
+    if (userId) {
+      const existingUsers = await getUserById(userId);
+      if (existingUsers.length === 0) {
+        console.log('Creating new user:', userId);
+        // For Clerk users, we use the userId as both id and email (or a placeholder email)
+        await createUser(`${userId}@clerk.local`, userId);
+      }
     }
 
     const messageCount = await getMessageCountByUserId({
-      id: userId,
+      id: finalUserId,
       differenceInHours: 24,
     });
 
@@ -124,21 +146,21 @@ export async function POST(request: Request) {
 
       await saveChat({
         id,
-        userId,
+        userId: finalUserId,
         title,
         visibility: selectedVisibilityType,
       });
     } else {
-      if (chat.userId !== userId) {
+      if (chat.userId !== finalUserId) {
         return new ChatSDKError('forbidden:chat').toResponse();
       }
     }
 
     // Create a session-like object for compatibility with existing tools
     const session: ClerkSession = {
-      userId,
+      userId: finalUserId,
       user: {
-        id: userId,
+        id: finalUserId,
         type: userType,
       },
     };
@@ -149,10 +171,10 @@ export async function POST(request: Request) {
     const { longitude, latitude, city, country } = geolocation(request);
 
     const requestHints: RequestHints = {
-      longitude,
-      latitude,
-      city,
-      country,
+      longitude: (longitude || 153.4307).toString(), // Default to Gold Coast, Australia coordinates if geolocation unavailable
+      latitude: (latitude || -28.0167).toString(),
+      city: city || 'Gold Coast',
+      country: country || 'Australia',
     };
 
     await saveMessages({
@@ -181,7 +203,7 @@ export async function POST(request: Request) {
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
-            selectedChatModel === 'mistralai/mistral-large-latest'
+            selectedChatModel === 'google/gemma-3-27b-it:free'
               ? []
               : [
                   'getWeather',
@@ -281,6 +303,7 @@ export async function DELETE(request: Request) {
   const { userId } = await auth();
 
   if (!userId) {
+    console.log('Chat DELETE: No authenticated user, denying access');
     return new ChatSDKError('unauthorized:chat').toResponse();
   }
 

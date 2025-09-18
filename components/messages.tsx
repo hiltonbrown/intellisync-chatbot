@@ -63,10 +63,10 @@ function PureMessages({
   return (
     <div
       ref={messagesContainerRef}
-      className="overscroll-behavior-contain -webkit-overflow-scrolling-touch flex-1 touch-pan-y overflow-y-scroll"
+      className="overscroll-behavior-contain flex-1 touch-pan-y overflow-y-scroll"
       style={{ overflowAnchor: 'none' }}
     >
-      <Conversation className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 md:gap-6">
+      <Conversation className="mx-auto flex min-w-0 max-w-4xl flex-col">
         <ConversationContent className="flex flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
           {messages.length === 0 && <Greeting />}
 
@@ -96,7 +96,9 @@ function PureMessages({
           {status === 'submitted' &&
             messages.length > 0 &&
             messages[messages.length - 1].role === 'user' &&
-            selectedModelId !== 'mistralai/mistral-large-latest' && <ThinkingMessage />}
+            selectedModelId !== 'mistralai/mistral-large-latest' && (
+              <ThinkingMessage />
+            )}
 
           <div
             ref={messagesEndRef}

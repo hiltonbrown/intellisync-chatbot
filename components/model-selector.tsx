@@ -24,11 +24,17 @@ async function fetcher(url: string) {
   const res = await fetch(url);
   if (!res.ok) throw new Error('Failed to fetch models.');
   const json = await res.json();
-  if (!('models' in json) || !Array.isArray(json.models)) throw new Error('Invalid models response.');
+  if (!('models' in json) || !Array.isArray(json.models))
+    throw new Error('Invalid models response.');
   // Data validation: Only keep valid models
   return (json.models as unknown[]).filter(
     (m): m is ChatModel =>
-      !!(m && typeof m === 'object' && typeof (m as any).id === 'string' && typeof (m as any).name === 'string')
+      !!(
+        m &&
+        typeof m === 'object' &&
+        typeof (m as any).id === 'string' &&
+        typeof (m as any).name === 'string'
+      ),
   );
 }
 
@@ -40,20 +46,28 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Fetch models via SWR, fallback to static if fetch fails
   const {
-    data: dynamicModels = getStaticModels(),
+    data: dynamicModels,
     error,
     isLoading,
     mutate,
   } = useSWR<ChatModel[]>('/api/models', fetcher, {
-    fallbackData: getStaticModels(),
     revalidateOnFocus: false,
     revalidateIfStale: false,
   });
 
+  const [fallbackModels, setFallbackModels] = React.useState<ChatModel[]>([]);
+
+  React.useEffect(() => {
+    async function loadStaticModels() {
+      const models = await getStaticModels();
+      setFallbackModels(models);
+    }
+    loadStaticModels();
+  }, []);
+
   // Defensive: Always have an array as models
-  const models = Array.isArray(dynamicModels) ? dynamicModels : [];
+  const models = Array.isArray(dynamicModels) ? dynamicModels : fallbackModels;
   const activeModel = models.find((model) => model.id === selectedModel);
 
   const handleModelChange = async (modelId: string) => {
@@ -85,12 +99,12 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
     // Network/error state for fetching models
     return (
       <div {...props}>
-        <div className='mb-2 flex items-center text-red-600'>
+        <div className="mb-2 flex items-center text-red-600">
           Failed to load models.&nbsp;
           <button
             type="button"
             onClick={() => mutate()}
-            className='text-blue-700 underline'
+            className="text-blue-700 underline"
             disabled={isLoading}
           >
             Retry
@@ -108,11 +122,11 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
   return (
     <div {...props}>
       {isLoading && (
-        <div className='mb-2 text-neutral-500 text-sm'>Loading available models…</div>
+        <div className="mb-2 text-neutral-500 text-sm">
+          Loading available models…
+        </div>
       )}
-      {saveError && (
-        <div className='mb-2 text-red-600'>{saveError}</div>
-      )}
+      {saveError && <div className="mb-2 text-red-600">{saveError}</div>}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -126,7 +140,10 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
               <ChevronDownIcon size={16} />
             </span>
             {saving && (
-              <svg className='ml-2 h-4 w-4 animate-spin text-gray-400' viewBox="0 0 24 24">
+              <svg
+                className="ml-2 h-4 w-4 animate-spin text-gray-400"
+                viewBox="0 0 24 24"
+              >
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -158,9 +175,15 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
               </DropdownMenuRadioItem>
             ) : (
               models.map((model) => (
-                <DropdownMenuRadioItem key={model.id} value={model.id} disabled={saving}>
+                <DropdownMenuRadioItem
+                  key={model.id}
+                  value={model.id}
+                  disabled={saving}
+                >
                   <strong>{model.name}</strong>
-                  <div className='text-muted-foreground text-xs'>{model.description}</div>
+                  <div className="text-muted-foreground text-xs">
+                    {model.description}
+                  </div>
                 </DropdownMenuRadioItem>
               ))
             )}
@@ -168,7 +191,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
         </DropdownMenuContent>
       </DropdownMenu>
       {error && (
-        <div className='mt-2 text-xs text-yellow-600'>
+        <div className="mt-2 text-xs text-yellow-600">
           Showing static fallback models due to loading error.
         </div>
       )}

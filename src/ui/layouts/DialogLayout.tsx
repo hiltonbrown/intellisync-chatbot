@@ -1,12 +1,12 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Dialog — https://app.subframe.com/84ec9af13098/library?component=Dialog_ca59db17-43fb-4247-8094-3c55162e902d
  * Dialog Layout — https://app.subframe.com/84ec9af13098/library?component=Dialog+Layout_ff4920a8-df26-4012-934d-0a9edbf5e373
  */
 
-import React from "react";
-import { Dialog } from "../components/Dialog";
+import React from 'react';
+import { Dialog } from '../components/Dialog';
 
 interface DialogLayoutRootProps extends React.ComponentProps<typeof Dialog> {
   children?: React.ReactNode;
@@ -18,13 +18,13 @@ const DialogLayoutRoot = React.forwardRef<
   DialogLayoutRootProps
 >(function DialogLayoutRoot(
   { children, className, ...otherProps }: DialogLayoutRootProps,
-  ref
+  ref,
 ) {
   return (
     <Dialog className={className} ref={ref} {...otherProps}>
       <Dialog.Content>
         {children ? (
-          <div className='flex w-full shrink-0 grow basis-0 items-start gap-6'>
+          <div className="flex w-full shrink-0 grow basis-0 items-start gap-6">
             {children}
           </div>
         ) : null}

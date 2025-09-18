@@ -69,7 +69,7 @@ const PurePreviewMessage = ({
         })}
       >
         {message.role === 'assistant' && (
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#0FA47F] text-white">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <SparklesIcon size={14} />
           </div>
         )}
@@ -128,9 +128,9 @@ const PurePreviewMessage = ({
                     <MessageContent
                       data-testid="message-content"
                       className={cn({
-                        'w-fit break-words rounded-2xl px-4 py-3 text-right text-white shadow-sm':
+                        'w-fit break-words rounded-2xl px-3 py-2 text-right text-white':
                           message.role === 'user',
-                        'rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left shadow-sm':
+                        'bg-transparent px-0 py-0 text-left':
                           message.role === 'assistant',
                       })}
                       style={
@@ -140,11 +140,13 @@ const PurePreviewMessage = ({
                       }
                     >
                       <Response>{sanitizeText(part.text)}</Response>
-                      <div className='mt-2 text-gray-500 text-xs opacity-70'>
-                        {new Date().toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                      <div className="mt-2 text-muted-foreground text-xs">
+                        {message.metadata?.createdAt
+                          ? (() => {
+                              const date = new Date(message.metadata.createdAt);
+                              return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                            })()
+                          : ''}
                       </div>
                     </MessageContent>
                   </div>

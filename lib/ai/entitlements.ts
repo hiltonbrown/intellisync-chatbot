@@ -9,22 +9,30 @@ interface Entitlements {
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
   /*
-    * For users without an account
-    */
+   * For users without an account
+   */
   guest: {
     maxMessagesPerDay: 20,
-    availableChatModelIds: ['google/gemini-flash-1.5', 'meta-llama/llama-3.1-8b-instruct', 'mistralai/mistral-large-latest'],
+    availableChatModelIds: [
+      'openai/gpt-oss-120b:free',
+      'meta-llama/llama-4-maverick:free',
+      'google/gemma-3-27b-it:free',
+    ],
   },
 
   /*
-    * For users with an account
-    */
+   * For users with an account
+   */
   regular: {
     maxMessagesPerDay: 100,
-    availableChatModelIds: ['google/gemini-flash-1.5', 'meta-llama/llama-3.1-8b-instruct', 'mistralai/mistral-large-latest'],
+    availableChatModelIds: [
+      'openai/gpt-oss-120b:free',
+      'meta-llama/llama-4-maverick:free',
+      'google/gemma-3-27b-it:free',
+    ],
   },
 
   /*
-    * TODO: For users with an account and a paid membership
-    */
+   * TODO: For users with an account and a paid membership
+   */
 };

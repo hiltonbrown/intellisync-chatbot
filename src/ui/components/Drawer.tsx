@@ -1,12 +1,12 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Drawer — https://app.subframe.com/84ec9af13098/library?component=Drawer_1e71b2cb-8d72-4e67-b368-8805179e9444
  */
 
-import React from "react";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface ContentProps
   extends React.ComponentProps<typeof SubframeCore.Drawer.Content> {
@@ -16,14 +16,14 @@ interface ContentProps
 
 const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
   { children, className, ...otherProps }: ContentProps,
-  ref
+  ref,
 ) {
   return children ? (
     <SubframeCore.Drawer.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
           'flex h-full min-w-[320px] flex-col items-start gap-2 border-neutral-border border-l border-solid bg-default-background',
-          className
+          className,
         )}
         ref={ref}
       >
@@ -44,14 +44,14 @@ interface DrawerRootProps
 const DrawerRoot = React.forwardRef<HTMLDivElement, DrawerRootProps>(
   function DrawerRoot(
     { children, className, ...otherProps }: DrawerRootProps,
-    ref
+    ref,
   ) {
     return children ? (
       <SubframeCore.Drawer.Root asChild={true} {...otherProps}>
         <div
           className={SubframeUtils.twClassNames(
-            "flex h-full w-full flex-col items-end justify-center gap-2 bg-[#00000066]",
-            className
+            'flex h-full w-full flex-col items-end justify-center gap-2 bg-[#00000066]',
+            className,
           )}
           ref={ref}
         >
@@ -59,7 +59,7 @@ const DrawerRoot = React.forwardRef<HTMLDivElement, DrawerRootProps>(
         </div>
       </SubframeCore.Drawer.Root>
     ) : null;
-  }
+  },
 );
 
 export const Drawer = Object.assign(DrawerRoot, {

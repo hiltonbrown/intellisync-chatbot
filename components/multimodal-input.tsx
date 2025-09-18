@@ -15,7 +15,13 @@ import {
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 
-import { ArrowUpIcon, PaperclipIcon, CpuIcon, StopIcon, ChevronDownIcon } from './icons';
+import {
+  ArrowUpIcon,
+  PaperclipIcon,
+  CpuIcon,
+  StopIcon,
+  ChevronDownIcon,
+} from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { SuggestedActions } from './suggested-actions';
@@ -37,7 +43,7 @@ import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
-import { chatModels } from '@/lib/ai/models';
+import { getStaticModels, type ChatModel } from '@/lib/ai/models';
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { startTransition } from 'react';
 import { getContextWindow, normalizeUsage } from 'tokenlens';
@@ -91,11 +97,11 @@ function PureMultimodalInput({
     }
   };
 
-  const resetHeight = () => {
+  const resetHeight = useCallback(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = '44px';
     }
-  };
+  }, []);
 
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     'input',
@@ -112,7 +118,8 @@ function PureMultimodalInput({
     }
     // Only run once after hydration
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  }, [adjustHeight, localStorageInput, setInput]);
 
   useEffect(() => {
     setLocalStorageInput(input);
@@ -162,9 +169,10 @@ function PureMultimodalInput({
     setLocalStorageInput,
     width,
     chatId,
+    resetHeight,
   ]);
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = useCallback(async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -189,7 +197,7 @@ function PureMultimodalInput({
     } catch (error) {
       toast.error('Failed to upload file, please try again!');
     }
-  };
+  }, []);
 
   const modelResolver = useMemo(() => {
     return myProvider.languageModel(selectedModelId);
@@ -243,7 +251,7 @@ function PureMultimodalInput({
         setUploadQueue([]);
       }
     },
-    [setAttachments],
+    [setAttachments, uploadFile],
   );
 
   const { isAtBottom, scrollToBottom } = useScrollToBottom();
@@ -255,7 +263,7 @@ function PureMultimodalInput({
   }, [status, scrollToBottom]);
 
   return (
-    <div className='relative flex w-full flex-col gap-4'>
+    <div className="relative flex w-full flex-col gap-4">
       <AnimatePresence>
         {!isAtBottom && (
           <motion.div
@@ -263,7 +271,7 @@ function PureMultimodalInput({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className='-top-12 -translate-x-1/2 absolute left-1/2 z-50'
+            className="-top-12 -translate-x-1/2 absolute left-1/2 z-50"
           >
             <Button
               data-testid="scroll-to-bottom-button"
@@ -301,7 +309,7 @@ function PureMultimodalInput({
       />
 
       <PromptInput
-        className='rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50'
+        className="relative mx-auto flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border bg-background shadow-sm transition-all focus-within:border-primary"
         onSubmit={(event) => {
           event.preventDefault();
           if (status !== 'ready') {
@@ -314,7 +322,7 @@ function PureMultimodalInput({
         {(attachments.length > 0 || uploadQueue.length > 0) && (
           <div
             data-testid="attachments-preview"
-            className='flex flex-row items-end gap-2 overflow-x-scroll'
+            className="flex flex-row items-end gap-2 overflow-x-scroll"
           >
             {attachments.map((attachment) => (
               <PreviewAttachment
@@ -344,7 +352,7 @@ function PureMultimodalInput({
             ))}
           </div>
         )}
-        <div className='flex flex-row items-start gap-1 sm:gap-2'>
+        <div className="flex items-end gap-2 px-3 pb-3">
           <PromptInputTextarea
             data-testid="multimodal-input"
             ref={textareaRef}
@@ -354,14 +362,14 @@ function PureMultimodalInput({
             minHeight={44}
             maxHeight={200}
             disableAutoResize={true}
-            className='grow resize-none border-0! border-none! bg-transparent p-2 text-sm outline-none ring-0 [-ms-overflow-style:none] [scrollbar-width:none] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-scrollbar]:hidden'
+            className="flex-1 resize-none bg-transparent px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:outline-none"
             rows={1}
             autoFocus
-          />{' '}
+          />
           <Context {...contextProps} />
         </div>
-        <PromptInputToolbar className='!border-top-0 border-t-0! p-0 shadow-none dark:border-0 dark:border-transparent!'>
-          <PromptInputTools className="gap-0 sm:gap-0.5">
+        <PromptInputToolbar className="flex items-center justify-between border-t px-3 py-2">
+          <PromptInputTools className="flex items-center gap-1">
             <AttachmentsButton
               fileInputRef={fileInputRef}
               status={status}
@@ -376,9 +384,9 @@ function PureMultimodalInput({
             <PromptInputSubmit
               status={status}
               disabled={!input.trim() || uploadQueue.length > 0}
-              className='size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground'
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground"
             >
-              <ArrowUpIcon size={14} />
+              <ArrowUpIcon size={16} />
             </PromptInputSubmit>
           )}
         </PromptInputToolbar>
@@ -415,7 +423,7 @@ function PureAttachmentsButton({
   return (
     <Button
       data-testid="attachments-button"
-      className='aspect-square h-8 rounded-lg p-1 transition-colors hover:bg-accent'
+      className="flex h-8 w-8 items-center justify-center rounded-lg p-1 transition-colors hover:bg-accent"
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();
@@ -423,7 +431,7 @@ function PureAttachmentsButton({
       disabled={status !== 'ready' || isReasoningModel}
       variant="ghost"
     >
-      <PaperclipIcon size={14} style={{ width: 14, height: 14 }} />
+      <PaperclipIcon size={16} />
     </Button>
   );
 }
@@ -436,6 +444,11 @@ function PureModelSelectorCompact({
   selectedModelId: string;
 }) {
   const [optimisticModelId, setOptimisticModelId] = useState(selectedModelId);
+  const [chatModels, setChatModels] = useState<ChatModel[]>([]);
+
+  useEffect(() => {
+    getStaticModels().then(setChatModels);
+  }, []);
 
   const selectedModel = chatModels.find(
     (model) => model.id === optimisticModelId,
@@ -456,26 +469,28 @@ function PureModelSelectorCompact({
     >
       <SelectPrimitive.Trigger
         type="button"
-        className='flex h-8 items-center gap-2 rounded-lg border-0 bg-background px-2 text-foreground shadow-none transition-colors hover:bg-accent focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0'
+        className="flex h-8 items-center gap-2 rounded-lg bg-background px-2 font-medium text-foreground text-xs transition-colors hover:bg-accent focus:outline-none"
       >
-        <CpuIcon size={16} />
-        <span className='hidden font-medium text-xs sm:block'>{selectedModel?.name}</span>
-        <ChevronDownIcon size={16} />
+        <CpuIcon size={14} />
+        <span className="hidden sm:block">{selectedModel?.name}</span>
+        <ChevronDownIcon size={14} />
       </SelectPrimitive.Trigger>
       <PromptInputModelSelectContent className="min-w-[260px] p-0">
         <div className="flex flex-col gap-px">
-        {chatModels.map((model) => (
-          <SelectItem key={model.id} value={model.name} className="px-3 py-2 text-xs">
-            <div className='flex min-w-0 flex-1 flex-col gap-1'>
-              <div className='truncate font-medium text-xs'>
-                {model.name}
+          {chatModels.map((model) => (
+            <SelectItem
+              key={model.id}
+              value={model.name}
+              className="px-3 py-2 text-xs"
+            >
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="truncate font-medium text-xs">{model.name}</div>
+                <div className="truncate text-[10px] text-muted-foreground leading-tight">
+                  {model.description}
+                </div>
               </div>
-              <div className='truncate text-[10px] text-muted-foreground leading-tight'>
-                {model.description}
-              </div>
-            </div>
-          </SelectItem>
-        ))}
+            </SelectItem>
+          ))}
         </div>
       </PromptInputModelSelectContent>
     </PromptInputModelSelect>
@@ -494,14 +509,14 @@ function PureStopButton({
   return (
     <Button
       data-testid="stop-button"
-      className='size-7 rounded-full bg-foreground p-1 text-background transition-colors duration-200 hover:bg-foreground/90 disabled:bg-muted disabled:text-muted-foreground'
+      className="flex h-8 w-8 items-center justify-center rounded-full bg-muted p-1 text-muted-foreground transition-colors hover:bg-muted/80"
       onClick={(event) => {
         event.preventDefault();
         stop();
         setMessages((messages) => messages);
       }}
     >
-      <StopIcon size={14} />
+      <StopIcon size={16} />
     </Button>
   );
 }

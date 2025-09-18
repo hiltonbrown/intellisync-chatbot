@@ -1,12 +1,12 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Tabs — https://app.subframe.com/84ec9af13098/library?component=Tabs_e1ad5091-8ad8-4319-b1f7-3e47f0256c20
  */
 
-import React from "react";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface ItemProps extends React.HTMLAttributes<HTMLDivElement> {
   active?: boolean;
@@ -25,7 +25,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
     className,
     ...otherProps
   }: ItemProps,
-  ref
+  ref,
 ) {
   return (
     <div
@@ -35,7 +35,7 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
           'border-brand-600 border-b-2 border-solid px-2.5 pt-0.5 pb-px hover:border-brand-600 hover:border-b-2 hover:border-solid':
             active,
         },
-        className
+        className,
       )}
       ref={ref}
       {...otherProps}
@@ -45,10 +45,10 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
           className={SubframeUtils.twClassNames(
             'font-body text-body text-subtext-color group-hover/d5612535:text-default-font',
             {
-              "text-neutral-400 group-hover/d5612535:text-neutral-400":
+              'text-neutral-400 group-hover/d5612535:text-neutral-400':
                 disabled,
-              "text-brand-700 group-hover/d5612535:text-brand-700": active,
-            }
+              'text-brand-700 group-hover/d5612535:text-brand-700': active,
+            },
           )}
         >
           {icon}
@@ -59,10 +59,10 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(function Item(
           className={SubframeUtils.twClassNames(
             'font-body-bold text-body-bold text-subtext-color group-hover/d5612535:text-default-font',
             {
-              "text-neutral-400 group-hover/d5612535:text-neutral-400":
+              'text-neutral-400 group-hover/d5612535:text-neutral-400':
                 disabled,
-              "text-brand-700 group-hover/d5612535:text-brand-700": active,
-            }
+              'text-brand-700 group-hover/d5612535:text-brand-700': active,
+            },
           )}
         >
           {children}
@@ -80,13 +80,13 @@ interface TabsRootProps extends React.HTMLAttributes<HTMLDivElement> {
 const TabsRoot = React.forwardRef<HTMLDivElement, TabsRootProps>(
   function TabsRoot(
     { children, className, ...otherProps }: TabsRootProps,
-    ref
+    ref,
   ) {
     return (
       <div
         className={SubframeUtils.twClassNames(
-          "flex w-full items-end",
-          className
+          'flex w-full items-end',
+          className,
         )}
         ref={ref}
         {...otherProps}
@@ -94,10 +94,10 @@ const TabsRoot = React.forwardRef<HTMLDivElement, TabsRootProps>(
         {children ? (
           <div className="flex items-start self-stretch">{children}</div>
         ) : null}
-        <div className='flex shrink-0 grow basis-0 flex-col items-start gap-2 self-stretch border-neutral-border border-b border-solid' />
+        <div className="flex shrink-0 grow basis-0 flex-col items-start gap-2 self-stretch border-neutral-border border-b border-solid" />
       </div>
     );
-  }
+  },
 );
 
 export const Tabs = Object.assign(TabsRoot, {

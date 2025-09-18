@@ -1,12 +1,12 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Progress — https://app.subframe.com/84ec9af13098/library?component=Progress_60964db0-a1bf-428b-b9d5-f34cdf58ea77
  */
 
-import React from "react";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface IndicatorProps
   extends React.ComponentProps<typeof SubframeCore.Progress.Indicator> {
@@ -19,14 +19,14 @@ const Indicator = React.forwardRef<HTMLDivElement, IndicatorProps>(
       <SubframeCore.Progress.Indicator asChild={true} {...otherProps}>
         <div
           className={SubframeUtils.twClassNames(
-            "flex h-2 w-full flex-col items-start gap-2 rounded-full bg-brand-600",
-            className
+            'flex h-2 w-full flex-col items-start gap-2 rounded-full bg-brand-600',
+            className,
           )}
           ref={ref}
         />
       </SubframeCore.Progress.Indicator>
     );
-  }
+  },
 );
 
 interface ProgressRootProps
@@ -38,14 +38,14 @@ interface ProgressRootProps
 const ProgressRoot = React.forwardRef<HTMLDivElement, ProgressRootProps>(
   function ProgressRoot(
     { value = 30, className, ...otherProps }: ProgressRootProps,
-    ref
+    ref,
   ) {
     return (
       <SubframeCore.Progress.Root asChild={true} value={value} {...otherProps}>
         <div
           className={SubframeUtils.twClassNames(
-            "flex w-full flex-col items-start gap-2 overflow-hidden rounded-full bg-neutral-100",
-            className
+            'flex w-full flex-col items-start gap-2 overflow-hidden rounded-full bg-neutral-100',
+            className,
           )}
           ref={ref}
         >
@@ -53,7 +53,7 @@ const ProgressRoot = React.forwardRef<HTMLDivElement, ProgressRootProps>(
         </div>
       </SubframeCore.Progress.Root>
     );
-  }
+  },
 );
 
 export const Progress = Object.assign(ProgressRoot, {

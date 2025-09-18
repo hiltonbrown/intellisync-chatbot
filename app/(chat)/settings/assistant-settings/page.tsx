@@ -8,9 +8,10 @@ import {
 import { ModelSelector } from '@/components/model-selector';
 import { getStaticModels } from '@/lib/ai/models';
 
-export default function AssistantSettingsPage() {
+export default async function AssistantSettingsPage() {
   // Get the first static model as initial model for the selector
-  const initialModel = getStaticModels()[0]?.id || '';
+  const models = await getStaticModels();
+  const initialModel = models[0]?.id || '';
 
   return (
     <div className="container mx-auto py-8">
@@ -24,8 +25,8 @@ export default function AssistantSettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <h3 className='mb-2 font-medium text-lg'>Default Model</h3>
-            <p className='mb-4 text-muted-foreground text-sm'>
+            <h3 className="mb-2 font-medium text-lg">Default Model</h3>
+            <p className="mb-4 text-muted-foreground text-sm">
               Choose the AI model that will be used by default for your
               conversations.
             </p>
@@ -33,8 +34,8 @@ export default function AssistantSettingsPage() {
           </div>
 
           <div>
-            <h3 className='mb-2 font-medium text-lg'>Additional Settings</h3>
-            <p className='text-muted-foreground text-sm'>
+            <h3 className="mb-2 font-medium text-lg">Additional Settings</h3>
+            <p className="text-muted-foreground text-sm">
               More assistant configuration options will be available here in
               future updates.
             </p>

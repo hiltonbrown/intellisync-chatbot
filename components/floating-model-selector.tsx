@@ -13,11 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { chatModels } from '@/lib/ai/models';
+import { getStaticModels, type ChatModel } from '@/lib/ai/models';
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { startTransition } from 'react';
 
-interface FloatingModelSelectorProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
+interface FloatingModelSelectorProps
+  extends Omit<HTMLMotionProps<'div'>, 'children'> {
   selectedModelId: string;
 }
 
@@ -27,6 +28,11 @@ export function FloatingModelSelector({
 }: FloatingModelSelectorProps) {
   const [optimisticModelId, setOptimisticModelId] =
     React.useState(selectedModelId);
+  const [chatModels, setChatModels] = React.useState<ChatModel[]>([]);
+
+  React.useEffect(() => {
+    getStaticModels().then(setChatModels);
+  }, []);
 
   const selectedModel = chatModels.find(
     (model) => model.id === optimisticModelId,
@@ -50,13 +56,13 @@ export function FloatingModelSelector({
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className='h-auto rounded-full border-gray-200 bg-white/90 px-4 py-2 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white/95'
+            className="h-auto rounded-full border-gray-200 bg-white/90 px-4 py-2 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white/95"
           >
             <div className="flex items-center gap-2">
-              <div className='flex h-6 w-6 items-center justify-center rounded-full bg-[#0FA47F] text-white'>
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0FA47F] text-white">
                 <CpuIcon size={14} />
               </div>
-              <span className='font-medium text-gray-700 text-sm'>
+              <span className="font-medium text-gray-700 text-sm">
                 {selectedModel?.name || 'Select Model'}
               </span>
               <div className="text-gray-500">
@@ -66,7 +72,7 @@ export function FloatingModelSelector({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-72 p-2" align="end">
-          <DropdownMenuLabel className='mb-2 font-medium text-gray-500 text-xs'>
+          <DropdownMenuLabel className="mb-2 font-medium text-gray-500 text-xs">
             Choose a model
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -78,16 +84,16 @@ export function FloatingModelSelector({
               <DropdownMenuRadioItem
                 key={model.id}
                 value={model.id}
-                className='flex cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-gray-50'
+                className="flex cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-gray-50"
               >
-                <div className='mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#0FA47F] text-white'>
+                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#0FA47F] text-white">
                   <CpuIcon size={16} />
                 </div>
-                <div className='min-w-0 flex-1'>
-                  <div className='font-medium text-gray-900 text-sm'>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-gray-900 text-sm">
                     {model.name}
                   </div>
-                  <div className='mt-1 text-gray-500 text-xs leading-relaxed'>
+                  <div className="mt-1 text-gray-500 text-xs leading-relaxed">
                     {model.description}
                   </div>
                 </div>

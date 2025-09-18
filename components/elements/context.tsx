@@ -156,7 +156,7 @@ function InfoRow({
   costText?: string;
 }) {
   return (
-    <div className='flex items-center justify-between text-xs'>
+    <div className="flex items-center justify-between text-xs">
       <span className="text-muted-foreground">{label}</span>
       <TokensWithCost tokens={tokens} costText={costText} />
     </div>
@@ -288,11 +288,13 @@ export const Context = ({
           <ContextIcon percent={usedPercent} />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" side="top" className='w-fit p-3'>
+      <DropdownMenuContent align="end" side="top" className="w-fit p-3">
         <div className="min-w-[240px] space-y-2">
-          <div className='flex items-start justify-between text-sm'>
+          <div className="flex items-start justify-between text-sm">
             <span>{displayPct}</span>
-            <span className="text-muted-foreground">{used} / {total} tokens</span>
+            <span className="text-muted-foreground">
+              {used} / {total} tokens
+            </span>
           </div>
           <div className="space-y-2">
             <Progress className="h-2 bg-muted" value={usedPercent} />
@@ -332,7 +334,7 @@ export const Context = ({
             {costText && (
               <>
                 <Separator className="mt-1" />
-                <div className='flex items-center justify-between pt-1 text-xs'>
+                <div className="flex items-center justify-between pt-1 text-xs">
                   <span className="text-muted-foreground">Total cost</span>
                   <span>{costText}</span>
                 </div>

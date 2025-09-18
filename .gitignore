@@ -47,3 +47,11 @@ yarn-error.log*
 /blob-report/
 /playwright/*
 .kilocode/mcp.json
+
+# Additional cache and temp files
+.cache/
+.pnpm-store/
+*.log
+Thumbs.db
+*.swp
+*.tmp

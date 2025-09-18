@@ -1,6 +1,6 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
-export const DEFAULT_CHAT_MODEL: string = 'google/gemini-flash-1.5';
+export const DEFAULT_CHAT_MODEL: string = 'openai/gpt-4o-mini';
 
 // Debug logging for OpenRouter configuration
 console.log('OpenRouter: API key present:', !!process.env.OPENROUTER_API_KEY);
@@ -11,7 +11,8 @@ export const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
   headers: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://app.intellisync.com.au',
+    'HTTP-Referer':
+      process.env.NEXT_PUBLIC_APP_URL || 'https://app.intellisync.com.au',
     'X-Title': 'IntelliSync Chatbot',
   },
 });
@@ -22,22 +23,43 @@ export interface ChatModel {
   description: string;
 }
 
-export const chatModels: Array<ChatModel> = [
-  {
-    id: 'google/gemini-flash-1.5',
-    name: 'Gemini 1.5 Flash',
-    description: 'Fast and versatile multimodal model from Google',
-  },
-  {
-    id: 'meta-llama/llama-3.1-8b-instruct',
-    name: 'Llama 3.1 8B',
-    description: 'The latest small, fast, and capable model from Meta',
-  },
-  {
-    id: 'mistralai/mistral-large-latest',
-    name: 'Mistral Large',
-    description: 'Flagship model from Mistral AI with top-tier reasoning',
-  },
-];
+let cachedModels: ChatModel[] | null = null;
+let lastFetchTime: number | null = null;
 
-export const getStaticModels = (): ChatModel[] => chatModels;
+// Fetch and cache models from OpenRouter API
+async function fetchAndCacheModels(): Promise<ChatModel[]> {
+  const now = Date.now();
+  // Cache for 1 hour
+  if (cachedModels && lastFetchTime && now - lastFetchTime < 3600000) {
+    return cachedModels;
+  }
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/models');
+    if (!response.ok) {
+      throw new Error('Failed to fetch models from OpenRouter API');
+    }
+    const { data } = await response.json();
+    cachedModels = data.map((model: any) => ({
+      id: model.id,
+      name: model.name,
+      description: model.description,
+    }));
+    lastFetchTime = now;
+    return cachedModels || [];
+  } catch (error) {
+    console.error('Error fetching or caching models:', error);
+    // Return a default list if fetch fails
+    return [
+      {
+        id: 'openai/gpt-4o-mini',
+        name: 'GPT-4o Mini',
+        description: 'Default fallback model',
+      },
+    ];
+  }
+}
+
+export const getStaticModels = async (): Promise<ChatModel[]> => {
+  return await fetchAndCacheModels();
+};

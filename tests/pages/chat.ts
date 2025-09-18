@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { chatModels } from '@/lib/ai/models';
+import { getStaticModels } from '@/lib/ai/models';
 import { expect, type Page } from '@playwright/test';
 
 export class ChatPage {
@@ -102,6 +102,7 @@ export class ChatPage {
   }
 
   public async chooseModelFromSelector(chatModelId: string) {
+    const chatModels = await getStaticModels();
     const chatModel = chatModels.find(
       (chatModel) => chatModel.id === chatModelId,
     );

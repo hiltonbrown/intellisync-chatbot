@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
       },
     });
 
@@ -15,7 +15,10 @@ export async function GET() {
 
     const data = await response.json();
     const models: ChatModel[] = data.data
-      .filter((model: any) => model.id.includes('chat') || model.id.includes('instruct'))
+      .filter(
+        (model: any) =>
+          model.id.includes('chat') || model.id.includes('instruct'),
+      )
       .map((model: any) => ({
         id: model.id,
         name: model.name || model.id.split('/').pop(),

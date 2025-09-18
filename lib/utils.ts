@@ -134,13 +134,13 @@ export function checkEnvironmentVariables() {
 
   console.log('Environment Variables Check:');
   console.log('Required variables:');
-  requiredVars.forEach(varName => {
+  requiredVars.forEach((varName) => {
     const value = process.env[varName];
     console.log(`  ${varName}: ${value ? '✓ present' : '✗ missing'}`);
   });
 
   console.log('Optional variables:');
-  optionalVars.forEach(varName => {
+  optionalVars.forEach((varName) => {
     const value = process.env[varName];
     console.log(`  ${varName}: ${value ? '✓ present' : '✗ missing'}`);
   });

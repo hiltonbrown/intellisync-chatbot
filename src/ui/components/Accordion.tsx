@@ -1,13 +1,13 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Accordion — https://app.subframe.com/84ec9af13098/library?component=Accordion_d2e81e20-863a-4027-826a-991d8910efd9
  */
 
-import React from "react";
-import { FeatherChevronDown } from "@subframe/core";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import { FeatherChevronDown } from '@subframe/core';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface ChevronProps
   extends React.ComponentProps<typeof SubframeCore.Collapsible.Chevron> {
@@ -23,7 +23,7 @@ const Chevron = React.forwardRef<
       <FeatherChevronDown
         className={SubframeUtils.twClassNames(
           'font-body text-body text-default-font',
-          className
+          className,
         )}
         ref={ref}
       />
@@ -39,14 +39,14 @@ interface ContentProps
 
 const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
   { children, className, ...otherProps }: ContentProps,
-  ref
+  ref,
 ) {
   return children ? (
     <SubframeCore.Collapsible.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          "flex w-full flex-col items-start gap-2",
-          className
+          'flex w-full flex-col items-start gap-2',
+          className,
         )}
         ref={ref}
       >
@@ -64,14 +64,14 @@ interface TriggerProps
 
 const Trigger = React.forwardRef<HTMLDivElement, TriggerProps>(function Trigger(
   { children, className, ...otherProps }: TriggerProps,
-  ref
+  ref,
 ) {
   return children ? (
     <SubframeCore.Collapsible.Trigger asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          "flex w-full cursor-pointer flex-col items-start gap-2",
-          className
+          'flex w-full cursor-pointer flex-col items-start gap-2',
+          className,
         )}
         ref={ref}
       >
@@ -91,27 +91,27 @@ interface AccordionRootProps
 const AccordionRoot = React.forwardRef<HTMLDivElement, AccordionRootProps>(
   function AccordionRoot(
     { trigger, children, className, ...otherProps }: AccordionRootProps,
-    ref
+    ref,
   ) {
     return (
       <SubframeCore.Collapsible.Root asChild={true} {...otherProps}>
         <div
           className={SubframeUtils.twClassNames(
-            "group/d2e81e20 flex w-full flex-col items-start rounded-md",
-            className
+            'group/d2e81e20 flex w-full flex-col items-start rounded-md',
+            className,
           )}
           ref={ref}
         >
           <Trigger>
             {trigger ? (
-              <div className='flex w-full shrink-0 grow basis-0 flex-col items-start group-data-[state=open]/d2e81e20:h-auto group-data-[state=open]/d2e81e20:w-full group-data-[state=open]/d2e81e20:flex-none'>
+              <div className="flex w-full shrink-0 grow basis-0 flex-col items-start group-data-[state=open]/d2e81e20:h-auto group-data-[state=open]/d2e81e20:w-full group-data-[state=open]/d2e81e20:flex-none">
                 {trigger}
               </div>
             ) : null}
           </Trigger>
           <Content>
             {children ? (
-              <div className='flex w-full shrink-0 grow basis-0 flex-col items-start'>
+              <div className="flex w-full shrink-0 grow basis-0 flex-col items-start">
                 {children}
               </div>
             ) : null}
@@ -119,7 +119,7 @@ const AccordionRoot = React.forwardRef<HTMLDivElement, AccordionRootProps>(
         </div>
       </SubframeCore.Collapsible.Root>
     );
-  }
+  },
 );
 
 export const Accordion = Object.assign(AccordionRoot, {

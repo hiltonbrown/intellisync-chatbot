@@ -1,17 +1,17 @@
-"use client";
+'use client';
 /*
  * Documentation:
  * Alert — https://app.subframe.com/84ec9af13098/library?component=Alert_3a65613d-d546-467c-80f4-aaba6a7edcd5
  */
 
-import React from "react";
-import { FeatherInfo } from "@subframe/core";
-import * as SubframeCore from "@subframe/core";
-import * as SubframeUtils from "../utils";
+import React from 'react';
+import { FeatherInfo } from '@subframe/core';
+import * as SubframeCore from '@subframe/core';
+import * as SubframeUtils from '../utils';
 
 interface AlertRootProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
-  variant?: "brand" | "neutral" | "error" | "success" | "warning";
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+  variant?: 'brand' | 'neutral' | 'error' | 'success' | 'warning';
   icon?: React.ReactNode;
   title?: React.ReactNode;
   description?: React.ReactNode;
@@ -22,7 +22,7 @@ interface AlertRootProps
 const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
   function AlertRoot(
     {
-      variant = "neutral",
+      variant = 'neutral',
       icon = <FeatherInfo />,
       title,
       description,
@@ -30,7 +30,7 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
       className,
       ...otherProps
     }: AlertRootProps,
-    ref
+    ref,
   ) {
     return (
       <div
@@ -38,15 +38,15 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
           'group/3a65613d flex w-full flex-col items-start gap-2 rounded-md border border-neutral-200 border-solid bg-neutral-50 py-3 pr-3 pl-4',
           {
             'border border-warning-100 border-solid bg-warning-50':
-              variant === "warning",
+              variant === 'warning',
             'border border-success-100 border-solid bg-success-50':
-              variant === "success",
+              variant === 'success',
             'border border-error-100 border-solid bg-error-50':
-              variant === "error",
+              variant === 'error',
             'border border-brand-100 border-solid bg-brand-50':
-              variant === "brand",
+              variant === 'brand',
           },
-          className
+          className,
         )}
         ref={ref}
         {...otherProps}
@@ -57,27 +57,27 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
               className={SubframeUtils.twClassNames(
                 'font-heading-3 text-heading-3 text-neutral-800',
                 {
-                  "text-warning-800": variant === "warning",
-                  "text-success-800": variant === "success",
-                  "text-error-800": variant === "error",
-                  "text-brand-800": variant === "brand",
-                }
+                  'text-warning-800': variant === 'warning',
+                  'text-success-800': variant === 'success',
+                  'text-error-800': variant === 'error',
+                  'text-brand-800': variant === 'brand',
+                },
               )}
             >
               {icon}
             </SubframeCore.IconWrapper>
           ) : null}
-          <div className='flex shrink-0 grow basis-0 flex-col items-start'>
+          <div className="flex shrink-0 grow basis-0 flex-col items-start">
             {title ? (
               <span
                 className={SubframeUtils.twClassNames(
                   'w-full whitespace-pre-wrap font-body-bold text-body-bold text-default-font',
                   {
-                    "text-warning-900": variant === "warning",
-                    "text-success-900": variant === "success",
-                    "text-error-900": variant === "error",
-                    "text-brand-900": variant === "brand",
-                  }
+                    'text-warning-900': variant === 'warning',
+                    'text-success-900': variant === 'success',
+                    'text-error-900': variant === 'error',
+                    'text-brand-900': variant === 'brand',
+                  },
                 )}
               >
                 {title}
@@ -88,11 +88,11 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
                 className={SubframeUtils.twClassNames(
                   'w-full whitespace-pre-wrap font-caption text-caption text-subtext-color',
                   {
-                    "text-warning-800": variant === "warning",
-                    "text-success-800": variant === "success",
-                    "text-error-800": variant === "error",
-                    "text-brand-800": variant === "brand",
-                  }
+                    'text-warning-800': variant === 'warning',
+                    'text-success-800': variant === 'success',
+                    'text-error-800': variant === 'error',
+                    'text-brand-800': variant === 'brand',
+                  },
                 )}
               >
                 {description}
@@ -105,7 +105,7 @@ const AlertRoot = React.forwardRef<HTMLDivElement, AlertRootProps>(
         </div>
       </div>
     );
-  }
+  },
 );
 
 export const Alert = AlertRoot;
