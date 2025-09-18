@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
 //  experimental: {
 //    ppr: true,
 //  },
+  outputFileTracingRoot: process.cwd(),
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "img.clerk.com" },
