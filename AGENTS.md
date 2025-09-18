@@ -1,32 +1,19 @@
-# AGENTS.md
+# Repository Guidelines
 
-This file provides guidance to agents when working with code in this repository.
+## Project Structure & Module Organization
+The Next.js app lives in `app/`, with chat flows under `app/(chat)/` and shared providers in `app/(chat)/layout.tsx`. Reusable UI lives in `components/` and `src/ui/` (Subframe exports), while domain logic, AI tools, and Drizzle schema sit in `lib/`. Artifact renderers are centralized in `artifacts/`, and static assets belong in `public/`. End-to-end Playwright suites reside in `tests/` alongside helpers and fixtures.
 
-## Commands (Non-Standard)
+## Build, Test, and Development Commands
+Use `pnpm dev` for local development. Run `pnpm build` before release—it automatically runs `tsx lib/db/migrate.ts` prior to `next build`. Production preview uses `pnpm start`. Database migrations are managed with `pnpm db:migrate` (Drizzle + Neon). Execute all Playwright E2E suites via `pnpm test` after exporting `PLAYWRIGHT=True`; target a single run with `npx playwright test tests/e2e/<file>.test.ts --project=e2e`.
 
-- `pnpm build`: Auto-runs DB migration (`tsx lib/db/migrate.ts`) before `next build`.
-- `pnpm test`: Requires `PLAYWRIGHT=True` env var; runs all E2E tests in `./tests/`.
-- Single E2E test: `npx playwright test tests/e2e/artifacts.test.ts --project=e2e` (targets e2e project; no unit tests).
-- DB migration: `pnpm db:migrate` executes from root but sources `lib/db/migrate.ts`.
+## Coding Style & Naming Conventions
+Formatting is enforced by Biome (`pnpm lint` / `pnpm format`), which expects 2-space indentation, 80-character lines, single quotes in JS, double quotes in JSX, and trailing commas. Tailwind class order is validated (use the `cn()` helper for conditional merges). React components and files that export components follow PascalCase; utilities remain camelCase. Keep TypeScript types colocated with their modules in `lib/` or `src/ui/`.
 
-## Code Style (From biome.jsonc Overrides)
+## Testing Guidelines
+Playwright is the primary test runner; place new journeys in `tests/e2e/` and reuse fixtures from `tests/fixtures.ts`. Name tests after the user path they cover (e.g., `artifacts.test.ts`). Record observed failures and screenshots with the default Playwright reporters. When migrations touch persisted data, add a corresponding test step that exercises the new schema.
 
-- 2-space indent, 80-char line width, LF endings.
-- Single quotes in JS, double in JSX; semicolons always; trailing commas in all (objects/arrays/functions).
-- Sorted Tailwind classes enforced at error level (`useSortedClasses`).
-- Custom a11y: `useSemanticElements` off (buggy), no autofocus ban, no keyWithClickEvents req.
-- Nursery rules: `noDocumentImportInPage` warn (Next.js specific), `useValidAutocomplete` warn.
-- Overrides for Playwright: `noEmptyPattern` off in `playwright/**`.
+## Commit & Pull Request Guidelines
+Commits follow a short, present-tense summary (`Openrouter + UI fixes`, `DB migration`); mirror this style and keep related changes together. Each PR should: explain the problem and solution, note any schema or config changes, link tracking issues, and attach UI screenshots or console output when behavior changes. Run `pnpm build` and relevant Playwright specs before requesting review, and call out any skipped coverage or follow-up work.
 
-## Critical Patterns & Gotchas
-
-- Guest auth: Emails match `/guest-\\d+@example\\.com/` regex; middleware redirects unauth to `/api/auth/guest` with redirectUrl.
-- Messages: Multimodal via `parts` array (text, image, tool); convert DB to UI with `convertToUIMessages` in [`lib/utils.ts`](lib/utils.ts:100) (preserves metadata).
-- AI Tools: `createDocument`/`updateDocument` in `lib/ai/tools/` trigger artifact handlers (`lib/artifacts/server.ts`); kinds: code (CodeMirror), text (ProseMirror), image (custom editor), sheet (react-data-grid). Pyodide loaded for Python code exec (`app/(chat)/layout.tsx`).
-- Streaming: Use `DataStreamProvider`/`DataStreamHandler` for real-time AI updates; `onData` captures usage/model costs.
-- Utils: `cn()` for Tailwind merging; `fetchWithErrorHandlers`/`fetcher` throw `ChatSDKError` (codes like 'offline:chat'); simple UUID gen in `generateUUID` (no crypto).
-- DB: Drizzle PostgreSQL (Neon); schema in `lib/db/schema.ts` (users/chats/messages/votes/documents/suggestions); queries in `lib/db/queries.ts`; supports v1 (legacy)/v2 message formats.
-- Prompts: Artifacts guidance in `lib/ai/prompts.ts` (wait for user feedback before updates; no immediate post-create edits).
-- Architecture: Experimental PPR enabled (`next.config.ts`, layouts); middleware matcher includes `/api/:path*` but excludes statics; guest mode via NextAuth with custom provider.
-
-From CLAUDE.md (non-obvious): Title gen via AI in `app/(chat)/actions.ts` (80-char limit, no quotes/colons).
+## Security & Configuration Tips
+Store secrets in `.env.local`; never commit `.env` files. Verify Neon and Redis credentials locally before running migrations. Middleware automatically redirects guest traffic to `/api/auth/guest`, so keep authentication checks in server actions and API routes consistent. Pyodide executes untrusted code in-browser—avoid introducing server-side execution paths for artifacts without review.
