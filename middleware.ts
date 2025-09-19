@@ -1,9 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isChatApiRoute = createRouteMatcher(['/api/chat/:path*']);
+const isPublicRoute = createRouteMatcher(['/', '/chat/:path*']);
 
 export default clerkMiddleware((auth, req) => {
-  if (!isChatApiRoute(req)) {
+  if (!isChatApiRoute(req) && !isPublicRoute(req)) {
     auth.protect();
   }
 });

@@ -3,7 +3,7 @@ import type { LanguageModel } from 'ai';
 
 export function getModel(modelId?: string): LanguageModel {
   const selectedModel =
-    modelId || process.env.OPENROUTER_MODEL || 'openai/gpt-oss-120b:free';
+    modelId || process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash';
 
   if (!selectedModel) {
     throw new Error(

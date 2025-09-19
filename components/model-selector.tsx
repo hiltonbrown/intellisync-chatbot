@@ -130,18 +130,20 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            className="flex items-center"
+            className="flex h-8 max-w-[120px] items-center px-2 text-xs"
             aria-label="Select model"
             disabled={isLoading || saving}
             variant="outline"
           >
-            <span>{activeModel ? activeModel.name : 'Select model'}</span>
-            <span className="ml-2">
-              <ChevronDownIcon size={16} />
+            <span className='overflow-hidden truncate text-ellipsis whitespace-nowrap'>
+              {activeModel ? activeModel.name : 'Select model'}
+            </span>
+            <span className="ml-1 flex-shrink-0">
+              <ChevronDownIcon size={12} />
             </span>
             {saving && (
               <svg
-                className="ml-2 h-4 w-4 animate-spin text-gray-400"
+                className='ml-1 h-3 w-3 flex-shrink-0 animate-spin text-gray-400'
                 viewBox="0 0 24 24"
               >
                 <circle

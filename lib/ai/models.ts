@@ -1,6 +1,6 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
-export const DEFAULT_CHAT_MODEL: string = 'openai/gpt-4o-mini';
+export const DEFAULT_CHAT_MODEL: string = 'google/gemini-2.5-flash';
 
 // Debug logging for OpenRouter configuration
 console.log('OpenRouter: API key present:', !!process.env.OPENROUTER_API_KEY);
@@ -52,9 +52,14 @@ async function fetchAndCacheModels(): Promise<ChatModel[]> {
  // Return a default list if fetch fails
  return [
  {
+ id: 'google/gemini-2.5-flash',
+ name: 'Gemini 2.5 Flash',
+ description: 'Default fallback model',
+ },
+ {
  id: 'openai/gpt-4o-mini',
  name: 'GPT-4o Mini',
- description: 'Default fallback model',
+ description: 'OpenAI fallback model',
  },
  ];
  }

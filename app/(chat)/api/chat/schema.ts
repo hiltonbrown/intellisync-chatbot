@@ -21,11 +21,7 @@ export const postRequestBodySchema = z.object({
     role: z.enum(['user']),
     parts: z.array(partSchema),
   }),
-  selectedChatModel: z.enum([
-    'openai/gpt-oss-120b:free',
-    'meta-llama/llama-4-maverick:free',
-    'google/gemma-3-27b-it:free',
-  ]),
+  selectedChatModel: z.string().min(1), // Allow any valid model ID string
   selectedVisibilityType: z.enum(['public', 'private']),
 });
 

@@ -56,22 +56,22 @@ export function FloatingModelSelector({
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="h-auto rounded-full border-gray-200 bg-white/90 px-4 py-2 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white/95"
+            className="h-auto max-w-[140px] rounded-full border-gray-200 bg-white/90 px-2 py-1 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white/95"
           >
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0FA47F] text-white">
-                <CpuIcon size={14} />
+            <div className="flex items-center gap-1">
+              <div className='flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-[#0FA47F] text-white'>
+                <CpuIcon size={10} />
               </div>
-              <span className="font-medium text-gray-700 text-sm">
+              <span className='overflow-hidden truncate text-ellipsis whitespace-nowrap font-medium text-gray-700 text-xs'>
                 {selectedModel?.name || 'Select Model'}
               </span>
-              <div className="text-gray-500">
-                <ChevronDownIcon size={14} />
+              <div className='flex-shrink-0 text-gray-500'>
+                <ChevronDownIcon size={10} />
               </div>
             </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-72 p-2" align="end">
+        <DropdownMenuContent className="w-60 p-2" align="end">
           <DropdownMenuLabel className="mb-2 font-medium text-gray-500 text-xs">
             Choose a model
           </DropdownMenuLabel>

@@ -22,15 +22,14 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   const user = await currentUser();
 
-  // Clerk middleware handles authentication, so this check is redundant
-  // but kept for explicitness
-  if (!userId) {
+  // Allow guests to view public chats, redirect to login only for private chats requiring auth
+  if (!userId && chat.visibility === 'private') {
     redirect('/login');
   }
 
   // Create a session-like object for compatibility with existing Chat component
   const session: ClerkSession = {
-    userId,
+    userId: userId || '', // Handle guest users
     user: userId
       ? {
           id: userId,

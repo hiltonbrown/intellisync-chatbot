@@ -203,7 +203,7 @@ export async function POST(request: Request) {
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
-            selectedChatModel === 'google/gemma-3-27b-it:free'
+            selectedChatModel.includes(':free') && selectedChatModel.includes('gemma')
               ? []
               : [
                   'getWeather',

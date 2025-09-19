@@ -10,24 +10,22 @@ import type { ClerkSession } from '@/lib/types';
 
 export default async function Page() {
   const { userId } = await auth();
-
-  // Clerk middleware handles authentication, so userId should always be available
-  if (!userId) {
-    throw new Error('User not authenticated');
-  }
-
   const id = generateUUID();
 
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get('chat-model');
 
   // Create a session-like object for compatibility with existing Chat component
-  const session: ClerkSession = {
+  // Handle both authenticated users and guests (when userId is null, API will create guest)
+  const session: ClerkSession = userId ? {
     userId,
     user: {
       id: userId,
       type: 'regular', // All Clerk users are regular users
     },
+  } : {
+    userId: '', // Will be handled by API as guest user
+    user: undefined,
   };
 
   if (!modelIdFromCookie) {
