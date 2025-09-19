@@ -15,15 +15,14 @@ export default clerkMiddleware((auth, req) => {
   const isApiRoute = pathname.startsWith('/api');
 
   if (isApiRoute) {
-    auth.protect();
-    return;
+    return auth.protect();
   }
 
-  const redirectPath = `${pathname}${search}${hash}`;
+  const redirectPath = `${pathname}${search}${hash}` || '/';
   const loginUrl = new URL('/login', req.url);
   loginUrl.searchParams.set('redirect_url', redirectPath);
 
-  auth.protect({ unauthenticatedUrl: loginUrl.toString() });
+  return auth.protect({ unauthenticatedUrl: loginUrl.toString() });
 });
 
 export const config = {
