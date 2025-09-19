@@ -10,7 +10,7 @@ export const codeDocumentHandler = createDocumentHandler<'code'>({
     let draftContent = '';
 
     const { fullStream } = streamObject({
-      model: myProvider.languageModel('openai/gpt-oss-120b:free'),
+      model: myProvider.languageModel('google/gemini-2.5-flash'),
       system: codePrompt,
       prompt: title,
       schema: z.object({
@@ -43,7 +43,7 @@ export const codeDocumentHandler = createDocumentHandler<'code'>({
     let draftContent = '';
 
     const { fullStream } = streamObject({
-      model: myProvider.languageModel('openai/gpt-oss-120b:free'),
+      model: myProvider.languageModel('google/gemini-2.5-flash'),
       system: updateDocumentPrompt(document.content, 'code'),
       prompt: description,
       schema: z.object({

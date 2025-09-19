@@ -10,7 +10,7 @@ export const sheetDocumentHandler = createDocumentHandler<'sheet'>({
     let draftContent = '';
 
     const { fullStream } = streamObject({
-      model: myProvider.languageModel('openai/gpt-oss-120b:free'),
+      model: myProvider.languageModel('google/gemini-2.5-flash'),
       system: sheetPrompt,
       prompt: title,
       schema: z.object({
@@ -49,7 +49,7 @@ export const sheetDocumentHandler = createDocumentHandler<'sheet'>({
     let draftContent = '';
 
     const { fullStream } = streamObject({
-      model: myProvider.languageModel('openai/gpt-oss-120b:free'),
+      model: myProvider.languageModel('google/gemini-2.5-flash'),
       system: updateDocumentPrompt(document.content, 'sheet'),
       prompt: description,
       schema: z.object({
