@@ -6,7 +6,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/auth/:path*',
 ]);
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   if (isPublicRoute(req)) {
     return;
   }
@@ -15,14 +15,15 @@ export default clerkMiddleware((auth, req) => {
   const isApiRoute = pathname.startsWith('/api');
 
   if (isApiRoute) {
-    return auth.protect();
+    await auth.protect();
+    return;
   }
 
   const redirectPath = `${pathname}${search}${hash}` || '/';
   const loginUrl = new URL('/login', req.url);
   loginUrl.searchParams.set('redirect_url', redirectPath);
 
-  return auth.protect({ unauthenticatedUrl: loginUrl.toString() });
+  await auth.protect({ unauthenticatedUrl: loginUrl.toString() });
 });
 
 export const config = {
