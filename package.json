@@ -132,7 +132,12 @@
   "pnpm": {
     "overrides": {
       "@types/react": "19.1.13",
-      "@types/react-dom": "19.1.9"
+      "@types/react-dom": "19.1.9",
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "undici@<5.29.0": ">=5.29.0",
+      "brace-expansion@>=1.0.0 <=1.1.11": ">=1.1.12",
+      "brace-expansion@>=2.0.0 <=2.0.1": ">=2.0.2",
+      "prismjs@<1.30.0": ">=1.30.0"
     }
   }
 }
