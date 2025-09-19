@@ -12,7 +12,7 @@ export const openrouter = createOpenRouter({
   baseURL: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
   headers: {
     'HTTP-Referer':
-      process.env.NEXT_PUBLIC_APP_URL || 'https://app.intellisync.com.au',
+      process.env.NEXT_PUBLIC_APP_URL || 'https://ledgerbot.co',
     'X-Title': 'IntelliSync Chatbot',
   },
 });

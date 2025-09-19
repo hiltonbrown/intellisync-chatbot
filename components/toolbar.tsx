@@ -319,7 +319,7 @@ const PureToolbar = ({
   setMessages: UseChatHelpers<ChatMessage>['setMessages'];
   artifactKind: ArtifactKind;
 }) => {
-  const toolbarRef = useRef<HTMLDivElement>(null!);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
