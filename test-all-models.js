@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 // Comprehensive model testing script for OpenRouter
-const https = require('https');
+const https = require('node:https');
 // Simple UUID generator
 function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
@@ -232,7 +232,7 @@ class ModelTester {
   async runAllTests() {
     console.log('🔍 Starting comprehensive model testing...');
     console.log(`📋 Testing ${MODELS_TO_TEST.length} models`);
-    console.log(`🔑 API Key: ${this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'NOT SET'}\n`);
+    console.log(`🔑 API Key: ${this.apiKey ? `${this.apiKey.substring(0, 10)}...` : 'NOT SET'}\n`);
 
     if (!this.apiKey) {
       console.error('❌ OPENROUTER_API_KEY is not set');
@@ -272,7 +272,7 @@ class ModelTester {
       // Show response preview
       if (directResult.responseText) {
         const preview = directResult.responseText.length > 60
-          ? directResult.responseText.substring(0, 60) + '...'
+          ? `${directResult.responseText.substring(0, 60)}...`
           : directResult.responseText;
         console.log(`  💭 Response: "${preview}"`);
       }
@@ -282,7 +282,7 @@ class ModelTester {
   }
 
   printSummary() {
-    console.log('\n' + '='.repeat(80));
+    console.log(`\n${'='.repeat(80)}`);
     console.log('📈 MODEL TESTING SUMMARY');
     console.log('='.repeat(80));
 

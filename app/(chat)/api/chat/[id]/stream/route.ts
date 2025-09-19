@@ -35,15 +35,11 @@ export async function GET(
   const { userId } = await auth();
   console.log('Stream API: Auth result - userId:', userId);
 
-  let finalUserId = userId;
-
   if (!userId) {
-    console.log('Stream API: No authenticated user, allowing for guest access');
-    // For guest users, we don't have a userId, but we'll allow the request
-    // The chat ownership check will handle access control
-  } else {
-    finalUserId = userId;
+    return new ChatSDKError('unauthorized:chat').toResponse();
   }
+
+  const finalUserId = userId;
 
   let chat: Chat | null;
 

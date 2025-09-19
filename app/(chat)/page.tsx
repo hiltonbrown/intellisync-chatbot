@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import { Chat } from '@/components/chat';
 import { FloatingThemeToggle } from '@/components/floating-theme-toggle';
@@ -10,22 +11,21 @@ import type { ClerkSession } from '@/lib/types';
 
 export default async function Page() {
   const { userId } = await auth();
+  if (!userId) {
+    redirect('/login');
+  }
   const id = generateUUID();
 
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get('chat-model');
 
   // Create a session-like object for compatibility with existing Chat component
-  // Handle both authenticated users and guests (when userId is null, API will create guest)
-  const session: ClerkSession = userId ? {
+  const session: ClerkSession = {
     userId,
     user: {
       id: userId,
       type: 'regular', // All Clerk users are regular users
     },
-  } : {
-    userId: '', // Will be handled by API as guest user
-    user: undefined,
   };
 
   if (!modelIdFromCookie) {

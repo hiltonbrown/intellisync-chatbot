@@ -57,8 +57,16 @@ export default async function RootLayout({
   // Debug: Check environment variables on startup
   checkEnvironmentVariables();
 
+  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  if (!clerkPublishableKey) {
+    throw new Error(
+      'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is not set. Please update your environment configuration before starting the app.',
+    );
+  }
+
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={clerkPublishableKey}>
       <html
         lang="en"
         // `next-themes` injects an extra classname to the body element to avoid

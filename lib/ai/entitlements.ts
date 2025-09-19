@@ -1,4 +1,4 @@
-export type UserType = 'guest' | 'regular';
+export type UserType = 'regular';
 
 import type { ChatModel } from './models';
 
@@ -8,18 +8,6 @@ interface Entitlements {
 }
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
-  /*
-   * For users without an account
-   */
-  guest: {
-    maxMessagesPerDay: 20,
-    availableChatModelIds: [
-      'openai/gpt-oss-120b:free',
-      'meta-llama/llama-4-maverick:free',
-      'google/gemma-3-27b-it:free',
-    ],
-  },
-
   /*
    * For users with an account
    */

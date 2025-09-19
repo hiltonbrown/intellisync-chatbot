@@ -10,7 +10,7 @@ The IntelliSync Chatbot is a sophisticated, open-source AI-powered chatbot appli
 
 - **Backend/Routing**: App Router with Server Components (RSC) and Partial Prerendering (PPR) enabled in next.config.ts for performance. Key routes: /(chat)/ for main chat, /(auth)/ for login/register. Server actions in actions.ts handle chat generation, title creation, visibility updates. Streaming via DataStreamProvider/Handler for real-time AI responses.
 
-- **Authentication**: NextAuth.js v5 with custom Credentials provider for regular users (email/password, hashed with bcrypt-ts) and guest mode (regex-matched emails like guest-*@example.com). Middleware redirects unauth to /api/auth/guest, preserving redirectUrl. Session extends with user type (guest/regular).
+- **Authentication**: Clerk handles email/password accounts via custom credentials wiring in NextAuth.js v5 compatibility mode. Middleware now protects chat routes and redirects unauthenticated traffic to `/login`. Session metadata tracks regular users (future tiers can extend this).
 
 - **Database**: Drizzle ORM with Neon Serverless Postgres. Schema includes users, chats, messages (v2 with parts/attachments for multimodal), votes, documents (artifacts), suggestions, streams. Queries in lib/db/queries.ts support CRUD, pagination, deletions by timestamp. Migrations via tsx lib/db/migrate.ts.
 
@@ -30,11 +30,11 @@ The architecture emphasizes statelessness (AI tools), forward-only migrations, a
 
 - **Modern, Performant Stack**: Next.js 15 with RSC/PPR enables efficient server-side rendering and streaming, reducing client bundle size. AI SDK unifies LLM interactions, supporting tool calls and structured outputs seamlessly.
 
-- **Rich User Experience**: Multimodal chat with editable artifacts provides interactive content creation (e.g., Python code execution in-browser via Pyodide). UI is accessible (Radix primitives), responsive, and polished (animations via framer-motion, dark mode). Guest mode lowers barriers; history/suggestions enhance usability.
+- **Rich User Experience**: Multimodal chat with editable artifacts provides interactive content creation (e.g., Python code execution in-browser via Pyodide). UI is accessible (Radix primitives), responsive, and polished (animations via framer-motion, dark mode). History and suggestions enhance usability.
 
 - **Robust Data Layer**: Drizzle schema supports v1/v2 message formats for backward compatibility. Queries are optimized (pagination, counts for rate limiting). Error handling via ChatSDKError with codes (e.g., 'offline:chat').
 
-- **Security Foundations**: Hashed passwords, guest regex isolation, middleware protection for routes. No immediate post-create artifact edits per prompts prevents abuse.
+- **Security Foundations**: Hashed passwords, middleware-protected routes, and prompt-guarded artifact workflows. No immediate post-create artifact edits prevents abuse.
 
 - **Developer-Friendly**: Clear patterns (AGENTS.md rules, utils like cn() for Tailwind, convertToUIMessages for DB/UI sync). E2E tests cover core flows (artifacts, chat, sessions). Biome enforces consistent style.
 
@@ -48,7 +48,7 @@ Overall, the project is production-ready for a chatbot MVP, with strong focus on
 
 - **Expand Test Coverage**: Currently only E2E with Playwright (artifacts.test.ts, chat.test.ts, etc.). Add unit/integration tests for utils (e.g., message conversion, error handlers), components (e.g., Artifact rendering), and AI tools (mock LLM responses). Use Vitest/Jest for faster feedback.
 
-- **Test Edge Cases**: Cover guest vs. regular auth flows, multimodal attachments, artifact versioning, streaming failures. Mock DB/AI for isolated tests.
+- **Test Edge Cases**: Cover auth redirects, multimodal attachments, artifact versioning, streaming failures. Mock DB/AI for isolated tests.
 
 ### Security
 

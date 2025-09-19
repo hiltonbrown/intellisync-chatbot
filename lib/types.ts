@@ -59,10 +59,10 @@ export interface Attachment {
 
 // Clerk session type for compatibility with components
 export interface ClerkSession {
-  userId: string | null;
+  userId: string;
   user?: {
     id: string;
-    type?: 'regular' | 'guest';
+    type?: 'regular';
   };
   expires?: string;
 }

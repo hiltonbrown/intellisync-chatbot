@@ -1,12 +1,29 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-const isChatApiRoute = createRouteMatcher(['/api/chat/:path*']);
-const isPublicRoute = createRouteMatcher(['/', '/chat/:path*']);
+const isPublicRoute = createRouteMatcher([
+  '/login(.*)',
+  '/register(.*)',
+  '/api/auth/:path*',
+]);
 
 export default clerkMiddleware((auth, req) => {
-  if (!isChatApiRoute(req) && !isPublicRoute(req)) {
-    auth.protect();
+  if (isPublicRoute(req)) {
+    return;
   }
+
+  const { pathname, search, hash } = req.nextUrl;
+  const isApiRoute = pathname.startsWith('/api');
+
+  if (isApiRoute) {
+    auth.protect();
+    return;
+  }
+
+  const redirectPath = `${pathname}${search}${hash}`;
+  const loginUrl = new URL('/login', req.url);
+  loginUrl.searchParams.set('redirect_url', redirectPath);
+
+  auth.protect({ unauthenticatedUrl: loginUrl.toString() });
 });
 
 export const config = {

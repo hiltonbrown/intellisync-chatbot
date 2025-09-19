@@ -20,22 +20,19 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   }
 
   const { userId } = await auth();
-  const user = await currentUser();
-
-  // Allow guests to view public chats, redirect to login only for private chats requiring auth
-  if (!userId && chat.visibility === 'private') {
+  if (!userId) {
     redirect('/login');
   }
 
+  const user = await currentUser();
+
   // Create a session-like object for compatibility with existing Chat component
   const session: ClerkSession = {
-    userId: userId || '', // Handle guest users
-    user: userId
-      ? {
-          id: userId,
-          type: 'regular',
-        }
-      : undefined,
+    userId,
+    user: {
+      id: userId,
+      type: 'regular',
+    },
   };
 
   if (chat.visibility === 'private') {

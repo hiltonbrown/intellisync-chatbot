@@ -12,7 +12,6 @@ import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
   createUser,
-  createGuestUser,
   deleteChatById,
   getChatById,
   getMessageCountByUserId,
@@ -102,21 +101,11 @@ export async function POST(request: Request) {
     const { userId } = await auth();
     console.log('Chat API: Auth result - userId:', userId);
 
-    let finalUserId = userId;
-    let userType: 'regular' | 'guest' = 'regular';
-
     if (!userId) {
-      console.log('Chat API: No authenticated user, creating guest user');
-      // Create guest user for unauthenticated requests
-      const guestUser = await createGuestUser();
-      finalUserId = guestUser[0].id;
-      userType = 'guest';
-      console.log('Chat API: Created guest user:', finalUserId);
-    } else {
-      // For Clerk, all authenticated users are regular users
-      finalUserId = userId;
-      userType = 'regular';
+      return new ChatSDKError('unauthorized:chat').toResponse();
     }
+
+    const finalUserId = userId;
 
     // Ensure user exists in database (only for authenticated users)
     if (userId) {
@@ -133,7 +122,7 @@ export async function POST(request: Request) {
       differenceInHours: 24,
     });
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
+    if (messageCount > entitlementsByUserType.regular.maxMessagesPerDay) {
       return new ChatSDKError('rate_limit:chat').toResponse();
     }
 
@@ -161,7 +150,7 @@ export async function POST(request: Request) {
       userId: finalUserId,
       user: {
         id: finalUserId,
-        type: userType,
+        type: 'regular',
       },
     };
 
