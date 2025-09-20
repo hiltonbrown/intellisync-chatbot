@@ -1,7 +1,7 @@
 'use client';
 
 import { SignUp } from '@clerk/nextjs';
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 function useRedirectUrl() {
@@ -18,7 +18,7 @@ function useRedirectUrl() {
   }, [searchParams]);
 }
 
-export default function Page() {
+function RegisterForm() {
   const redirectUrl = useRedirectUrl();
   const redirectQuery =
     redirectUrl && redirectUrl !== '/'
@@ -26,13 +26,30 @@ export default function Page() {
       : '';
 
   return (
+    <SignUp
+      path="/register"
+      routing="path"
+      signInUrl={`/login${redirectQuery}`}
+      redirectUrl={redirectUrl}
+    />
+  );
+}
+
+export default function Page() {
+  return (
     <div className="flex h-dvh w-screen items-center justify-center bg-background">
-      <SignUp
-        path="/register"
-        routing="path"
-        signInUrl={`/login${redirectQuery}`}
-        redirectUrl={redirectUrl}
-      />
+      <Suspense
+        fallback={
+          <SignUp
+            path="/register"
+            routing="path"
+            signInUrl="/login"
+            redirectUrl="/"
+          />
+        }
+      >
+        <RegisterForm />
+      </Suspense>
     </div>
   );
 }

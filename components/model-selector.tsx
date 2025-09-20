@@ -83,7 +83,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
       });
       if (!resp.ok) throw new Error('Failed to save model selection.');
       // Optionally, server responds with confirmation. Could check here.
-      if (pathname === '/') {
+      if (pathname === '/' || pathname.startsWith('/chat/')) {
         router.refresh();
       }
     } catch (err) {

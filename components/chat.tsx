@@ -52,6 +52,7 @@ export function Chat({
   const [usage, setUsage] = useState<LanguageModelUsage | undefined>(
     initialLastContext,
   );
+  const [currentChatModel, setCurrentChatModel] = useState<string>(initialChatModel);
 
   const {
     messages,
@@ -74,7 +75,7 @@ export function Chat({
           body: {
             id,
             message: messages.at(-1),
-            selectedChatModel: initialChatModel,
+            selectedChatModel: currentChatModel,
             selectedVisibilityType: visibilityType,
             ...body,
           },
@@ -162,7 +163,8 @@ export function Chat({
               setMessages={setMessages}
               sendMessage={sendMessage}
               selectedVisibilityType={visibilityType}
-              selectedModelId={initialChatModel}
+              selectedModelId={currentChatModel}
+              onModelChange={setCurrentChatModel}
               usage={usage}
             />
           )}

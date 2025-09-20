@@ -65,6 +65,7 @@ function PureMultimodalInput({
   className,
   selectedVisibilityType,
   selectedModelId,
+  onModelChange,
   usage,
 }: {
   chatId: string;
@@ -80,6 +81,7 @@ function PureMultimodalInput({
   className?: string;
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
+  onModelChange?: (modelId: string) => void;
   usage?: LanguageModelUsage;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -124,6 +126,7 @@ function PureMultimodalInput({
   useEffect(() => {
     setLocalStorageInput(input);
   }, [input, setLocalStorageInput]);
+
 
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
@@ -375,7 +378,10 @@ function PureMultimodalInput({
               status={status}
               selectedModelId={selectedModelId}
             />
-            <ModelSelectorCompact selectedModelId={selectedModelId} />
+            <ModelSelectorCompact
+              selectedModelId={selectedModelId}
+              onModelChange={onModelChange}
+            />
           </PromptInputTools>
 
           {status === 'submitted' ? (
@@ -404,6 +410,7 @@ export const MultimodalInput = memo(
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
       return false;
     if (prevProps.selectedModelId !== nextProps.selectedModelId) return false;
+    if (prevProps.onModelChange !== nextProps.onModelChange) return false;
 
     return true;
   },
@@ -440,8 +447,10 @@ const AttachmentsButton = memo(PureAttachmentsButton);
 
 function PureModelSelectorCompact({
   selectedModelId,
+  onModelChange,
 }: {
   selectedModelId: string;
+  onModelChange?: (modelId: string) => void;
 }) {
   const [optimisticModelId, setOptimisticModelId] = useState(selectedModelId);
   const [chatModels, setChatModels] = useState<ChatModel[]>([]);
@@ -449,6 +458,11 @@ function PureModelSelectorCompact({
   useEffect(() => {
     getStaticModels().then(setChatModels);
   }, []);
+
+  // Sync optimisticModelId with external selectedModelId prop changes
+  useEffect(() => {
+    setOptimisticModelId(selectedModelId);
+  }, [selectedModelId]);
 
   const selectedModel = chatModels.find(
     (model) => model.id === optimisticModelId,
@@ -461,6 +475,9 @@ function PureModelSelectorCompact({
         const model = chatModels.find((m) => m.name === modelName);
         if (model) {
           setOptimisticModelId(model.id);
+          onModelChange?.(model.id);
+          // Clear localStorage input when model changes to prevent retention
+          localStorage.removeItem('input');
           startTransition(() => {
             saveChatModelAsCookie(model.id);
           });
@@ -497,7 +514,14 @@ function PureModelSelectorCompact({
   );
 }
 
-const ModelSelectorCompact = memo(PureModelSelectorCompact);
+const ModelSelectorCompact = memo(
+  PureModelSelectorCompact,
+  (prevProps, nextProps) => {
+    if (prevProps.selectedModelId !== nextProps.selectedModelId) return false;
+    if (prevProps.onModelChange !== nextProps.onModelChange) return false;
+    return true;
+  }
+);
 
 function PureStopButton({
   stop,
