@@ -110,22 +110,27 @@ function PureMultimodalInput({
     '',
   );
 
+  const [isHydrated, setIsHydrated] = useState(false);
+
   useEffect(() => {
-    if (textareaRef.current) {
+    if (textareaRef.current && !isHydrated) {
       const domValue = textareaRef.current.value;
       // Prefer DOM value over localStorage to handle hydration
       const finalValue = domValue || localStorageInput || '';
       setInput(finalValue);
       adjustHeight();
+      setIsHydrated(true);
     }
     // Only run once after hydration
     // eslint-disable-next-line react-hooks/exhaustive-deps
     // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  }, [adjustHeight, localStorageInput, setInput]);
+  }, [adjustHeight, localStorageInput, setInput, isHydrated]);
 
   useEffect(() => {
-    setLocalStorageInput(input);
-  }, [input, setLocalStorageInput]);
+    if (isHydrated) {
+      setLocalStorageInput(input);
+    }
+  }, [input, setLocalStorageInput, isHydrated]);
 
 
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -156,9 +161,9 @@ function PureMultimodalInput({
     });
 
     setAttachments([]);
+    setInput('');
     setLocalStorageInput('');
     resetHeight();
-    setInput('');
 
     if (width && width > 768) {
       textareaRef.current?.focus();
@@ -476,8 +481,6 @@ function PureModelSelectorCompact({
         if (model) {
           setOptimisticModelId(model.id);
           onModelChange?.(model.id);
-          // Clear localStorage input when model changes to prevent retention
-          localStorage.removeItem('input');
           startTransition(() => {
             saveChatModelAsCookie(model.id);
           });
