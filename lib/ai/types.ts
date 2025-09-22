@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = 'meta-llama/llama-3.2-3b-instruct';
+export const DEFAULT_CHAT_MODEL: string = 'google/gemini-2.5-flash';
 
 export interface ChatModel {
   id: string;

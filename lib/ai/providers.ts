@@ -13,14 +13,13 @@ export const myProvider = isTestEnvironment
       } = require('./models.mock');
       return customProvider({
         languageModels: {
-          'meta-llama/llama-3.2-3b-instruct': chatModel,
-          'meta-llama/llama-3.3-8b-instruct:free': chatModel,
-          'mistralai/mistral-small-3.1-24b-instruct:free': reasoningModel,
-          'deepseek/deepseek-chat-v3.1:free': chatModel,
-          'deepseek/deepseek-r1-distill-llama-70b:free': reasoningModel,
-          'openai/gpt-4o-mini': chatModel,
           'google/gemini-2.5-flash': chatModel,
-          'qwen/qwen3-next-80b-a3b-instruct': reasoningModel,
+          'anthropic/claude-sonnet-4': chatModel,
+          'openai/gpt-5-mini': chatModel,
+          'openai/gpt-5': chatModel,
+          'meta-llama/llama-4-maverick:free': chatModel,
+          'meta-llama/llama-4-maverick': chatModel,
+          'x-ai/grok-4-fast:free': chatModel,
           'openai/gpt-oss-120b:free': chatModel, // Backward compatibility for stored preferences
           'google/gemini-flash-1.5': chatModel, // Legacy support
           'title-model': titleModel,
