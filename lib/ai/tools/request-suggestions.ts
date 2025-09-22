@@ -1,21 +1,16 @@
 import { z } from 'zod';
-import type { ClerkSession } from '@/lib/types';
-import { streamObject, tool, type UIMessageStreamWriter } from 'ai';
+import { streamObject, tool } from 'ai';
 import { getDocumentById, saveSuggestions } from '@/lib/db/queries';
 import type { Suggestion } from '@/lib/db/schema';
 import { generateUUID } from '@/lib/utils';
-import { myProvider } from '../providers';
-import type { ChatMessage } from '@/lib/types';
-
-interface RequestSuggestionsProps {
-  session: ClerkSession;
-  dataStream: UIMessageStreamWriter<ChatMessage>;
-}
+import type { ToolContext } from './types';
 
 export const requestSuggestions = ({
   session,
   dataStream,
-}: RequestSuggestionsProps) =>
+  selectedModel,
+  providerClient,
+}: ToolContext) =>
   tool({
     description: 'Request suggestions for a document',
     inputSchema: z.object({
@@ -37,7 +32,7 @@ export const requestSuggestions = ({
       > = [];
 
       const { elementStream } = streamObject({
-        model: myProvider.languageModel('google/gemini-2.5-flash'),
+        model: providerClient.languageModel(selectedModel),
         system:
           'You are a help writing assistant. Given a piece of writing, please offer suggestions to improve the piece of writing and describe the change. It is very important for the edits to contain full sentences instead of just words. Max 5 suggestions.',
         prompt: document.content,

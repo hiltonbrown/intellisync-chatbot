@@ -1,19 +1,13 @@
 import { generateUUID } from '@/lib/utils';
-import { tool, type UIMessageStreamWriter } from 'ai';
+import { tool } from 'ai';
 import { z } from 'zod';
-import type { ClerkSession } from '@/lib/types';
 import {
   artifactKinds,
   documentHandlersByArtifactKind,
 } from '@/lib/artifacts/server';
-import type { ChatMessage } from '@/lib/types';
+import type { ToolContext } from './types';
 
-interface CreateDocumentProps {
-  session: ClerkSession;
-  dataStream: UIMessageStreamWriter<ChatMessage>;
-}
-
-export const createDocument = ({ session, dataStream }: CreateDocumentProps) =>
+export const createDocument = ({ session, dataStream }: ToolContext) =>
   tool({
     description:
       'Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind.',

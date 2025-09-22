@@ -1,0 +1,10 @@
+openai/gpt-4o: OpenAI GPT-4o - Advanced multimodal model with excellent reasoning and coding capabilities
+anthropic/claude-3.5-sonnet: Anthropic Claude 3.5 Sonnet - Balanced model for complex tasks, coding, and analysis
+google/gemini-2.5-flash: Google Gemini 2.5 Flash - Fast, efficient model for general chat and reasoning
+meta-llama/llama-3.3-70b-instruct: Meta Llama 3.3 70B - Powerful open-source model for diverse tasks
+deepseek/deepseek-chat-v3.1: DeepSeek V3.1 - Efficient hybrid reasoning model with long context
+mistralai/mistral-large-2411: Mistral Large 2411 - High-performance model for reasoning and multilingual tasks
+qwen/qwen2.5-72b-instruct: Qwen 2.5 72B - Strong in coding, math, and multilingual understanding
+openai/gpt-4o-mini: OpenAI GPT-4o Mini - Cost-effective version of GPT-4o for lighter tasks
+anthropic/claude-3.5-haiku: Anthropic Claude 3.5 Haiku - Fast model for real-time applications
+google/gemini-2.5-pro: Google Gemini 2.5 Pro - Advanced model for complex reasoning and tasks

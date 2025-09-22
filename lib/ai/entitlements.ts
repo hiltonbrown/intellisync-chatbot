@@ -1,5 +1,5 @@
-import type { ChatModel } from './models';
-import { DEFAULT_CHAT_MODEL } from './models';
+import type { ChatModel } from './types';
+import { DEFAULT_CHAT_MODEL } from './types';
 
 export type UserType = 'free' | 'pro' | 'enterprise';
 

@@ -9,10 +9,8 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { DefaultModelSelector } from '@/components/settings/default-model-selector';
-import {
-  DEFAULT_CHAT_MODEL,
-  getStaticModels,
-} from '@/lib/ai/models';
+import { DEFAULT_CHAT_MODEL } from '@/lib/ai/types';
+import { getStaticModels } from '@/lib/ai/server-models';
 
 export default async function UserPreferencesPage() {
   const cookieStore = await cookies();

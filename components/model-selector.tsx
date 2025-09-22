@@ -3,7 +3,7 @@
 import * as React from 'react';
 import useSWR from 'swr';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ChatModel, getStaticModels } from '@/lib/ai/models';
+import type { ChatModel } from '@/lib/ai/types';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -56,18 +56,8 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
     revalidateIfStale: false,
   });
 
-  const [fallbackModels, setFallbackModels] = React.useState<ChatModel[]>([]);
-
-  React.useEffect(() => {
-    async function loadStaticModels() {
-      const models = await getStaticModels();
-      setFallbackModels(models);
-    }
-    loadStaticModels();
-  }, []);
-
   // Defensive: Always have an array as models
-  const models = Array.isArray(dynamicModels) ? dynamicModels : fallbackModels;
+  const models = Array.isArray(dynamicModels) ? dynamicModels : [];
   const activeModel = models.find((model) => model.id === selectedModel);
 
   const handleModelChange = async (modelId: string) => {
@@ -135,7 +125,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
             disabled={isLoading || saving}
             variant="outline"
           >
-            <span className='overflow-hidden truncate text-ellipsis whitespace-nowrap'>
+            <span className="overflow-hidden truncate text-ellipsis whitespace-nowrap">
               {activeModel ? activeModel.name : 'Select model'}
             </span>
             <span className="ml-1 flex-shrink-0">
@@ -143,7 +133,7 @@ export function ModelSelector({ initialModel, ...props }: ModelSelectorProps) {
             </span>
             {saving && (
               <svg
-                className='ml-1 h-3 w-3 flex-shrink-0 animate-spin text-gray-400'
+                className="ml-1 h-3 w-3 flex-shrink-0 animate-spin text-gray-400"
                 viewBox="0 0 24 24"
               >
                 <circle

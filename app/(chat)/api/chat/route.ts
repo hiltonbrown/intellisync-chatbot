@@ -23,10 +23,7 @@ import {
 import { updateChatLastContextById } from '@/lib/db/queries';
 import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
-import { createDocument } from '@/lib/ai/tools/create-document';
-import { updateDocument } from '@/lib/ai/tools/update-document';
-import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
+import { createToolRegistry } from '@/lib/ai/tools/registry';
 import { createUserProvider, myProvider } from '@/lib/ai/providers';
 import { getEntitlements, type UserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
@@ -133,7 +130,11 @@ export async function POST(request: Request) {
       console.warn('Falling back to shared OpenRouter API key', error);
     }
 
-    if (!usingSharedKey && creditLimit > 0 && existingUsageCredits >= creditLimit) {
+    if (
+      !usingSharedKey &&
+      creditLimit > 0 &&
+      existingUsageCredits >= creditLimit
+    ) {
       return new ChatSDKError(
         'rate_limit:chat',
         'Daily credit allowance exhausted. Upgrade your plan to continue.',
@@ -238,24 +239,24 @@ export async function POST(request: Request) {
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
-            selectedChatModel.includes(':free') && selectedChatModel.includes('gemma')
+            selectedChatModel.includes(':free') &&
+            selectedChatModel.includes('gemma')
               ? []
               : [
                   'getWeather',
                   'createDocument',
                   'updateDocument',
                   'requestSuggestions',
+                  'analyzeEmailFraud',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
-          tools: {
-            getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-            }),
-          },
+          tools: createToolRegistry({
+            session,
+            dataStream,
+            chatId: id,
+            selectedModel: selectedChatModel,
+            providerClient,
+          }),
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: 'stream-text',
@@ -418,17 +419,16 @@ type UsageMetrics = {
   costUSD?: number;
 };
 
-function extractUsageMetrics(usage: LanguageModelUsage | undefined): UsageMetrics {
+function extractUsageMetrics(
+  usage: LanguageModelUsage | undefined,
+): UsageMetrics {
   if (!usage) {
     return {};
   }
 
   const usageAny = usage as any;
   const providerUsage =
-    usageAny?.openai?.usage ??
-    usageAny?.usage ??
-    usageAny?.openrouter ??
-    {};
+    usageAny?.openai?.usage ?? usageAny?.usage ?? usageAny?.openrouter ?? {};
 
   const promptTokensRaw =
     providerUsage.prompt_tokens ??
@@ -457,7 +457,8 @@ function extractUsageMetrics(usage: LanguageModelUsage | undefined): UsageMetric
     providerUsage.reasoning_tokens ??
     providerUsage.reasoningTokens;
 
-  let costUSD: number | undefined = providerUsage.cost ?? providerUsage.total_cost;
+  let costUSD: number | undefined =
+    providerUsage.cost ?? providerUsage.total_cost;
 
   if (costUSD === undefined && providerUsage.total_cost_usd !== undefined) {
     costUSD = providerUsage.total_cost_usd;
@@ -476,7 +477,8 @@ function extractUsageMetrics(usage: LanguageModelUsage | undefined): UsageMetric
       typeof promptTokensRaw === 'number' ? promptTokensRaw : undefined,
     completionTokens:
       typeof completionTokensRaw === 'number' ? completionTokensRaw : undefined,
-    totalTokens: typeof totalTokensRaw === 'number' ? totalTokensRaw : undefined,
+    totalTokens:
+      typeof totalTokensRaw === 'number' ? totalTokensRaw : undefined,
     cachedTokens:
       typeof cachedTokensRaw === 'number' ? cachedTokensRaw : undefined,
     reasoningTokens:

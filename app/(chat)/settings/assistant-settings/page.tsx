@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ModelSelector } from '@/components/model-selector';
-import { getStaticModels } from '@/lib/ai/models';
+import { getStaticModels } from '@/lib/ai/server-models';
 
 export default async function AssistantSettingsPage() {
   // Get the first static model as initial model for the selector

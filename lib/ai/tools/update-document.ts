@@ -1,16 +1,10 @@
-import { tool, type UIMessageStreamWriter } from 'ai';
-import type { ClerkSession } from '@/lib/types';
+import { tool } from 'ai';
 import { z } from 'zod';
 import { getDocumentById } from '@/lib/db/queries';
 import { documentHandlersByArtifactKind } from '@/lib/artifacts/server';
-import type { ChatMessage } from '@/lib/types';
+import type { ToolContext } from './types';
 
-interface UpdateDocumentProps {
-  session: ClerkSession;
-  dataStream: UIMessageStreamWriter<ChatMessage>;
-}
-
-export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
+export const updateDocument = ({ session, dataStream }: ToolContext) =>
   tool({
     description: 'Update a document with the given description.',
     inputSchema: z.object({

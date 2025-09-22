@@ -43,7 +43,7 @@ import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage, UsageWithCost } from '@/lib/types';
-import { getStaticModels, type ChatModel } from '@/lib/ai/models';
+import type { ChatModel } from '@/lib/ai/types';
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { startTransition } from 'react';
 import { getContextWindow, normalizeUsage } from 'tokenlens';
@@ -131,7 +131,6 @@ function PureMultimodalInput({
       setLocalStorageInput(input);
     }
   }, [input, setLocalStorageInput, isHydrated]);
-
 
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
@@ -461,7 +460,9 @@ function PureModelSelectorCompact({
   const [chatModels, setChatModels] = useState<ChatModel[]>([]);
 
   useEffect(() => {
-    getStaticModels().then(setChatModels);
+    fetch('/api/models')
+      .then((res) => res.json())
+      .then((data) => setChatModels(data.models));
   }, []);
 
   // Sync optimisticModelId with external selectedModelId prop changes
@@ -523,7 +524,7 @@ const ModelSelectorCompact = memo(
     if (prevProps.selectedModelId !== nextProps.selectedModelId) return false;
     if (prevProps.onModelChange !== nextProps.onModelChange) return false;
     return true;
-  }
+  },
 );
 
 function PureStopButton({

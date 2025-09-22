@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getStaticModels, type ChatModel } from '@/lib/ai/models';
+import type { ChatModel } from '@/lib/ai/types';
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { startTransition } from 'react';
 
@@ -31,7 +31,9 @@ export function FloatingModelSelector({
   const [chatModels, setChatModels] = React.useState<ChatModel[]>([]);
 
   React.useEffect(() => {
-    getStaticModels().then(setChatModels);
+    fetch('/api/models')
+      .then((res) => res.json())
+      .then((data) => setChatModels(data.models));
   }, []);
 
   const selectedModel = chatModels.find(
@@ -59,13 +61,13 @@ export function FloatingModelSelector({
             className="h-auto max-w-[140px] rounded-full border-gray-200 bg-white/90 px-2 py-1 shadow-lg backdrop-blur-sm transition-all duration-200 hover:bg-white/95"
           >
             <div className="flex items-center gap-1">
-              <div className='flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-[#0FA47F] text-white'>
+              <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-[#0FA47F] text-white">
                 <CpuIcon size={10} />
               </div>
-              <span className='overflow-hidden truncate text-ellipsis whitespace-nowrap font-medium text-gray-700 text-xs'>
+              <span className="overflow-hidden truncate text-ellipsis whitespace-nowrap font-medium text-gray-700 text-xs">
                 {selectedModel?.name || 'Select Model'}
               </span>
-              <div className='flex-shrink-0 text-gray-500'>
+              <div className="flex-shrink-0 text-gray-500">
                 <ChevronDownIcon size={10} />
               </div>
             </div>
