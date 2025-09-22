@@ -129,7 +129,8 @@ function normaliseStatus(status?: string): User['keyStatus'] {
 
 async function updateClerkMetadata(userId: string, metadata: Record<string, unknown>) {
   try {
-    await clerkClient.users.updateUserMetadata(userId, {
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, {
       publicMetadata: metadata,
     });
   } catch (error) {

@@ -26,8 +26,20 @@ async function verifyRequest(request: Request): Promise<{ event: WebhookEvent; s
     throw new Error('Webhook signature header missing.');
   }
 
+  const id = request.headers.get('webhook-id') ?? request.headers.get('svix-id');
+  const timestamp =
+    request.headers.get('webhook-timestamp') ?? request.headers.get('svix-timestamp');
+
+  if (!id || !timestamp) {
+    throw new Error('Webhook id or timestamp header missing.');
+  }
+
   const webhook = new Webhook(webhookSecret);
-  const event = webhook.verify(payload, signature) as WebhookEvent;
+  const event = webhook.verify(payload, {
+    'webhook-id': id,
+    'webhook-signature': signature,
+    'webhook-timestamp': timestamp,
+  }) as WebhookEvent;
   return { event, success: true };
 }
 

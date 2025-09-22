@@ -70,16 +70,14 @@ export interface ClerkSession {
   expires?: string;
 }
 
-export interface UsageWithCost extends LanguageModelUsage {
+export type UsageWithCost = LanguageModelUsage & {
   provider?: 'openrouter';
   cost?: number;
   promptTokens?: number;
   completionTokens?: number;
-  totalTokens?: number;
   cachedTokens?: number;
-  reasoningTokens?: number;
   currency?: string;
   creditLimit?: number;
   currentUsage?: number;
   remainingCredits?: number;
-}
+};
