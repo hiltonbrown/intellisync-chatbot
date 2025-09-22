@@ -27,16 +27,17 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
-import { isProductionEnvironment } from '@/lib/constants';
-import { myProvider } from '@/lib/ai/providers';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
+import { createUserProvider, myProvider } from '@/lib/ai/providers';
+import { getEntitlements, type UserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import { getStreamContext } from '@/lib/ai/stream-context';
 import { ChatSDKError } from '@/lib/errors';
-import type { ChatMessage, ClerkSession } from '@/lib/types';
+import type { ChatMessage, ClerkSession, UsageWithCost } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
+import { OpenRouterKeyService } from '@/lib/services/openrouter-keys';
+import { isProductionEnvironment, isTestEnvironment } from '@/lib/constants';
 
 export const maxDuration = 60;
 
@@ -81,23 +82,71 @@ export async function POST(request: Request) {
 
     const finalUserId = userId;
 
-    // Ensure user exists in database (only for authenticated users)
-    if (userId) {
-      const existingUsers = await getUserById(userId);
-      if (existingUsers.length === 0) {
-        console.log('Creating new user:', userId);
-        // For Clerk users, we use the userId as both id and email (or a placeholder email)
-        await createUser(`${userId}@clerk.local`, userId);
-      }
+    let [userRecord] = await getUserById(finalUserId);
+    if (!userRecord) {
+      console.log('Creating new user:', finalUserId);
+      await createUser(`${finalUserId}@clerk.local`, finalUserId);
+      [userRecord] = await getUserById(finalUserId);
     }
+
+    const userType = (userRecord?.userType as UserType) ?? 'free';
+    const entitlements = getEntitlements(userType);
 
     const messageCount = await getMessageCountByUserId({
       id: finalUserId,
       differenceInHours: 24,
     });
 
-    if (messageCount > entitlementsByUserType.regular.maxMessagesPerDay) {
+    if (
+      entitlements.maxMessagesPerDay > -1 &&
+      messageCount >= entitlements.maxMessagesPerDay
+    ) {
       return new ChatSDKError('rate_limit:chat').toResponse();
+    }
+
+    const storedCreditLimit =
+      userRecord?.creditLimit && userRecord.creditLimit > 0
+        ? userRecord.creditLimit
+        : entitlements.creditLimit;
+    let existingUsageCredits = userRecord?.currentUsage ?? 0;
+
+    let keyService: OpenRouterKeyService | null = null;
+    let providerClient = myProvider;
+    let creditLimit = storedCreditLimit;
+    let usingSharedKey = false;
+
+    try {
+      keyService = new OpenRouterKeyService();
+
+      const keyDetails = await keyService.ensureUserApiKey({
+        userId: finalUserId,
+        userType,
+        creditLimit: storedCreditLimit,
+      });
+
+      creditLimit = keyDetails.limit ?? storedCreditLimit;
+      providerClient = createUserProvider(keyDetails.apiKey);
+    } catch (error) {
+      usingSharedKey = true;
+      creditLimit = 0;
+      existingUsageCredits = 0;
+      console.warn('Falling back to shared OpenRouter API key', error);
+    }
+
+    if (!usingSharedKey && creditLimit > 0 && existingUsageCredits >= creditLimit) {
+      return new ChatSDKError(
+        'rate_limit:chat',
+        'Daily credit allowance exhausted. Upgrade your plan to continue.',
+      ).toResponse();
+    }
+
+    const allowedModels = entitlements.availableChatModelIds;
+    const allowAllModels = allowedModels.includes('*');
+    if (!allowAllModels && !allowedModels.includes(selectedChatModel)) {
+      return new ChatSDKError(
+        'forbidden:chat',
+        'This model is not available on your current subscription tier.',
+      ).toResponse();
     }
 
     const chat = await getChatById({ id });
@@ -124,12 +173,26 @@ export async function POST(request: Request) {
       userId: finalUserId,
       user: {
         id: finalUserId,
-        type: 'regular',
+        type: userType,
+        creditLimit:
+          !usingSharedKey && creditLimit > 0 ? creditLimit : undefined,
+        currentUsage: !usingSharedKey ? existingUsageCredits : undefined,
       },
     };
 
     const messagesFromDb = await getMessagesByChatId({ id });
     const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+    const languageModel = providerClient.languageModel(selectedChatModel);
+    const effectiveCreditLimit = creditLimit > 0 ? creditLimit : undefined;
+
+    let finalUsage: UsageWithCost | undefined;
+    let usageCostCredits = 0;
+    let usageCostUSD: number | undefined;
+    let usagePromptTokens: number | undefined;
+    let usageCompletionTokens: number | undefined;
+    let usageTotalTokens: number | undefined;
+    let usageCachedTokens: number | undefined;
+    let usageReasoningTokens: number | undefined;
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -156,12 +219,21 @@ export async function POST(request: Request) {
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
-    let finalUsage: LanguageModelUsage | undefined;
+    const providerOptions = isTestEnvironment
+      ? undefined
+      : {
+          openai: {
+            usage: {
+              include: true,
+            },
+            user: `intellisync_${finalUserId}`,
+          },
+        };
 
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
         const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
+          model: languageModel,
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
@@ -188,9 +260,43 @@ export async function POST(request: Request) {
             isEnabled: isProductionEnvironment,
             functionId: 'stream-text',
           },
+          providerOptions,
           onFinish: ({ usage }) => {
-            finalUsage = usage;
-            dataStream.write({ type: 'data-usage', data: usage });
+            const metrics = extractUsageMetrics(usage);
+
+            usagePromptTokens = metrics.promptTokens;
+            usageCompletionTokens = metrics.completionTokens;
+            usageTotalTokens = metrics.totalTokens;
+            usageCachedTokens = metrics.cachedTokens;
+            usageReasoningTokens = metrics.reasoningTokens;
+            usageCostUSD = metrics.costUSD;
+
+            usageCostCredits = metrics.costUSD
+              ? Math.max(0, Math.ceil(metrics.costUSD * 100))
+              : 0;
+
+            const predictedTotalCredits =
+              existingUsageCredits + usageCostCredits;
+
+            finalUsage = {
+              ...(usage as UsageWithCost),
+              provider: 'openrouter',
+              cost: metrics.costUSD,
+              promptTokens: metrics.promptTokens,
+              completionTokens: metrics.completionTokens,
+              totalTokens: metrics.totalTokens,
+              cachedTokens: metrics.cachedTokens,
+              reasoningTokens: metrics.reasoningTokens,
+              currency: 'USD',
+              creditLimit: effectiveCreditLimit,
+              currentUsage: usingSharedKey ? undefined : predictedTotalCredits,
+              remainingCredits:
+                effectiveCreditLimit !== undefined
+                  ? Math.max(effectiveCreditLimit - predictedTotalCredits, 0)
+                  : undefined,
+            };
+
+            dataStream.write({ type: 'data-usage', data: finalUsage });
           },
         });
 
@@ -217,6 +323,28 @@ export async function POST(request: Request) {
 
         if (finalUsage) {
           try {
+            if (keyService && !usingSharedKey) {
+              const latestUsageTotal = await keyService.recordUsage({
+                userId: finalUserId,
+                cost: usageCostCredits,
+                chatId: id,
+                modelId: selectedChatModel,
+                promptTokens: usagePromptTokens,
+                completionTokens: usageCompletionTokens,
+                totalTokens: usageTotalTokens,
+                cachedTokens: usageCachedTokens,
+                reasoningTokens: usageReasoningTokens,
+              });
+
+              if (latestUsageTotal !== undefined) {
+                finalUsage.currentUsage = latestUsageTotal;
+                finalUsage.remainingCredits =
+                  creditLimit > 0
+                    ? Math.max(creditLimit - latestUsageTotal, 0)
+                    : undefined;
+              }
+            }
+
             await updateChatLastContextById({
               chatId: id,
               context: finalUsage,
@@ -279,4 +407,80 @@ export async function DELETE(request: Request) {
   const deletedChat = await deleteChatById({ id });
 
   return Response.json(deletedChat, { status: 200 });
+}
+
+type UsageMetrics = {
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  cachedTokens?: number;
+  reasoningTokens?: number;
+  costUSD?: number;
+};
+
+function extractUsageMetrics(usage: LanguageModelUsage | undefined): UsageMetrics {
+  if (!usage) {
+    return {};
+  }
+
+  const usageAny = usage as any;
+  const providerUsage =
+    usageAny?.openai?.usage ??
+    usageAny?.usage ??
+    usageAny?.openrouter ??
+    {};
+
+  const promptTokensRaw =
+    providerUsage.prompt_tokens ??
+    providerUsage.promptTokens ??
+    usage.inputTokens;
+  const completionTokensRaw =
+    providerUsage.completion_tokens ??
+    providerUsage.completionTokens ??
+    usage.outputTokens;
+  const totalTokensRaw =
+    providerUsage.total_tokens ??
+    providerUsage.totalTokens ??
+    usage.totalTokens ??
+    (typeof promptTokensRaw === 'number' &&
+    typeof completionTokensRaw === 'number'
+      ? promptTokensRaw + completionTokensRaw
+      : undefined);
+
+  const cachedTokensRaw =
+    providerUsage.prompt_tokens_details?.cached_tokens ??
+    providerUsage.cached_tokens ??
+    providerUsage.cachedTokens;
+
+  const reasoningTokensRaw =
+    providerUsage.completion_tokens_details?.reasoning_tokens ??
+    providerUsage.reasoning_tokens ??
+    providerUsage.reasoningTokens;
+
+  let costUSD: number | undefined = providerUsage.cost ?? providerUsage.total_cost;
+
+  if (costUSD === undefined && providerUsage.total_cost_usd !== undefined) {
+    costUSD = providerUsage.total_cost_usd;
+  }
+
+  if (
+    costUSD === undefined &&
+    providerUsage.total_cost_usd_cents !== undefined &&
+    Number.isFinite(providerUsage.total_cost_usd_cents)
+  ) {
+    costUSD = providerUsage.total_cost_usd_cents / 100;
+  }
+
+  return {
+    promptTokens:
+      typeof promptTokensRaw === 'number' ? promptTokensRaw : undefined,
+    completionTokens:
+      typeof completionTokensRaw === 'number' ? completionTokensRaw : undefined,
+    totalTokens: typeof totalTokensRaw === 'number' ? totalTokensRaw : undefined,
+    cachedTokens:
+      typeof cachedTokensRaw === 'number' ? cachedTokensRaw : undefined,
+    reasoningTokens:
+      typeof reasoningTokensRaw === 'number' ? reasoningTokensRaw : undefined,
+    costUSD: typeof costUSD === 'number' ? costUSD : undefined,
+  };
 }

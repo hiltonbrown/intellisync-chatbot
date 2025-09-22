@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
+import { entitlementsByUserType, getEntitlements } from '@/lib/ai/entitlements';
 import {
   DEFAULT_CHAT_MODEL,
   type ChatModel,
@@ -24,27 +24,43 @@ interface DefaultModelSelectorProps {
   selectorId?: string;
 }
 
-const allowedModelIds = new Set<string>([
+const defaultAllowedModels = new Set<string>([
   DEFAULT_CHAT_MODEL,
-  ...entitlementsByUserType.regular.availableChatModelIds,
+  ...entitlementsByUserType.free.availableChatModelIds,
 ]);
 
 const modelMetadata: Record<string, { name: string; description: string }> = {
+  'meta-llama/llama-3.2-3b-instruct': {
+    name: 'Llama 3.2 3B Instruct',
+    description: 'Meta’s 2025 lightweight instruct model tuned for fast helpful replies.',
+  },
+  'meta-llama/llama-3.3-8b-instruct:free': {
+    name: 'Llama 3.3 8B (Free)',
+    description: 'Free access to Meta’s larger Llama 3.3 assistant for richer answers.',
+  },
+  'mistralai/mistral-small-3.1-24b-instruct:free': {
+    name: 'Mistral Small 3.1 Instruct (Free)',
+    description: '24B Mixture-of-Experts model ideal for analytical and multilingual work.',
+  },
+  'deepseek/deepseek-chat-v3.1:free': {
+    name: 'DeepSeek V3.1 (Free)',
+    description: 'Hybrid reasoning chat model with long-context and agentic tooling.',
+  },
+  'deepseek/deepseek-r1-distill-llama-70b:free': {
+    name: 'DeepSeek R1 Distill Llama 70B (Free)',
+    description: 'Reasoning-focused 70B distillation that excels at STEM and coding tasks.',
+  },
+  'openai/gpt-4o-mini': {
+    name: 'GPT-4o mini',
+    description: 'OpenAI’s latest cost-efficient multimodal model for everyday assistants.',
+  },
   'google/gemini-2.5-flash': {
     name: 'Gemini 2.5 Flash',
-    description: 'Balanced default model tuned for fast, high-quality replies.',
+    description: 'Google’s flagship 2.5 release balancing speed, quality, and tool use.',
   },
-  'openai/gpt-oss-120b:free': {
-    name: 'GPT-OSS 120B',
-    description: 'OpenRouter community model built for broad general-purpose tasks.',
-  },
-  'meta-llama/llama-4-maverick:free': {
-    name: 'Llama 4 Maverick',
-    description: 'Meta’s flagship model offering creative and structured responses.',
-  },
-  'google/gemma-3-27b-it:free': {
-    name: 'Gemma 3 27B Instruct',
-    description: 'Google Gemma instruct model optimized for thoughtful reasoning.',
+  'qwen/qwen3-next-80b-a3b-instruct': {
+    name: 'Qwen3 Next 80B',
+    description: 'Alibaba’s Next-gen 80B model tuned for stable multi-turn automation.',
   },
 };
 
@@ -66,13 +82,24 @@ export function DefaultModelSelector({
       return overrides ? { ...model, ...overrides } : model;
     };
 
+    const userEntitlements = getEntitlements('free');
+    const allowedModelIds = new Set([
+      DEFAULT_CHAT_MODEL,
+      ...defaultAllowedModels,
+      ...userEntitlements.availableChatModelIds,
+    ]);
+
     for (const model of models) {
-      if (allowedModelIds.has(model.id) || model.id === initialModelId) {
+      const allowAll = allowedModelIds.has('*');
+      if (allowedModelIds.has(model.id) || allowAll || model.id === initialModelId) {
         mappedModels.set(model.id, withOverrides(model));
       }
     }
 
     for (const modelId of allowedModelIds) {
+      if (modelId === '*') {
+        continue;
+      }
       if (!mappedModels.has(modelId)) {
         const overrides = modelMetadata[modelId];
         mappedModels.set(modelId, {

@@ -31,7 +31,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     userId,
     user: {
       id: userId,
-      type: 'regular',
+      type: 'free',
     },
   };
 

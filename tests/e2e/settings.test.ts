@@ -11,21 +11,21 @@ test.describe('Settings', () => {
     await selectorTrigger.click();
 
     await page
-      .getByRole('option', { name: 'Gemma 3 27B Instruct' })
+      .getByRole('option', { name: 'Llama 3.3 8B (Free)' })
       .click();
 
-    await expect(selectorTrigger).toContainText('Gemma 3 27B Instruct');
+    await expect(selectorTrigger).toContainText('Llama 3.3 8B (Free)');
 
     await expect
       .poll(async () => {
         const cookies = await page.context().cookies(['http://localhost:3000']);
         return cookies.find((cookie) => cookie.name === 'chat-model')?.value;
       })
-      .toBe('google/gemma-3-27b-it:free');
+      .toBe('meta-llama/llama-3.3-8b-instruct:free');
 
     await page.goto('/');
     await expect(
-      page.getByRole('button', { name: /Gemma 3 27B Instruct/ }),
+      page.getByRole('button', { name: /Llama 3.3 8B \(Free\)/ }),
     ).toBeVisible();
   });
 });

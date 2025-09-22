@@ -24,7 +24,7 @@ export default async function Page() {
     userId,
     user: {
       id: userId,
-      type: 'regular', // All Clerk users are regular users
+      type: 'free',
     },
   };
 

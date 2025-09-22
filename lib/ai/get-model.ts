@@ -1,9 +1,9 @@
-import { openrouter } from './models';
+import { DEFAULT_CHAT_MODEL, openrouter } from './models';
 import type { LanguageModel } from 'ai';
 
 export function getModel(modelId?: string): LanguageModel {
   const selectedModel =
-    modelId || process.env.OPENROUTER_MODEL || 'google/gemini-2.5-flash';
+    modelId || process.env.OPENROUTER_MODEL || DEFAULT_CHAT_MODEL;
 
   if (!selectedModel) {
     throw new Error(

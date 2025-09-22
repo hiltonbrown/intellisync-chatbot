@@ -1,26 +1,46 @@
-export type UserType = 'regular';
-
 import type { ChatModel } from './models';
+import { DEFAULT_CHAT_MODEL } from './models';
 
-interface Entitlements {
+export type UserType = 'free' | 'pro' | 'enterprise';
+
+export interface Entitlements {
   maxMessagesPerDay: number;
+  creditLimit: number;
   availableChatModelIds: Array<ChatModel['id']>;
 }
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
-  /*
-   * For users with an account
-   */
-  regular: {
-    maxMessagesPerDay: 100,
+  free: {
+    maxMessagesPerDay: 50,
+    creditLimit: 100,
     availableChatModelIds: [
-      'openai/gpt-oss-120b:free',
-      'meta-llama/llama-4-maverick:free',
-      'google/gemma-3-27b-it:free',
+      DEFAULT_CHAT_MODEL,
+      'meta-llama/llama-3.3-8b-instruct:free',
+      'mistralai/mistral-small-3.1-24b-instruct:free',
+      'deepseek/deepseek-chat-v3.1:free',
     ],
   },
+  pro: {
+    maxMessagesPerDay: 500,
+    creditLimit: 5000,
+    availableChatModelIds: [
+      'openai/gpt-4o-mini',
+      'google/gemini-2.5-flash',
+      'deepseek/deepseek-r1-distill-llama-70b:free',
+      'qwen/qwen3-next-80b-a3b-instruct',
+      DEFAULT_CHAT_MODEL,
+      'meta-llama/llama-3.3-8b-instruct:free',
+      'mistralai/mistral-small-3.1-24b-instruct:free',
+      'deepseek/deepseek-chat-v3.1:free',
+    ],
+  },
+  enterprise: {
+    maxMessagesPerDay: -1,
+    creditLimit: 50000,
+    availableChatModelIds: ['*'],
+  },
+};
 
-  /*
-   * TODO: For users with an account and a paid membership
-   */
+export const getEntitlements = (userType: UserType): Entitlements => {
+  return entitlementsByUserType[userType] ?? entitlementsByUserType.free;
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import type { LanguageModelUsage, UIMessage } from 'ai';
+import type { UIMessage } from 'ai';
 import {
   useRef,
   useEffect,
@@ -42,7 +42,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
-import type { Attachment, ChatMessage } from '@/lib/types';
+import type { Attachment, ChatMessage, UsageWithCost } from '@/lib/types';
 import { getStaticModels, type ChatModel } from '@/lib/ai/models';
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { startTransition } from 'react';
@@ -82,7 +82,7 @@ function PureMultimodalInput({
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
   onModelChange?: (modelId: string) => void;
-  usage?: LanguageModelUsage;
+  usage?: UsageWithCost;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();

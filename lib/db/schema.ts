@@ -10,6 +10,7 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  integer,
 } from 'drizzle-orm/pg-core';
 import type { LanguageModelV2Usage } from '@ai-sdk/provider';
 
@@ -17,9 +18,51 @@ export const user = pgTable('User', {
   id: varchar('id', { length: 255 }).primaryKey().notNull(),
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
+  userType: varchar('userType', {
+    length: 32,
+    enum: ['free', 'pro', 'enterprise'],
+  })
+    .notNull()
+    .default('free'),
+  openrouterKeyHash: varchar('openrouterKeyHash', { length: 255 }),
+  openrouterKeyReference: varchar('openrouterKeyReference', { length: 255 }),
+  encryptedApiKey: varchar('encryptedApiKey', { length: 1024 }),
+  keyCreatedAt: timestamp('keyCreatedAt'),
+  keyLastRotated: timestamp('keyLastRotated'),
+  creditLimit: integer('creditLimit').default(0),
+  currentUsage: integer('currentUsage').default(0),
+  keyStatus: varchar('keyStatus', {
+    length: 16,
+    enum: ['active', 'disabled', 'revoked', 'pending'],
+  })
+    .notNull()
+    .default('pending'),
 });
 
 export type User = InferSelectModel<typeof user>;
+
+export const openrouterKeyAudit = pgTable('OpenRouterKeyAudit', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  userId: varchar('userId', { length: 255 })
+    .notNull()
+    .references(() => user.id),
+  action: varchar('action', {
+    length: 16,
+    enum: [
+      'created',
+      'rotated',
+      'limit_updated',
+      'disabled',
+      'deleted',
+      'usage_logged',
+    ],
+  }).notNull(),
+  keyHash: varchar('keyHash', { length: 255 }),
+  metadata: jsonb('metadata'),
+  occurredAt: timestamp('occurredAt').notNull().defaultNow(),
+});
+
+export type OpenRouterKeyAudit = InferSelectModel<typeof openrouterKeyAudit>;
 
 export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),

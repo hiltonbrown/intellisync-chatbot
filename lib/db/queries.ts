@@ -27,19 +27,33 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  openrouterKeyAudit,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { ChatSDKError } from '../errors';
 import { generateUUID } from '../utils';
 import type { LanguageModelV2Usage } from '@ai-sdk/provider';
+import type { UsageWithCost } from '@/lib/types';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
 // https://authjs.dev/reference/adapter/drizzle
 
-// biome-ignore lint: Forbidden non-null assertion.
-const client = postgres(process.env.POSTGRES_URL!, {
+const globalForDb = globalThis as unknown as {
+  __postgresClient?: ReturnType<typeof postgres>;
+};
+
+const getPostgresClient = () => {
+  if (globalForDb.__postgresClient) {
+    return globalForDb.__postgresClient;
+  }
+
+  if (!process.env.POSTGRES_URL) {
+    throw new Error('POSTGRES_URL environment variable is not set');
+  }
+
+  const client = postgres(process.env.POSTGRES_URL, {
   // Optimized for serverless environments
   connect_timeout: 10,
   // Shorter idle timeout for serverless (2 minutes)
@@ -50,7 +64,16 @@ const client = postgres(process.env.POSTGRES_URL!, {
   max: 3,
   // Enable logging notices in development only
   onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
-});
+  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    globalForDb.__postgresClient = client;
+  }
+
+  return client;
+};
+
+const client = getPostgresClient();
 const db = drizzle(client);
 
 export async function getUser(email: string): Promise<Array<User>> {
@@ -488,7 +511,7 @@ export async function updateChatLastContextById({
 }: {
   chatId: string;
   // Store raw LanguageModelUsage to keep it simple
-  context: LanguageModelV2Usage;
+  context: LanguageModelV2Usage | UsageWithCost;
 }) {
   try {
     return await db
@@ -532,6 +555,144 @@ export async function getMessageCountByUserId({
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get message count by user id',
+    );
+  }
+}
+
+export async function updateUserOpenRouterKeyDetails({
+  userId,
+  keyHash,
+  keyReference,
+  encryptedApiKey,
+  keyStatus,
+  keyCreatedAt,
+  keyLastRotated,
+  creditLimit,
+  currentUsage,
+  userType,
+}: {
+  userId: string;
+  keyHash?: string | null;
+  keyReference?: string | null;
+  encryptedApiKey?: string | null;
+  keyStatus?: User['keyStatus'];
+  keyCreatedAt?: Date | null;
+  keyLastRotated?: Date | null;
+  creditLimit?: number;
+  currentUsage?: number;
+  userType?: User['userType'];
+}) {
+  const updateData: Partial<User> = {};
+
+  if (keyHash !== undefined) {
+    updateData.openrouterKeyHash = keyHash ?? null;
+  }
+
+  if (keyReference !== undefined) {
+    updateData.openrouterKeyReference = keyReference ?? null;
+  }
+
+  if (encryptedApiKey !== undefined) {
+    updateData.encryptedApiKey = encryptedApiKey ?? null;
+  }
+
+  if (keyStatus !== undefined) {
+    updateData.keyStatus = keyStatus;
+  }
+
+  if (keyCreatedAt !== undefined) {
+    updateData.keyCreatedAt = keyCreatedAt ?? null;
+  }
+
+  if (keyLastRotated !== undefined) {
+    updateData.keyLastRotated = keyLastRotated ?? null;
+  }
+
+  if (creditLimit !== undefined) {
+    updateData.creditLimit = creditLimit;
+  }
+
+  if (currentUsage !== undefined) {
+    updateData.currentUsage = currentUsage;
+  }
+
+  if (userType !== undefined) {
+    updateData.userType = userType;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return;
+  }
+
+  try {
+    await db.update(user).set(updateData).where(eq(user.id, userId));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update user OpenRouter key details',
+    );
+  }
+}
+
+export async function recordOpenRouterKeyAudit({
+  userId,
+  action,
+  keyHash,
+  metadata,
+}: {
+  userId: string;
+  action:
+    | 'created'
+    | 'rotated'
+    | 'limit_updated'
+    | 'disabled'
+    | 'deleted'
+    | 'usage_logged';
+  keyHash?: string | null;
+  metadata?: Record<string, unknown> | null;
+}) {
+  try {
+    await db.insert(openrouterKeyAudit).values({
+      userId,
+      action,
+      keyHash: keyHash ?? null,
+      metadata: metadata ?? null,
+    });
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to record OpenRouter key audit entry',
+    );
+  }
+}
+
+export async function incrementUserOpenRouterUsage({
+  userId,
+  delta,
+}: {
+  userId: string;
+  delta: number;
+}): Promise<number> {
+  try {
+    const [existing] = await db
+      .select({ currentUsage: user.currentUsage })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    const currentUsage = existing?.currentUsage ?? 0;
+    const nextUsage = currentUsage + delta;
+
+    await db
+      .update(user)
+      .set({ currentUsage: nextUsage })
+      .where(eq(user.id, userId));
+
+    return nextUsage;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to increment user OpenRouter usage',
     );
   }
 }

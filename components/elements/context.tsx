@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { ComponentProps } from 'react';
-import type { LanguageModelUsage } from 'ai';
+import type { UsageWithCost } from '@/lib/types';
 import { breakdownTokens, estimateCost, normalizeUsage } from 'tokenlens';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
@@ -18,7 +18,7 @@ export type ContextProps = ComponentProps<'button'> & {
   /** Tokens used so far */
   usedTokens: number;
   /** Optional full usage payload to enable breakdown view */
-  usage?: LanguageModelUsage | undefined;
+  usage?: UsageWithCost | undefined;
   /** Optional model id (canonical or alias) to compute cost */
   modelId?: string;
 };
@@ -83,6 +83,11 @@ const formatUSD = (value?: number) => {
 const formatUSDFixed = (value?: number, decimals = 5) => {
   if (value === undefined || !Number.isFinite(value)) return undefined;
   return `$${Number(value).toFixed(decimals)}`;
+};
+
+const formatCreditsUSD = (value?: number) => {
+  if (value === undefined) return undefined;
+  return formatUSD(value / 100);
 };
 
 type ContextIconProps = {
@@ -265,10 +270,16 @@ export const Context = ({
         usage: { input: displayInput ?? 0, output: displayOutput ?? 0 },
       }).totalUSD
     : undefined;
-  const costText = formatUSDFixed(costUSD);
+  const providerCostText = usage?.cost !== undefined ? formatUSD(usage.cost) : undefined;
+  const costText = providerCostText ?? formatUSDFixed(costUSD);
 
-  const fmtOrUnknown = (n?: number) =>
-    n === undefined ? '—' : formatTokens(n);
+  const remainingCreditsValue =
+    usage?.remainingCredits ??
+    (usage?.creditLimit !== undefined && usage?.currentUsage !== undefined
+      ? Math.max(usage.creditLimit - usage.currentUsage, 0)
+      : undefined);
+  const creditLimitText = formatCreditsUSD(usage?.creditLimit);
+  const remainingCreditsText = formatCreditsUSD(remainingCreditsValue);
 
   return (
     <DropdownMenu>
@@ -339,6 +350,22 @@ export const Context = ({
                   <span>{costText}</span>
                 </div>
               </>
+            )}
+            {(creditLimitText || remainingCreditsText) && (
+              <div className="flex flex-col gap-1 pt-1 text-xs">
+                {creditLimitText && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Credit limit</span>
+                    <span>{creditLimitText}</span>
+                  </div>
+                )}
+                {remainingCreditsText && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Remaining</span>
+                    <span>{remainingCreditsText}</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

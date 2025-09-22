@@ -1,6 +1,6 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
-export const DEFAULT_CHAT_MODEL: string = 'google/gemini-2.5-flash';
+export const DEFAULT_CHAT_MODEL: string = 'meta-llama/llama-3.2-3b-instruct';
 
 // Debug logging for OpenRouter configuration
 console.log('OpenRouter: API key present:', !!process.env.OPENROUTER_API_KEY);
@@ -28,41 +28,55 @@ let lastFetchTime: number | null = null;
 
 // Fetch and cache models from OpenRouter API
 async function fetchAndCacheModels(): Promise<ChatModel[]> {
- const now = Date.now();
- // Cache for 1 hour
- if (cachedModels && lastFetchTime && now - lastFetchTime < 3600000) {
- return cachedModels;
- }
+  const now = Date.now();
+  // Cache for 1 hour
+  if (cachedModels && lastFetchTime && now - lastFetchTime < 3600000) {
+    return cachedModels;
+  }
 
- try {
- const response = await fetch('https://openrouter.ai/api/v1/models');
- if (!response.ok) {
- throw new Error('Failed to fetch models from OpenRouter API');
- }
- const { data } = await response.json();
- cachedModels = data.map((model: any) => ({
- id: model.id,
- name: model.name,
- description: model.description,
- }));
- lastFetchTime = now;
- return cachedModels || [];
- } catch (error) {
- console.error('Error fetching or caching models:', error);
- // Return a default list if fetch fails
- return [
- {
- id: 'google/gemini-2.5-flash',
- name: 'Gemini 2.5 Flash',
- description: 'Default fallback model',
- },
- {
- id: 'openai/gpt-4o-mini',
- name: 'GPT-4o Mini',
- description: 'OpenAI fallback model',
- },
- ];
- }
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: process.env.OPENROUTER_API_KEY
+        ? { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` }
+        : undefined,
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch models from OpenRouter API');
+    }
+    const { data } = await response.json();
+    cachedModels = data.map((model: any) => ({
+      id: model.id,
+      name: model.name,
+      description: model.description,
+    }));
+    lastFetchTime = now;
+    return cachedModels || [];
+  } catch (error) {
+    console.error('Error fetching or caching models:', error);
+    // Return a default list if fetch fails
+    return [
+      {
+        id: DEFAULT_CHAT_MODEL,
+        name: 'Llama 3.2 3B Instruct',
+        description: 'Meta’s latest fast instruct-tuned model.',
+      },
+      {
+        id: 'deepseek/deepseek-chat-v3.1:free',
+        name: 'DeepSeek V3.1 (Free)',
+        description: 'Hybrid reasoning model with long-context support.',
+      },
+      {
+        id: 'google/gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        description: 'Google’s balanced flagship chat model.',
+      },
+      {
+        id: 'openai/gpt-4o-mini',
+        name: 'GPT-4o Mini',
+        description: 'OpenAI’s cost-efficient frontier model.',
+      },
+    ];
+  }
 }
 
 export const getStaticModels = async (): Promise<ChatModel[]> => {

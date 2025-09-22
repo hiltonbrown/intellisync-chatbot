@@ -4,6 +4,7 @@ import type { createDocument } from './ai/tools/create-document';
 import type { updateDocument } from './ai/tools/update-document';
 import type { requestSuggestions } from './ai/tools/request-suggestions';
 import type { InferUITool, LanguageModelUsage, UIMessage } from 'ai';
+import type { UserType } from '@/lib/ai/entitlements';
 
 import type { ArtifactKind } from '@/components/artifact';
 import type { Suggestion } from './db/schema';
@@ -62,7 +63,23 @@ export interface ClerkSession {
   userId: string;
   user?: {
     id: string;
-    type?: 'regular';
+    type?: UserType;
+    creditLimit?: number;
+    currentUsage?: number;
   };
   expires?: string;
+}
+
+export interface UsageWithCost extends LanguageModelUsage {
+  provider?: 'openrouter';
+  cost?: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  cachedTokens?: number;
+  reasoningTokens?: number;
+  currency?: string;
+  creditLimit?: number;
+  currentUsage?: number;
+  remainingCredits?: number;
 }
