@@ -82,7 +82,7 @@ const isPhaseTwoReport = (value: unknown): value is PhaseTwoReport =>
 
 const createStepKey = (step: PhaseOneStep) =>
   [step.title, step.action, step.importance]
-    .filter((part): part is string => Boolean(part))
+    .filter((part): part is string => part != null)
     .join('|');
 
 const PhaseOneGuidanceView = ({
