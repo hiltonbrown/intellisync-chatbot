@@ -76,6 +76,7 @@ function normaliseFieldValue(
     case 'checkbox':
       return Boolean(value);
     case 'select':
+      return value ?? '';
     case 'text':
     case 'textarea':
       if (field.inputType === 'number') {
