@@ -103,15 +103,17 @@ export function normaliseFieldValue(
     }
 
     case "select": {
-      if (
-        rawValue === "" ||
-        rawValue === undefined ||
-        rawValue === null
-      ) {
+      if (rawValue === undefined || rawValue === null) {
         return undefined;
       }
 
-      return coerceToString(rawValue);
+      const coerced = coerceToString(rawValue);
+
+      if (coerced.length === 0) {
+        return undefined;
+      }
+
+      return coerced;
     }
 
     case "text":
