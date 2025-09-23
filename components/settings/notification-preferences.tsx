@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bell, Monitor, MessageSquare, Clock } from 'lucide-react';
 
 import {
@@ -35,6 +35,20 @@ export function NotificationPreferencesComponent({
       end: '08:00',
     },
   });
+
+  useEffect(() => {
+    setPreferences({
+      emailNotifications: initialPreferences?.emailNotifications ?? true,
+      browserNotifications: initialPreferences?.browserNotifications ?? true,
+      mentionNotifications: initialPreferences?.mentionNotifications ?? true,
+      systemUpdates: initialPreferences?.systemUpdates ?? false,
+      quietHours: initialPreferences?.quietHours ?? {
+        enabled: false,
+        start: '22:00',
+        end: '08:00',
+      },
+    });
+  }, [initialPreferences]);
 
   const handlePreferenceChange = (
     key: keyof NotificationPreferences,

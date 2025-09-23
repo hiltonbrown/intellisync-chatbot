@@ -13,6 +13,7 @@ import {
   integer,
 } from 'drizzle-orm/pg-core';
 import type { LanguageModelV2Usage } from '@ai-sdk/provider';
+import type { SerializedUserPreferences } from '@/lib/types/preferences';
 
 export const user = pgTable('User', {
   id: varchar('id', { length: 255 }).primaryKey().notNull(),
@@ -41,6 +42,22 @@ export const user = pgTable('User', {
 
 export type User = InferSelectModel<typeof user>;
 
+export const userPreferences = pgTable(
+  'UserPreferences',
+  {
+    userId: varchar('userId', { length: 255 })
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    data: jsonb('data').$type<SerializedUserPreferences>().notNull(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId] }),
+  }),
+);
+
+export type UserPreferencesRow = InferSelectModel<typeof userPreferences>;
+
 export const openrouterKeyAudit = pgTable('OpenRouterKeyAudit', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   userId: varchar('userId', { length: 255 })
@@ -63,6 +80,32 @@ export const openrouterKeyAudit = pgTable('OpenRouterKeyAudit', {
 });
 
 export type OpenRouterKeyAudit = InferSelectModel<typeof openrouterKeyAudit>;
+
+export const accountingIntegration = pgTable(
+  'AccountingIntegration',
+  {
+    userId: varchar('userId', { length: 255 }).notNull(),
+    provider: varchar('provider', { length: 64 }).notNull(),
+    status: varchar('status', {
+      length: 32,
+      enum: ['disconnected', 'connecting', 'connected', 'syncing', 'error'],
+    })
+      .notNull()
+      .default('disconnected'),
+    connectedAt: timestamp('connectedAt'),
+    lastSyncedAt: timestamp('lastSyncedAt'),
+    tokens: jsonb('tokens')
+      .$type<Record<string, unknown> | null>()
+      .default(null),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.provider] }),
+  }),
+);
+
+export type AccountingIntegration = InferSelectModel<typeof accountingIntegration>;
 
 export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),

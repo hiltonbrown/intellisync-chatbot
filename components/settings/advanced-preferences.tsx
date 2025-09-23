@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Settings, Cpu, Database, Code, Zap } from 'lucide-react';
 
 import {
@@ -14,23 +14,39 @@ import { Switch } from '@/src/ui/components/Switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup } from '@/src/ui/components/RadioGroup';
+import type { AdvancedPreferences } from '@/lib/types/preferences';
 
 interface AdvancedPreferencesProps {
-  onPreferencesChange?: (preferences: any) => void;
+  initialPreferences?: Partial<AdvancedPreferences>;
+  onPreferencesChange?: (preferences: AdvancedPreferences) => void;
 }
 
 export function AdvancedPreferencesComponent({
+  initialPreferences,
   onPreferencesChange,
 }: AdvancedPreferencesProps) {
-  const [preferences, setPreferences] = useState({
-    debugMode: false,
-    performanceMode: 'balanced',
-    cachingEnabled: true,
-    apiAccess: false,
-    experimentalFeatures: false,
+  const [preferences, setPreferences] = useState<AdvancedPreferences>({
+    debugMode: initialPreferences?.debugMode ?? false,
+    performanceMode: initialPreferences?.performanceMode ?? 'balanced',
+    cachingEnabled: initialPreferences?.cachingEnabled ?? true,
+    apiAccess: initialPreferences?.apiAccess ?? false,
+    experimentalFeatures: initialPreferences?.experimentalFeatures ?? false,
   });
 
-  const handlePreferenceChange = (key: string, value: any) => {
+  useEffect(() => {
+    setPreferences({
+      debugMode: initialPreferences?.debugMode ?? false,
+      performanceMode: initialPreferences?.performanceMode ?? 'balanced',
+      cachingEnabled: initialPreferences?.cachingEnabled ?? true,
+      apiAccess: initialPreferences?.apiAccess ?? false,
+      experimentalFeatures: initialPreferences?.experimentalFeatures ?? false,
+    });
+  }, [initialPreferences]);
+
+  const handlePreferenceChange = <K extends keyof AdvancedPreferences>(
+    key: K,
+    value: AdvancedPreferences[K],
+  ) => {
     const newPreferences = { ...preferences, [key]: value };
     setPreferences(newPreferences);
     onPreferencesChange?.(newPreferences);
