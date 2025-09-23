@@ -24,6 +24,7 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { EmailFraudAnalysisResult } from './email-fraud-analysis-result';
 
 const PurePreviewMessage = ({
   chatId,
@@ -188,6 +189,43 @@ const PurePreviewMessage = ({
                       <ToolOutput
                         output={<Weather weatherAtLocation={part.output} />}
                         errorText={undefined}
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if (type === 'tool-analyzeEmailFraud') {
+              const { toolCallId, state } = part;
+
+              return (
+                <Tool key={toolCallId} defaultOpen={true}>
+                  <ToolHeader type={type} state={state} />
+                  <ToolContent>
+                    {state === 'input-available' && (
+                      <ToolInput input={part.input} />
+                    )}
+                    {state === 'output-available' && (
+                      <ToolOutput
+                        output={
+                          part.output &&
+                          typeof part.output === 'object' &&
+                          'error' in part.output ? (
+                            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-destructive">
+                              Error: {String(part.output.error)}
+                            </div>
+                          ) : (
+                            <EmailFraudAnalysisResult result={part.output} />
+                          )
+                        }
+                        errorText={undefined}
+                      />
+                    )}
+                    {state === 'output-error' && (
+                      <ToolOutput
+                        output={null}
+                        errorText={part.errorText}
                       />
                     )}
                   </ToolContent>
