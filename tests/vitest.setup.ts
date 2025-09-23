@@ -14,4 +14,3 @@ if (!('ResizeObserver' in globalThis)) {
   globalThis.ResizeObserver = ResizeObserverMock;
 }
 
-globalThis.ResizeObserver = globalThis.ResizeObserver ?? ResizeObserverMock;
