@@ -14,7 +14,11 @@ TypeScript and React components should use 2-space indentation and stay strongly
 
 ## Testing Guidelines
 
-Playwright drives integration coverage, with specs living in `tests/e2e` and named `*.spec.ts`. Keep fixtures reusable via `tests/fixtures.ts`, and prefer data from `tests/prompts/` or `tests/routes/` over inline literals. When adding user flows, record expected UI states or screenshots in the generated Playwright report, and rerun `pnpm test` locally to confirm stability before pushing.
+Playwright drives integration coverage, with specs living in `tests/e2e` and named `*.spec.ts`. Keep fixtures reusable via `tests/fixtures.ts`, and prefer data from `tests/prompts/` or `tests/routes/` over inline literals. When adding user flows, record expected UI states or screenshots in the generated Playwright report, and rerun `pnpm test` locally to confirm stability before pushing. Run unit tests with `pnpm test:unit`, which uses Vitest for component and utility testing.
+
+## Accounting Integrations
+
+The application supports integrations with accounting platforms to sync financial data. Currently supported providers include QuickBooks Online, Xero, and FreshBooks (coming soon). Integrations use OAuth 2.0 for secure connections and support syncing invoices, bills, expenses, and other financial records. Integration status and management is available through the settings panel, with data stored in the `AccountingIntegration` table.
 
 ## Commit & Pull Request Guidelines
 
@@ -37,3 +41,7 @@ Copy `.env.example` to `.env.local` and fill credentials for the AI gateway, dat
 - Modified FloatingModelSelector component to fetch models from the API endpoint, enabling dynamic model updates without code changes.
 - Standardized AI tools system with `ToolContext` interface providing chat ID, selected model, and provider client to all tools for consistent context passing.
 - Implemented email fraud analysis tool (`lib/ai/tools/analyze-email-fraud.ts`) with step-by-step user guidance and AI-powered risk assessment using the selected model.
+- Added accounting integrations for QuickBooks Online, Xero, and FreshBooks (coming soon) with OAuth-based connections and data syncing capabilities (`lib/services/integrations/`, `app/(chat)/api/integrations/`, `AccountingIntegration` table).
+- Implemented additional AI tools: create-document (`lib/ai/tools/create-document.ts`), get-weather (`lib/ai/tools/get-weather.ts`), request-suggestions (`lib/ai/tools/request-suggestions.ts`), and update-document (`lib/ai/tools/update-document.ts`).
+- Introduced unit testing with Vitest via `pnpm test:unit` for component and utility testing.
+- Added new settings pages for billing/usage tracking (`app/(chat)/settings/billing-usage/`) and integration management (`app/(chat)/settings/integration-settings/`).
