@@ -86,8 +86,8 @@ function createMemoryRepository(): IntegrationRepository {
     lastSyncedAt: integration.lastSyncedAt
       ? new Date(integration.lastSyncedAt)
       : null,
-    createdAt: integration.createdAt ? new Date(integration.createdAt) : null,
-    updatedAt: integration.updatedAt ? new Date(integration.updatedAt) : null,
+    createdAt: integration.createdAt ? new Date(integration.createdAt) : new Date(),
+    updatedAt: integration.updatedAt ? new Date(integration.updatedAt) : new Date(),
   });
 
   return {

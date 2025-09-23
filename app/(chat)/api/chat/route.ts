@@ -31,8 +31,6 @@ import { geolocation } from '@vercel/functions';
 import { getStreamContext } from '@/lib/ai/stream-context';
 import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage, ClerkSession, UsageWithCost } from '@/lib/types';
-import type { ChatModel } from '@/lib/ai/models';
-import type { VisibilityType } from '@/components/visibility-selector';
 import { OpenRouterKeyService } from '@/lib/services/openrouter-keys';
 import { isProductionEnvironment, isTestEnvironment } from '@/lib/constants';
 
@@ -57,11 +55,6 @@ export async function POST(request: Request) {
       message,
       selectedChatModel,
       selectedVisibilityType,
-    }: {
-      id: string;
-      message: ChatMessage;
-      selectedChatModel: ChatModel['id'];
-      selectedVisibilityType: VisibilityType;
     } = requestBody;
 
     console.log(
@@ -154,7 +147,7 @@ export async function POST(request: Request) {
 
     if (!chat) {
       const title = await generateTitleFromUserMessage({
-        message,
+        message: message as ChatMessage,
       });
 
       await saveChat({
@@ -182,7 +175,7 @@ export async function POST(request: Request) {
     };
 
     const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+    const uiMessages = [...convertToUIMessages(messagesFromDb), message as ChatMessage];
     const languageModel = providerClient.languageModel(selectedChatModel);
     const effectiveCreditLimit = creditLimit > 0 ? creditLimit : undefined;
 

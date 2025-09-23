@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Bell, Bot, CreditCard, SlidersHorizontal, UserRound } from 'lucide-react';
 
-import { SettingsNavigation } from './_components/settings-navigation';
+import { SettingsNavigation, type SettingsNavigationItem } from './_components/settings-navigation';
 import { SettingsMenu } from '@/src/ui/components/SettingsMenu';
 
 const NAVIGATION_ITEMS = [
@@ -30,7 +30,7 @@ const NAVIGATION_ITEMS = [
     label: 'Integrations',
     icon: SlidersHorizontal,
   },
-] as const;
+] satisfies SettingsNavigationItem[];
 
 export default function SettingsLayout({
   children,

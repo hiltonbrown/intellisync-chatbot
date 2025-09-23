@@ -6,7 +6,7 @@ import type { LucideIcon } from 'lucide-react';
 
 import { SettingsMenu } from '@/src/ui/components/SettingsMenu';
 
-interface SettingsNavigationItem {
+export interface SettingsNavigationItem {
   href: string;
   label: string;
   icon: LucideIcon;

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import type { ComponentProps, ReactNode } from 'react';
 import { DataStreamProvider } from '../data-stream-provider';
 import { PreviewMessage } from '../message';
@@ -109,6 +110,7 @@ const createPhaseOneOutput = (): AnalyzeEmailFraudOutput => ({
     {
       title: 'Validate the sender domain',
       checks: ['Compare the sender email domain with the official domain.'],
+      action: 'Check the sender email domain',
       importance: 'HIGH',
     },
   ],
@@ -165,7 +167,7 @@ const createOutputErrorPart = (): AnalyzeEmailFraudOutputErrorPart => ({
   toolCallId: 'call-output-error',
   state: 'output-available',
   input: baseInput,
-  output: { error: 'Analysis failed to complete.' },
+  output: { error: 'Analysis failed to complete.' } as any,
 });
 
 const createErrorPart = (): AnalyzeEmailFraudErrorPart => ({

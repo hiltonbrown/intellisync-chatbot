@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/components/toast', () => ({
@@ -19,7 +20,6 @@ let fetchMock: ReturnType<typeof vi.fn>;
 describe('PreferencesManager', () => {
   beforeEach(() => {
     fetchMock = vi.fn();
-    // @ts-expect-error - assigning test double
     global.fetch = fetchMock;
   });
 

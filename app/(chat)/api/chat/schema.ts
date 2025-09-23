@@ -15,7 +15,9 @@ const filePartSchema = z.object({
 const toolInvocationSchema = z.object({
   type: z
     .string()
-    .regex(/^tool-/)
+    .refine((value) => value.startsWith('tool-'), {
+      message: 'Tool type must start with "tool-"',
+    })
     .describe('Tool invocation payload identifier'),
   toolCallId: z.string().uuid(),
   state: z.literal('input-available'),

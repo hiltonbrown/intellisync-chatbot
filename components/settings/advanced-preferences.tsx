@@ -128,7 +128,7 @@ export function AdvancedPreferencesComponent({
             <RadioGroup
               value={preferences.performanceMode}
               onValueChange={(value) =>
-                handlePreferenceChange('performanceMode', value)
+                handlePreferenceChange('performanceMode', value as 'power-saver' | 'balanced' | 'high-performance')
               }
               className="flex flex-col gap-3"
             >
