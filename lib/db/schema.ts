@@ -64,6 +64,32 @@ export const openrouterKeyAudit = pgTable('OpenRouterKeyAudit', {
 
 export type OpenRouterKeyAudit = InferSelectModel<typeof openrouterKeyAudit>;
 
+export const accountingIntegration = pgTable(
+  'AccountingIntegration',
+  {
+    userId: varchar('userId', { length: 255 }).notNull(),
+    provider: varchar('provider', { length: 64 }).notNull(),
+    status: varchar('status', {
+      length: 32,
+      enum: ['disconnected', 'connecting', 'connected', 'syncing', 'error'],
+    })
+      .notNull()
+      .default('disconnected'),
+    connectedAt: timestamp('connectedAt'),
+    lastSyncedAt: timestamp('lastSyncedAt'),
+    tokens: jsonb('tokens')
+      .$type<Record<string, unknown> | null>()
+      .default(null),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.provider] }),
+  }),
+);
+
+export type AccountingIntegration = InferSelectModel<typeof accountingIntegration>;
+
 export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
   createdAt: timestamp('createdAt').notNull(),
