@@ -9,13 +9,28 @@ import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { convertToUIMessages } from '@/lib/utils';
 import type { ClerkSession } from '@/lib/types';
+import { ChatSDKError } from '@/lib/errors';
+
+type ChatResult = Awaited<ReturnType<typeof getChatById>>;
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
-  const chat = await getChatById({ id });
+  let databaseAvailable = true;
+  let chat: ChatResult = null;
 
-  if (!chat) {
+  try {
+    chat = await getChatById({ id });
+  } catch (error) {
+    if (error instanceof ChatSDKError && error.surface === 'database') {
+      databaseAvailable = false;
+      chat = null;
+    } else {
+      throw error;
+    }
+  }
+
+  if (databaseAvailable && !chat) {
     notFound();
   }
 
@@ -35,7 +50,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     },
   };
 
-  if (chat.visibility === 'private') {
+  if (chat && chat.visibility === 'private') {
     if (!user) {
       return notFound();
     }
@@ -45,11 +60,15 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     }
   }
 
-  const messagesFromDb = await getMessagesByChatId({
-    id,
-  });
+  let uiMessages: ReturnType<typeof convertToUIMessages> = [];
 
-  const uiMessages = convertToUIMessages(messagesFromDb);
+  if (chat && databaseAvailable) {
+    const messagesFromDb = await getMessagesByChatId({
+      id,
+    });
+
+    uiMessages = convertToUIMessages(messagesFromDb);
+  }
 
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get('chat-model');
@@ -59,14 +78,14 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       <>
         <FloatingThemeToggle />
         <Chat
-          id={chat.id}
+          id={chat?.id ?? id}
           initialMessages={uiMessages}
           initialChatModel={DEFAULT_CHAT_MODEL}
-          initialVisibilityType={chat.visibility}
-          isReadonly={user?.id !== chat.userId}
+          initialVisibilityType={chat?.visibility ?? 'private'}
+          isReadonly={chat ? user?.id !== chat.userId : false}
           session={session}
           autoResume={true}
-          initialLastContext={chat.lastContext ?? undefined}
+          initialLastContext={chat?.lastContext ?? undefined}
         />
         <DataStreamHandler />
       </>
@@ -77,14 +96,14 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     <>
       <FloatingThemeToggle />
       <Chat
-        id={chat.id}
+        id={chat?.id ?? id}
         initialMessages={uiMessages}
         initialChatModel={chatModelFromCookie.value}
-        initialVisibilityType={chat.visibility}
-        isReadonly={user?.id !== chat.userId}
+        initialVisibilityType={chat?.visibility ?? 'private'}
+        isReadonly={chat ? user?.id !== chat.userId : false}
         session={session}
         autoResume={true}
-        initialLastContext={chat.lastContext ?? undefined}
+        initialLastContext={chat?.lastContext ?? undefined}
       />
       <DataStreamHandler />
     </>

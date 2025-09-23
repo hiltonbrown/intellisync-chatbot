@@ -57,10 +57,24 @@ export async function GET(
     return new ChatSDKError('forbidden:chat').toResponse();
   }
 
-  const streamIds = await getStreamIdsByChatId({ chatId });
+  let streamIds: Array<string> = [];
+
+  try {
+    streamIds = await getStreamIdsByChatId({ chatId });
+  } catch (error) {
+    console.warn(
+      'Stream API: Unable to load stream ids for chat; returning empty response',
+      {
+        chatId,
+        error,
+      },
+    );
+
+    return new Response(null, { status: 204 });
+  }
 
   if (!streamIds.length) {
-    return new ChatSDKError('not_found:stream').toResponse();
+    return new Response(null, { status: 204 });
   }
 
   const recentStreamId = streamIds.at(-1);

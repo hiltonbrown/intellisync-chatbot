@@ -36,6 +36,12 @@ import { isProductionEnvironment, isTestEnvironment } from '@/lib/constants';
 
 export const maxDuration = 60;
 
+type UserRecord = Awaited<ReturnType<typeof getUserById>> extends Array<
+  infer Item
+>
+  ? Item
+  : never;
+
 export async function POST(request: Request) {
   console.log('Chat API: Received POST request');
   let requestBody: PostRequestBody;
@@ -63,6 +69,18 @@ export async function POST(request: Request) {
       'model:',
       selectedChatModel,
     );
+
+    const messageContainsText = (message.parts ?? []).some((part) => {
+      return part.type === 'text' && part.text.trim().length > 0;
+    });
+
+    if (!messageContainsText) {
+      return new ChatSDKError(
+        'bad_request:chat',
+        'Please include some text with your message before sending.',
+      ).toResponse();
+    }
+
     const { userId } = await auth();
     console.log('Chat API: Auth result - userId:', userId);
 
@@ -72,22 +90,90 @@ export async function POST(request: Request) {
 
     const finalUserId = userId;
 
-    let [userRecord] = await getUserById(finalUserId);
-    if (!userRecord) {
+    let databaseAvailable = true;
+
+    const handleDatabaseError = (error: unknown, context: string) => {
+      if (!databaseAvailable) {
+        return;
+      }
+
+      databaseAvailable = false;
+
+      if (error instanceof ChatSDKError && error.surface === 'database') {
+        console.warn(
+          'Chat API: Database operation failed; continuing without persistence',
+          {
+            chatId: id,
+            userId: finalUserId,
+            context,
+            error,
+          },
+        );
+        return;
+      }
+
+      console.warn(
+        'Chat API: Unexpected error while interacting with the database; continuing without persistence',
+        {
+          chatId: id,
+          userId: finalUserId,
+          context,
+          error,
+        },
+      );
+    };
+
+    const runWithDatabase = async <T>(
+      context: string,
+      operation: () => Promise<T>,
+    ): Promise<T | undefined> => {
+      if (!databaseAvailable) {
+        return undefined;
+      }
+
+      try {
+        return await operation();
+      } catch (error) {
+        handleDatabaseError(error, context);
+        return undefined;
+      }
+    };
+
+    let userRecord: UserRecord | undefined;
+    const userRows = await runWithDatabase('getUserById', () =>
+      getUserById(finalUserId),
+    );
+
+    if (userRows?.length) {
+      userRecord = userRows[0];
+    }
+
+    if (databaseAvailable && !userRecord) {
       console.log('Creating new user:', finalUserId);
-      await createUser(`${finalUserId}@clerk.local`, finalUserId);
-      [userRecord] = await getUserById(finalUserId);
+      await runWithDatabase('createUser', () =>
+        createUser(`${finalUserId}@clerk.local`, finalUserId),
+      );
+      const refreshedRows = await runWithDatabase('getUserById', () =>
+        getUserById(finalUserId),
+      );
+      if (refreshedRows?.length) {
+        userRecord = refreshedRows[0];
+      }
     }
 
     const userType = (userRecord?.userType as UserType) ?? 'free';
     const entitlements = getEntitlements(userType);
 
-    const messageCount = await getMessageCountByUserId({
-      id: finalUserId,
-      differenceInHours: 24,
-    });
+    const messageCount =
+      (await runWithDatabase('getMessageCountByUserId', () =>
+        getMessageCountByUserId({
+          id: finalUserId,
+          differenceInHours: 24,
+        }),
+      )) ?? 0;
 
     if (
+      databaseAvailable &&
       entitlements.maxMessagesPerDay > -1 &&
       messageCount >= entitlements.maxMessagesPerDay
     ) {
@@ -105,22 +191,28 @@ export async function POST(request: Request) {
     let creditLimit = storedCreditLimit;
     let usingSharedKey = false;
 
-    try {
-      keyService = new OpenRouterKeyService();
+    if (databaseAvailable) {
+      try {
+        keyService = new OpenRouterKeyService();
 
-      const keyDetails = await keyService.ensureUserApiKey({
-        userId: finalUserId,
-        userType,
-        creditLimit: storedCreditLimit,
-      });
+        const keyDetails = await keyService.ensureUserApiKey({
+          userId: finalUserId,
+          userType,
+          creditLimit: storedCreditLimit,
+        });
 
-      creditLimit = keyDetails.limit ?? storedCreditLimit;
-      providerClient = createUserProvider(keyDetails.apiKey);
-    } catch (error) {
+        creditLimit = keyDetails.limit ?? storedCreditLimit;
+        providerClient = createUserProvider(keyDetails.apiKey);
+      } catch (error) {
+        usingSharedKey = true;
+        creditLimit = 0;
+        existingUsageCredits = 0;
+        console.warn('Falling back to shared OpenRouter API key', error);
+      }
+    } else {
       usingSharedKey = true;
       creditLimit = 0;
       existingUsageCredits = 0;
-      console.warn('Falling back to shared OpenRouter API key', error);
     }
 
     if (
@@ -135,7 +227,8 @@ export async function POST(request: Request) {
     }
 
     const allowedModels = entitlements.availableChatModelIds;
-    const allowAllModels = allowedModels.includes('*');
+    const allowAllModels =
+      !databaseAvailable || allowedModels.includes('*');
     if (!allowAllModels && !allowedModels.includes(selectedChatModel)) {
       return new ChatSDKError(
         'forbidden:chat',
@@ -143,21 +236,26 @@ export async function POST(request: Request) {
       ).toResponse();
     }
 
-    const chat = await getChatById({ id });
+    const existingChat = await runWithDatabase('getChatById', () =>
+      getChatById({ id }),
+    );
+    const chat = existingChat ?? null;
 
-    if (!chat) {
-      const title = await generateTitleFromUserMessage({
-        message: message as ChatMessage,
-      });
+    if (databaseAvailable) {
+      if (!chat) {
+        const title = await generateTitleFromUserMessage({
+          message: message as ChatMessage,
+        });
 
-      await saveChat({
-        id,
-        userId: finalUserId,
-        title,
-        visibility: selectedVisibilityType,
-      });
-    } else {
-      if (chat.userId !== finalUserId) {
+        await runWithDatabase('saveChat', () =>
+          saveChat({
+            id,
+            userId: finalUserId,
+            title,
+            visibility: selectedVisibilityType,
+          }),
+        );
+      } else if (chat.userId !== finalUserId) {
         return new ChatSDKError('forbidden:chat').toResponse();
       }
     }
@@ -174,8 +272,14 @@ export async function POST(request: Request) {
       },
     };
 
-    const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [...convertToUIMessages(messagesFromDb), message as ChatMessage];
+    const messagesFromDb =
+      (await runWithDatabase('getMessagesByChatId', () =>
+        getMessagesByChatId({ id }),
+      )) ?? [];
+    const uiMessages = [
+      ...convertToUIMessages(messagesFromDb),
+      message as ChatMessage,
+    ];
     const languageModel = providerClient.languageModel(selectedChatModel);
     const effectiveCreditLimit = creditLimit > 0 ? creditLimit : undefined;
 
@@ -197,21 +301,49 @@ export async function POST(request: Request) {
       country: country || 'Australia',
     };
 
-    await saveMessages({
-      messages: [
+    await runWithDatabase('saveMessages:user', () =>
+      saveMessages({
+        messages: [
+          {
+            chatId: id,
+            id: message.id,
+            role: 'user',
+            parts: message.parts,
+            attachments: [],
+            createdAt: new Date(),
+          },
+        ],
+      }),
+    );
+
+    let streamId: string | null = null;
+
+    if (databaseAvailable) {
+      const generatedStreamId = generateUUID();
+      await runWithDatabase('createStreamId', () =>
+        createStreamId({ streamId: generatedStreamId, chatId: id }),
+      );
+
+      if (databaseAvailable) {
+        streamId = generatedStreamId;
+      } else {
+        console.warn(
+          'Chat API: Unable to persist stream metadata – disabling resumable stream for this request',
+          {
+            chatId: id,
+          },
+        );
+      }
+    }
+
+    if (!streamId && !databaseAvailable) {
+      console.warn(
+        'Chat API: Resumable streaming disabled because the database is unavailable',
         {
           chatId: id,
-          id: message.id,
-          role: 'user',
-          parts: message.parts,
-          attachments: [],
-          createdAt: new Date(),
         },
-      ],
-    });
-
-    const streamId = generateUUID();
-    await createStreamId({ streamId, chatId: id });
+      );
+    }
 
     const providerOptions = isTestEnvironment
       ? undefined
@@ -304,33 +436,37 @@ export async function POST(request: Request) {
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
-        await saveMessages({
-          messages: messages.map((message) => ({
-            id: message.id,
-            role: message.role,
-            parts: message.parts,
-            createdAt: new Date(),
-            attachments: [],
-            chatId: id,
-          })),
-        });
+        await runWithDatabase('saveMessages:onFinish', () =>
+          saveMessages({
+            messages: messages.map((message) => ({
+              id: message.id,
+              role: message.role,
+              parts: message.parts,
+              createdAt: new Date(),
+              attachments: [],
+              chatId: id,
+            })),
+          }),
+        );
 
         if (finalUsage) {
           try {
             if (keyService && !usingSharedKey) {
-              const latestUsageTotal = await keyService.recordUsage({
-                userId: finalUserId,
-                cost: usageCostCredits,
-                chatId: id,
-                modelId: selectedChatModel,
-                promptTokens: usagePromptTokens,
-                completionTokens: usageCompletionTokens,
-                totalTokens: usageTotalTokens,
-                cachedTokens: usageCachedTokens,
-                reasoningTokens: usageReasoningTokens,
-              });
+              const latestUsageTotal = await runWithDatabase('recordUsage', () =>
+                keyService.recordUsage({
+                  userId: finalUserId,
+                  cost: usageCostCredits,
+                  chatId: id,
+                  modelId: selectedChatModel,
+                  promptTokens: usagePromptTokens,
+                  completionTokens: usageCompletionTokens,
+                  totalTokens: usageTotalTokens,
+                  cachedTokens: usageCachedTokens,
+                  reasoningTokens: usageReasoningTokens,
+                }),
+              );
 
-              if (latestUsageTotal !== undefined) {
+              if (typeof latestUsageTotal === 'number') {
                 finalUsage.currentUsage = latestUsageTotal;
                 finalUsage.remainingCredits =
                   creditLimit > 0
@@ -339,10 +475,12 @@ export async function POST(request: Request) {
               }
             }
 
-            await updateChatLastContextById({
-              chatId: id,
-              context: finalUsage,
-            });
+            await runWithDatabase('updateChatLastContextById', () =>
+              updateChatLastContextById({
+                chatId: id,
+                context: finalUsage,
+              }),
+            );
           } catch (err) {
             console.warn('Unable to persist last usage for chat', id, err);
           }
@@ -353,9 +491,9 @@ export async function POST(request: Request) {
       },
     });
 
-    const streamContext = getStreamContext();
+    const streamContext = streamId ? getStreamContext() : null;
 
-    if (streamContext) {
+    if (streamContext && streamId) {
       return new Response(
         await streamContext.resumableStream(streamId, () =>
           stream.pipeThrough(new JsonToSseTransformStream()),
