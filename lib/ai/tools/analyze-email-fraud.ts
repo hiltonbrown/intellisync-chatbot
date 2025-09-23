@@ -2,7 +2,7 @@ import { tool, generateObject } from 'ai';
 import { z } from 'zod';
 import type { ToolContext } from './types';
 
-const analyzeEmailFraudInput = z.object({
+export const analyzeEmailFraudInput = z.object({
   // Basic email metadata
   senderEmail: z.string().email('Please provide a valid sender email address'),
   senderName: z.string().min(1, "Please provide the sender's display name"),
