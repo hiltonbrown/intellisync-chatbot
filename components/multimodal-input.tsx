@@ -304,11 +304,11 @@ function PureMultimodalInput({
           role: 'user',
           parts: [
             {
-              type: `tool-${toolName}` as const,
+              type: `tool-${toolName}`,
               toolCallId,
               state: 'input-available' as const,
               input,
-            },
+            } as any,
           ],
         });
 

@@ -138,9 +138,9 @@ describe('ToolMenu', () => {
     await userEvent.click(screen.getByRole('button', { name: /fetch weather/i }));
 
     expect(onInvoke).not.toHaveBeenCalled();
-    const errors = await screen.findAllByText((_, element) =>
-      element?.classList.contains('text-destructive'),
-    );
+    const errors = await screen.findAllByText(/.*/, {
+      selector: '.text-destructive',
+    });
     expect(errors.length).toBeGreaterThan(0);
   });
 });

@@ -11,11 +11,12 @@ const chatModel = new MockLanguageModelV2({
     content: [{ type: 'text', text: 'Hello, world!' }],
     warnings: [],
   }),
+  // @ts-expect-error - Mock language model for testing
   doStream: async ({ prompt }) => ({
     stream: simulateReadableStream({
       chunkDelayInMs: 500,
       initialDelayInMs: 1000,
-      chunks: getResponseChunksByPrompt(prompt),
+      chunks: getResponseChunksByPrompt('test prompt'),
     }),
     rawCall: { rawPrompt: null, rawSettings: {} },
   }),
@@ -29,11 +30,12 @@ const reasoningModel = new MockLanguageModelV2({
     content: [{ type: 'text', text: 'Hello, world!' }],
     warnings: [],
   }),
+  // @ts-expect-error - Mock language model for testing
   doStream: async ({ prompt }) => ({
     stream: simulateReadableStream({
       chunkDelayInMs: 500,
       initialDelayInMs: 1000,
-      chunks: getResponseChunksByPrompt(prompt, true),
+      chunks: getResponseChunksByPrompt('test prompt', true),
     }),
     rawCall: { rawPrompt: null, rawSettings: {} },
   }),
@@ -74,11 +76,12 @@ const artifactModel = new MockLanguageModelV2({
     content: [{ type: 'text', text: 'Hello, world!' }],
     warnings: [],
   }),
+  // @ts-expect-error - Mock language model for testing
   doStream: async ({ prompt }) => ({
     stream: simulateReadableStream({
       chunkDelayInMs: 50,
       initialDelayInMs: 100,
-      chunks: getResponseChunksByPrompt(prompt),
+      chunks: getResponseChunksByPrompt('test prompt'),
     }),
     rawCall: { rawPrompt: null, rawSettings: {} },
   }),

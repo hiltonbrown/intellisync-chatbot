@@ -20,7 +20,6 @@ let fetchMock: ReturnType<typeof vi.fn>;
 describe('PreferencesManager', () => {
   beforeEach(() => {
     fetchMock = vi.fn();
-    // @ts-expect-error - assigning test double
     global.fetch = fetchMock;
   });
 

@@ -82,7 +82,7 @@ function normalizeFieldValue(
       return value;
     case 'text':
     case 'textarea':
-      if (field.inputType === 'number') {
+      if (field.type === 'text' && field.inputType === 'number') {
         if (value === '' || value === null || value === undefined) {
           return undefined;
         }
@@ -157,6 +157,7 @@ export function ToolMenu({
       setFormState((previous) => ({ ...previous, [field.name]: value }));
       setFormErrors((previous) => ({ ...previous, [field.name]: '' }));
     },
+    [],
   );
 
   const handleSubmit = useCallback(
