@@ -180,9 +180,7 @@ const PhaseOneGuidanceView = ({
 );
 
 const createFindingKey = (finding: PhaseTwoFinding) =>
-  [finding.category, finding.indicator, finding.severity]
-    .filter((part): part is string => Boolean(part))
-    .join('|');
+  [finding.category, finding.indicator, finding.severity].join('|');
 
 const PhaseTwoReportView = ({ report }: { report: PhaseTwoReport }) => (
   <div className="space-y-4 text-sm">
