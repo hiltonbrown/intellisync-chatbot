@@ -279,9 +279,11 @@ function PureMultimodalInput({
     }
   }, [status, scrollToBottom]);
 
+  const isChatBusy = status === 'submitted' || status === 'streaming';
+
   const handleToolInvoke = useCallback(
     async (toolName: string, input: Record<string, unknown>) => {
-      if (status !== 'ready') {
+      if (status === 'submitted' || status === 'streaming') {
         const message =
           'Please wait for the current response to finish before launching a tool.';
         setToolError(message);
@@ -381,7 +383,7 @@ function PureMultimodalInput({
         className="relative mx-auto flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border bg-background shadow-sm transition-all focus-within:border-primary"
         onSubmit={(event) => {
           event.preventDefault();
-          if (status !== 'ready') {
+          if (isChatBusy) {
             toast.error('Please wait for the model to finish its response!');
           } else {
             submitForm();
@@ -428,7 +430,7 @@ function PureMultimodalInput({
               onModelChange={onModelChange}
             />
             <ToolMenu
-              disabled={status !== 'ready' || isReasoningModel}
+              disabled={isChatBusy || isReasoningModel}
               isLoading={isToolLoading}
               activeTool={activeToolName}
               lastError={toolError}
@@ -504,6 +506,7 @@ function PureAttachmentsButton({
   selectedModelId: string;
 }) {
   const isReasoningModel = selectedModelId === 'mistralai/mistral-large-latest';
+  const isChatBusy = status === 'submitted' || status === 'streaming';
 
   return (
     <Button
@@ -513,7 +516,7 @@ function PureAttachmentsButton({
         event.preventDefault();
         fileInputRef.current?.click();
       }}
-      disabled={status !== 'ready' || isReasoningModel}
+      disabled={isChatBusy || isReasoningModel}
       variant="ghost"
     >
       <PaperclipIcon size={16} />
