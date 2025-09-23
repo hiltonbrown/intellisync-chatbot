@@ -31,8 +31,6 @@ import { geolocation } from '@vercel/functions';
 import { getStreamContext } from '@/lib/ai/stream-context';
 import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage, ClerkSession, UsageWithCost } from '@/lib/types';
-import type { ChatModel } from '@/lib/ai/models';
-import type { VisibilityType } from '@/components/visibility-selector';
 import { OpenRouterKeyService } from '@/lib/services/openrouter-keys';
 import { isProductionEnvironment, isTestEnvironment } from '@/lib/constants';
 
