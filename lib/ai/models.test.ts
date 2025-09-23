@@ -1,8 +1,9 @@
 import { simulateReadableStream } from 'ai';
 import { MockLanguageModelV2 } from 'ai/test';
+import { describe, expect, it } from 'vitest';
 import { getResponseChunksByPrompt } from '@/tests/prompts/utils';
 
-export const chatModel = new MockLanguageModelV2({
+const chatModel = new MockLanguageModelV2({
   doGenerate: async () => ({
     rawCall: { rawPrompt: null, rawSettings: {} },
     finishReason: 'stop',
@@ -20,7 +21,7 @@ export const chatModel = new MockLanguageModelV2({
   }),
 });
 
-export const reasoningModel = new MockLanguageModelV2({
+const reasoningModel = new MockLanguageModelV2({
   doGenerate: async () => ({
     rawCall: { rawPrompt: null, rawSettings: {} },
     finishReason: 'stop',
@@ -38,7 +39,7 @@ export const reasoningModel = new MockLanguageModelV2({
   }),
 });
 
-export const titleModel = new MockLanguageModelV2({
+const titleModel = new MockLanguageModelV2({
   doGenerate: async () => ({
     rawCall: { rawPrompt: null, rawSettings: {} },
     finishReason: 'stop',
@@ -65,7 +66,7 @@ export const titleModel = new MockLanguageModelV2({
   }),
 });
 
-export const artifactModel = new MockLanguageModelV2({
+const artifactModel = new MockLanguageModelV2({
   doGenerate: async () => ({
     rawCall: { rawPrompt: null, rawSettings: {} },
     finishReason: 'stop',
@@ -81,4 +82,13 @@ export const artifactModel = new MockLanguageModelV2({
     }),
     rawCall: { rawPrompt: null, rawSettings: {} },
   }),
+});
+
+describe('mock chat models', () => {
+  it('expose base fixtures', () => {
+    expect(chatModel).toBeDefined();
+    expect(reasoningModel).toBeDefined();
+    expect(titleModel).toBeDefined();
+    expect(artifactModel).toBeDefined();
+  });
 });
