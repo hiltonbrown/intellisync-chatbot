@@ -50,6 +50,8 @@ import { getContextWindow, normalizeUsage } from 'tokenlens';
 import { Context } from './elements/context';
 import { myProvider } from '@/lib/ai/providers';
 import { generateUUID } from '@/lib/utils';
+import { ToolMenu } from './tool-menu';
+import { toolDefinitions } from '@/lib/ai/tools/definitions';
 
 function PureMultimodalInput({
   chatId,
@@ -138,6 +140,14 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+  const [activeToolName, setActiveToolName] = useState<string | null>(null);
+  const [isToolLoading, setIsToolLoading] = useState(false);
+  const [toolError, setToolError] = useState<string | null>(null);
+
+  const toolLabelMap = useMemo(
+    () => new Map(toolDefinitions.map((definition) => [definition.name, definition.label])),
+    [],
+  );
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
@@ -269,6 +279,58 @@ function PureMultimodalInput({
     }
   }, [status, scrollToBottom]);
 
+  const handleToolInvoke = useCallback(
+    async (toolName: string, input: Record<string, unknown>) => {
+      if (status !== 'ready') {
+        const message =
+          'Please wait for the current response to finish before launching a tool.';
+        setToolError(message);
+        toast.error(message);
+        throw new Error(message);
+      }
+
+      const toolLabel = toolLabelMap.get(toolName) ?? toolName;
+      const toolCallId = generateUUID();
+
+      try {
+        setActiveToolName(toolName);
+        setIsToolLoading(true);
+        setToolError(null);
+
+        window.history.replaceState({}, '', `/chat/${chatId}`);
+
+        await sendMessage({
+          id: generateUUID(),
+          role: 'user',
+          parts: [
+            {
+              type: `tool-${toolName}` as const,
+              toolCallId,
+              state: 'input-available' as const,
+              input,
+            },
+          ],
+        });
+
+        toast.success(`${toolLabel} request sent`);
+        setToolError(null);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : `Failed to launch ${toolLabel}.`;
+        setToolError(message);
+        throw new Error(message);
+      } finally {
+        setIsToolLoading(false);
+        setActiveToolName(null);
+      }
+    },
+    [chatId, sendMessage, status, toolLabelMap],
+  );
+
+  const isReasoningModel = selectedModelId === 'mistralai/mistral-large-latest';
+
   return (
     <div className="relative flex w-full flex-col gap-4">
       <AnimatePresence>
@@ -359,21 +421,37 @@ function PureMultimodalInput({
             ))}
           </div>
         )}
-        <div className="flex items-end gap-2 px-3 pb-3">
-          <PromptInputTextarea
-            data-testid="multimodal-input"
-            ref={textareaRef}
-            placeholder="Send a message..."
-            value={input}
-            onChange={handleInput}
-            minHeight={44}
-            maxHeight={200}
-            disableAutoResize={true}
-            className="flex-1 resize-none bg-transparent px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:outline-none"
-            rows={1}
-            autoFocus
-          />
-          <Context {...contextProps} />
+        <div className="flex flex-col gap-2 px-3 pb-3">
+          <div className="flex items-center justify-between pt-3">
+            <ModelSelectorCompact
+              selectedModelId={selectedModelId}
+              onModelChange={onModelChange}
+            />
+            <ToolMenu
+              disabled={status !== 'ready' || isReasoningModel}
+              isLoading={isToolLoading}
+              activeTool={activeToolName}
+              lastError={toolError}
+              onInvoke={handleToolInvoke}
+              onResetError={() => setToolError(null)}
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            <PromptInputTextarea
+              data-testid="multimodal-input"
+              ref={textareaRef}
+              placeholder="Send a message..."
+              value={input}
+              onChange={handleInput}
+              minHeight={44}
+              maxHeight={200}
+              disableAutoResize={true}
+              className="flex-1 resize-none bg-transparent px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:outline-none"
+              rows={1}
+              autoFocus
+            />
+            <Context {...contextProps} />
+          </div>
         </div>
         <PromptInputToolbar className="flex items-center justify-between border-t px-3 py-2">
           <PromptInputTools className="flex items-center gap-1">
@@ -381,10 +459,6 @@ function PureMultimodalInput({
               fileInputRef={fileInputRef}
               status={status}
               selectedModelId={selectedModelId}
-            />
-            <ModelSelectorCompact
-              selectedModelId={selectedModelId}
-              onModelChange={onModelChange}
             />
           </PromptInputTools>
 

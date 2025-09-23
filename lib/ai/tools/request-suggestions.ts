@@ -1,9 +1,10 @@
-import { z } from 'zod';
 import { streamObject, tool } from 'ai';
+import { z } from 'zod';
 import { getDocumentById, saveSuggestions } from '@/lib/db/queries';
 import type { Suggestion } from '@/lib/db/schema';
 import { generateUUID } from '@/lib/utils';
 import type { ToolContext } from './types';
+import { requestSuggestionsInputSchema } from './schemas';
 
 export const requestSuggestions = ({
   session,
@@ -13,11 +14,7 @@ export const requestSuggestions = ({
 }: ToolContext) =>
   tool({
     description: 'Request suggestions for a document',
-    inputSchema: z.object({
-      documentId: z
-        .string()
-        .describe('The ID of the document to request edits'),
-    }),
+    inputSchema: requestSuggestionsInputSchema,
     execute: async ({ documentId }) => {
       const document = await getDocumentById({ id: documentId });
 
