@@ -104,8 +104,7 @@ export function normaliseFieldValue(
       if (
         rawValue === "" ||
         rawValue === undefined ||
-        rawValue === null ||
-        (typeof rawValue === "string" && rawValue.length === 0)
+        rawValue === null
       ) {
         return undefined;
       }
