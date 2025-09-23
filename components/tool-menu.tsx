@@ -169,7 +169,7 @@ export function ToolMenu({
 
       for (const field of selectedTool.ui.fields) {
         const value = formState[field.name];
-        normalisedInput[field.name] = normaliseFieldValue(field, value);
+        normalisedInput[field.name] = normalizeFieldValue(field, value);
       }
 
       const validation = selectedTool.inputSchema.safeParse(normalisedInput);
