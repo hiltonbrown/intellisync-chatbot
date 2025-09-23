@@ -13,6 +13,7 @@ import {
   integer,
 } from 'drizzle-orm/pg-core';
 import type { LanguageModelV2Usage } from '@ai-sdk/provider';
+import type { SerializedUserPreferences } from '@/lib/types/preferences';
 
 export const user = pgTable('User', {
   id: varchar('id', { length: 255 }).primaryKey().notNull(),
@@ -40,6 +41,22 @@ export const user = pgTable('User', {
 });
 
 export type User = InferSelectModel<typeof user>;
+
+export const userPreferences = pgTable(
+  'UserPreferences',
+  {
+    userId: varchar('userId', { length: 255 })
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    data: jsonb('data').$type<SerializedUserPreferences>().notNull(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId] }),
+  }),
+);
+
+export type UserPreferencesRow = InferSelectModel<typeof userPreferences>;
 
 export const openrouterKeyAudit = pgTable('OpenRouterKeyAudit', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),

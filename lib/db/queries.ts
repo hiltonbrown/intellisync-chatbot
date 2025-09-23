@@ -28,6 +28,7 @@ import {
   type Chat,
   stream,
   openrouterKeyAudit,
+  userPreferences,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import type { VisibilityType } from '@/components/visibility-selector';
@@ -35,6 +36,11 @@ import { ChatSDKError } from '../errors';
 import { generateUUID } from '../utils';
 import type { LanguageModelV2Usage } from '@ai-sdk/provider';
 import type { UsageWithCost } from '@/lib/types';
+import {
+  deserializeUserPreferences,
+  serializeUserPreferences,
+  type UserPreferences as Preferences,
+} from '@/lib/types/preferences';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -693,6 +699,69 @@ export async function incrementUserOpenRouterUsage({
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to increment user OpenRouter usage',
+    );
+  }
+}
+
+export async function getUserPreferences(
+  userId: string,
+): Promise<Preferences | null> {
+  try {
+    const [record] = await db
+      .select({ data: userPreferences.data })
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
+      .limit(1);
+
+    if (!record) {
+      return null;
+    }
+
+    return deserializeUserPreferences(record.data);
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get user preferences',
+    );
+  }
+}
+
+export async function saveUserPreferences({
+  userId,
+  preferences,
+}: {
+  userId: string;
+  preferences: Preferences;
+}): Promise<Preferences> {
+  const updatedAt = new Date();
+  const preferencesWithTimestamp: Preferences = {
+    ...preferences,
+    lastUpdated: updatedAt,
+  };
+
+  const serialized = serializeUserPreferences(preferencesWithTimestamp);
+
+  try {
+    await db
+      .insert(userPreferences)
+      .values({
+        userId,
+        data: serialized,
+        updatedAt,
+      })
+      .onConflictDoUpdate({
+        target: userPreferences.userId,
+        set: {
+          data: serialized,
+          updatedAt,
+        },
+      });
+
+    return preferencesWithTimestamp;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to save user preferences',
     );
   }
 }

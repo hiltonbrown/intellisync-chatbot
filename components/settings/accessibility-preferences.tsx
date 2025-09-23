@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, Type, Volume2, Palette } from 'lucide-react';
 
 import {
@@ -32,6 +32,16 @@ export function AccessibilityPreferencesComponent({
     lineSpacing: initialPreferences?.lineSpacing ?? 'normal',
     textToSpeech: initialPreferences?.textToSpeech ?? false,
   });
+
+  useEffect(() => {
+    setPreferences({
+      highContrast: initialPreferences?.highContrast ?? false,
+      colorBlindness: initialPreferences?.colorBlindness ?? false,
+      fontSize: initialPreferences?.fontSize ?? 'medium',
+      lineSpacing: initialPreferences?.lineSpacing ?? 'normal',
+      textToSpeech: initialPreferences?.textToSpeech ?? false,
+    });
+  }, [initialPreferences]);
 
   const handlePreferenceChange = (
     key: keyof AccessibilityPreferences,

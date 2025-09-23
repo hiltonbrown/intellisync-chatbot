@@ -16,12 +16,18 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/components/toast';
-import type { UserPreferences } from '@/lib/types/preferences';
+import {
+  deserializeUserPreferences,
+  isSerializedUserPreferences,
+  serializeUserPreferences,
+  type UserPreferences,
+} from '@/lib/types/preferences';
 
 interface PreferencesManagerProps {
   currentPreferences: UserPreferences;
   onPreferencesReset: () => void;
   onPreferencesImport: (preferences: UserPreferences) => void;
+  onPreferencesSaved?: (preferences: UserPreferences) => void;
   hasUnsavedChanges: boolean;
 }
 
@@ -29,6 +35,7 @@ export function PreferencesManager({
   currentPreferences,
   onPreferencesReset,
   onPreferencesImport,
+  onPreferencesSaved,
   hasUnsavedChanges,
 }: PreferencesManagerProps) {
   const [isSaving, setIsSaving] = useState(false);
@@ -37,17 +44,25 @@ export function PreferencesManager({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      // Simulate API call to save preferences
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch('/api/settings/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serializeUserPreferences(currentPreferences)),
+      });
 
-      // In a real implementation, this would save to the database
-      localStorage.setItem(
-        'user-preferences',
-        JSON.stringify({
-          ...currentPreferences,
-          lastUpdated: new Date(),
-        }),
-      );
+      if (!response.ok) {
+        throw new Error('Failed to save preferences');
+      }
+
+      const data = await response.json();
+
+      if (!isSerializedUserPreferences(data)) {
+        throw new Error('Received malformed preferences');
+      }
+
+      const savedPreferences = deserializeUserPreferences(data);
+
+      onPreferencesSaved?.(savedPreferences);
 
       toast({
         type: 'success',
@@ -61,7 +76,7 @@ export function PreferencesManager({
     } finally {
       setIsSaving(false);
     }
-  }, [currentPreferences]);
+  }, [currentPreferences, onPreferencesSaved]);
 
   const handleReset = useCallback(async () => {
     setIsResetting(true);
@@ -87,7 +102,11 @@ export function PreferencesManager({
 
   const handleExport = useCallback(() => {
     try {
-      const dataStr = JSON.stringify(currentPreferences, null, 2);
+      const dataStr = JSON.stringify(
+        serializeUserPreferences(currentPreferences),
+        null,
+        2,
+      );
       const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
 
       const exportFileDefaultName = `user-preferences-${new Date().toISOString().split('T')[0]}.json`;
@@ -117,18 +136,13 @@ export function PreferencesManager({
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const importedPreferences = JSON.parse(
-            e.target?.result as string,
-          ) as UserPreferences;
+          const parsed = JSON.parse(e.target?.result as string);
 
-          // Validate the imported preferences structure
-          if (
-            !importedPreferences.theme ||
-            !importedPreferences.chat ||
-            !importedPreferences.notifications
-          ) {
+          if (!isSerializedUserPreferences(parsed)) {
             throw new Error('Invalid preferences file structure');
           }
+
+          const importedPreferences = deserializeUserPreferences(parsed);
 
           onPreferencesImport(importedPreferences);
 
