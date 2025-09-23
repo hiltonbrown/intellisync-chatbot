@@ -53,6 +53,10 @@ type AnalyzeEmailFraudErrorPart = Extract<
   { state: 'output-error' }
 >;
 
+type AnalyzeEmailFraudOutputErrorPart = AnalyzeEmailFraudOutputPart & {
+  output: { error: string };
+};
+
 type AnalyzeEmailFraudInput = ChatTools['analyzeEmailFraud']['input'];
 
 type AnalyzeEmailFraudOutput = ChatTools['analyzeEmailFraud']['output'];
@@ -156,6 +160,14 @@ const createPhaseTwoPart = (): AnalyzeEmailFraudOutputPart => ({
   output: createPhaseTwoOutput(),
 });
 
+const createOutputErrorPart = (): AnalyzeEmailFraudOutputErrorPart => ({
+  type: 'tool-analyzeEmailFraud',
+  toolCallId: 'call-output-error',
+  state: 'output-available',
+  input: baseInput,
+  output: { error: 'Analysis failed to complete.' },
+});
+
 const createErrorPart = (): AnalyzeEmailFraudErrorPart => ({
   type: 'tool-analyzeEmailFraud',
   toolCallId: 'call-error',
@@ -201,5 +213,13 @@ describe('PreviewMessage analyze email fraud tool rendering', () => {
 
     expect(screen.getAllByText('Error').length).toBeGreaterThan(0);
     expect(screen.getByText(/Unable to reach the fraud analysis service./i)).toBeInTheDocument();
+  });
+
+  it('renders presentational error state when the tool output contains an error payload', () => {
+    const message = createMessage(createOutputErrorPart());
+    renderWithProviders(message);
+
+    expect(screen.getByText(/Unable to display fraud analysis:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Analysis failed to complete./i)).toBeInTheDocument();
   });
 });
