@@ -27,7 +27,7 @@ import { textArtifact } from '@/artifacts/text/client';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
-import type { Attachment, ChatMessage } from '@/lib/types';
+import type { Attachment, ChatMessage, UsageWithCost } from '@/lib/types';
 
 export const artifactDefinitions = [
   textArtifact,
@@ -68,6 +68,7 @@ function PureArtifact({
   isReadonly,
   selectedVisibilityType,
   selectedModelId,
+  usage,
 }: {
   chatId: string;
   input: string;
@@ -84,6 +85,7 @@ function PureArtifact({
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
+  usage: UsageWithCost | undefined;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
 
@@ -339,6 +341,7 @@ function PureArtifact({
                     setMessages={setMessages}
                     selectedVisibilityType={selectedVisibilityType}
                     selectedModelId={selectedModelId}
+                    usage={usage}
                   />
                 </div>
               </div>
@@ -506,9 +509,12 @@ export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
   if (prevProps.input !== nextProps.input) return false;
-  if (!equal(prevProps.messages, nextProps.messages.length)) return false;
+  if (prevProps.messages.length !== nextProps.messages.length) return false;
+  if (!equal(prevProps.messages, nextProps.messages)) return false;
   if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
     return false;
+  if (prevProps.selectedModelId !== nextProps.selectedModelId) return false;
+  if (!equal(prevProps.usage, nextProps.usage)) return false;
 
   return true;
 });
