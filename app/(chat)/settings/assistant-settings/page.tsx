@@ -1,3 +1,5 @@
+import { cookies } from 'next/headers';
+
 import {
   Card,
   CardContent,
@@ -6,12 +8,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ModelSelector } from '@/components/model-selector';
-import { getStaticModels } from '@/lib/ai/server-models';
+import { DEFAULT_CHAT_MODEL } from '@/lib/ai/types';
 
 export default async function AssistantSettingsPage() {
-  // Get the first static model as initial model for the selector
-  const models = await getStaticModels();
-  const initialModel = models[0]?.id || '';
+  const cookieStore = await cookies();
+  const initialModel =
+    cookieStore.get('chat-model')?.value ?? DEFAULT_CHAT_MODEL;
 
   return (
     <div className="container mx-auto py-8">

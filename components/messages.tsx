@@ -5,7 +5,7 @@ import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { useMessages } from '@/hooks/use-messages';
-import type { ChatMessage } from '@/lib/types';
+import type { ChatMessage, UsageWithCost } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
 import { Conversation, ConversationContent } from './elements/conversation';
 import { ArrowDownIcon } from 'lucide-react';
@@ -20,6 +20,7 @@ interface MessagesProps {
   isReadonly: boolean;
   isArtifactVisible: boolean;
   selectedModelId: string;
+  usage: UsageWithCost | undefined;
 }
 
 function PureMessages({
@@ -129,6 +130,7 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
+  if (!equal(prevProps.usage, nextProps.usage)) return false;
 
-  return false;
+  return true;
 });

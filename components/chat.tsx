@@ -144,7 +144,8 @@ export function Chat({
           regenerate={regenerate}
           isReadonly={isReadonly}
           isArtifactVisible={isArtifactVisible}
-          selectedModelId={initialChatModel}
+          selectedModelId={currentChatModel}
+          usage={usage}
         />
 
         <div className="sticky bottom-0 mx-auto w-full max-w-4xl border-t bg-background px-2 pb-3 md:px-4 md:pb-4">
@@ -187,7 +188,8 @@ export function Chat({
         votes={votes}
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
-        selectedModelId={initialChatModel}
+        selectedModelId={currentChatModel}
+        usage={usage}
       />
     </>
   );
