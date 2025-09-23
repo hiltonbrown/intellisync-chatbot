@@ -38,4 +38,9 @@ export const toolDefinitions: ToolDefinition[] = [
     tool: null, // Will be created with context
     requiresContext: true,
   },
+  {
+    name: 'analyzeEmailFraud',
+    tool: null, // Will be created with context
+    requiresContext: true,
+  },
 ];
