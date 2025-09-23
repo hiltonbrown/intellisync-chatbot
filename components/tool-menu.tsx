@@ -68,7 +68,7 @@ function getInitialFieldValue(field: ToolFieldDefinition): unknown {
   }
 }
 
-function normaliseFieldValue(
+function normalizeFieldValue(
   field: ToolFieldDefinition,
   value: unknown,
 ): unknown {
