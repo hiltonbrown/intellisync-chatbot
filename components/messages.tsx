@@ -132,5 +132,5 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (!equal(prevProps.votes, nextProps.votes)) return false;
   if (!equal(prevProps.usage, nextProps.usage)) return false;
 
-  return false;
+  return true;
 });
