@@ -28,13 +28,19 @@ import {
   type Chat,
   stream,
   openrouterKeyAudit,
+  accountingIntegration,
+  type AccountingIntegration,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { ChatSDKError } from '../errors';
 import { generateUUID } from '../utils';
 import type { LanguageModelV2Usage } from '@ai-sdk/provider';
-import type { UsageWithCost } from '@/lib/types';
+import type {
+  UsageWithCost,
+  IntegrationStatus,
+  IntegrationTokens,
+} from '@/lib/types';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -75,6 +81,17 @@ const getPostgresClient = () => {
 
 const client = getPostgresClient();
 const db = drizzle(client);
+
+type AccountingIntegrationUpsertInput = {
+  userId: string;
+  provider: string;
+  status?: IntegrationStatus;
+  connectedAt?: Date | null;
+  lastSyncedAt?: Date | null;
+  tokens?: IntegrationTokens;
+};
+
+type AccountingIntegrationUpdateInput = AccountingIntegrationUpsertInput;
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
@@ -730,6 +747,209 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get stream ids by chat id',
+    );
+  }
+}
+
+export async function listAccountingIntegrations(
+  userId: string,
+): Promise<Array<AccountingIntegration>> {
+  try {
+    return await db
+      .select()
+      .from(accountingIntegration)
+      .where(eq(accountingIntegration.userId, userId))
+      .orderBy(asc(accountingIntegration.provider));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to list accounting integrations',
+    );
+  }
+}
+
+export async function getAccountingIntegrationByProvider({
+  userId,
+  provider,
+}: {
+  userId: string;
+  provider: string;
+}): Promise<AccountingIntegration | null> {
+  try {
+    const [integration] = await db
+      .select()
+      .from(accountingIntegration)
+      .where(
+        and(
+          eq(accountingIntegration.userId, userId),
+          eq(accountingIntegration.provider, provider),
+        ),
+      )
+      .limit(1);
+
+    return integration ?? null;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to fetch accounting integration',
+    );
+  }
+}
+
+export async function upsertAccountingIntegration({
+  userId,
+  provider,
+  status,
+  connectedAt,
+  lastSyncedAt,
+  tokens,
+}: AccountingIntegrationUpsertInput): Promise<AccountingIntegration> {
+  try {
+    const now = new Date();
+    const insertValues = {
+      userId,
+      provider,
+      status: status ?? 'disconnected',
+      connectedAt: connectedAt ?? null,
+      lastSyncedAt: lastSyncedAt ?? null,
+      tokens: tokens ?? null,
+      createdAt: now,
+      updatedAt: now,
+    } satisfies AccountingIntegration;
+
+    const updateValues: Partial<AccountingIntegration> & { updatedAt: Date } = {
+      updatedAt: now,
+    };
+
+    if (status !== undefined) {
+      updateValues.status = status;
+    }
+
+    if (connectedAt !== undefined) {
+      updateValues.connectedAt = connectedAt;
+    }
+
+    if (lastSyncedAt !== undefined) {
+      updateValues.lastSyncedAt = lastSyncedAt;
+    }
+
+    if (tokens !== undefined) {
+      updateValues.tokens = tokens ?? null;
+    }
+
+    const [integration] = await db
+      .insert(accountingIntegration)
+      .values(insertValues)
+      .onConflictDoUpdate({
+        target: [
+          accountingIntegration.userId,
+          accountingIntegration.provider,
+        ],
+        set: updateValues,
+      })
+      .returning();
+
+    return integration;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to upsert accounting integration',
+    );
+  }
+}
+
+export async function updateAccountingIntegration({
+  userId,
+  provider,
+  status,
+  connectedAt,
+  lastSyncedAt,
+  tokens,
+}: AccountingIntegrationUpdateInput): Promise<AccountingIntegration> {
+  try {
+    const updatePayload: Partial<AccountingIntegration> & { updatedAt: Date } = {
+      updatedAt: new Date(),
+    };
+
+    if (status !== undefined) {
+      updatePayload.status = status;
+    }
+
+    if (connectedAt !== undefined) {
+      updatePayload.connectedAt = connectedAt;
+    }
+
+    if (lastSyncedAt !== undefined) {
+      updatePayload.lastSyncedAt = lastSyncedAt;
+    }
+
+    if (tokens !== undefined) {
+      updatePayload.tokens = tokens;
+    }
+
+    const [integration] = await db
+      .update(accountingIntegration)
+      .set(updatePayload)
+      .where(
+        and(
+          eq(accountingIntegration.userId, userId),
+          eq(accountingIntegration.provider, provider),
+        ),
+      )
+      .returning();
+
+    if (!integration) {
+      throw new ChatSDKError(
+        'not_found:database',
+        `Integration ${provider} not found for update`,
+      );
+    }
+
+    return integration;
+  } catch (error) {
+    if (error instanceof ChatSDKError) {
+      throw error;
+    }
+
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update accounting integration',
+    );
+  }
+}
+
+export async function deleteAccountingIntegration({
+  userId,
+  provider,
+}: {
+  userId: string;
+  provider: string;
+}) {
+  try {
+    const deleted = await db
+      .delete(accountingIntegration)
+      .where(
+        and(
+          eq(accountingIntegration.userId, userId),
+          eq(accountingIntegration.provider, provider),
+        ),
+      )
+      .returning();
+
+    if (!deleted.length) {
+      throw new ChatSDKError(
+        'not_found:database',
+        `Integration ${provider} not found for deletion`,
+      );
+    }
+  } catch (error) {
+    if (error instanceof ChatSDKError) {
+      throw error;
+    }
+
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to delete accounting integration',
     );
   }
 }

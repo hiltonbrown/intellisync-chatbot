@@ -86,3 +86,12 @@ export type UsageWithCost = LanguageModelUsage & {
   currentUsage?: number;
   remainingCredits?: number;
 };
+
+export type IntegrationStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'syncing'
+  | 'error';
+
+export type IntegrationTokens = Record<string, unknown> | null;
