@@ -1,31 +1,9 @@
 import { tool, generateObject } from 'ai';
 import { z } from 'zod';
 import type { ToolContext } from './types';
+import { analyzeEmailFraudInputSchema } from './schemas';
 
-const analyzeEmailFraudInput = z.object({
-  // Basic email metadata
-  senderEmail: z.string().email('Please provide a valid sender email address'),
-  senderName: z.string().min(1, "Please provide the sender's display name"),
-  subject: z.string().min(1, 'Please provide the email subject'),
-
-  // Email content
-  emailBody: z.string().min(10, 'Please provide the email body content'),
-
-  // Optional technical details
-  receivedHeaders: z.string().optional(),
-  links: z.array(z.string().url()).optional(),
-  hasAttachments: z.boolean().optional(),
-
-  // User observations
-  userFlags: z.array(z.string()).optional(),
-  urgencyLevel: z.enum(['low', 'medium', 'high']).optional(),
-  requestsPersonalInfo: z.boolean().optional(),
-
-  // Analysis preferences
-  analysisDepth: z
-    .enum(['basic', 'detailed', 'comprehensive'])
-    .default('detailed'),
-});
+type AnalyzeEmailFraudInput = z.infer<typeof analyzeEmailFraudInputSchema>;
 
 function getPhase1Guidance() {
   return {
@@ -92,7 +70,7 @@ function getPhase1Guidance() {
 }
 
 async function performFraudAnalysis(
-  input: any,
+  input: AnalyzeEmailFraudInput,
   selectedModel: string,
   providerClient: any,
 ) {
@@ -161,10 +139,16 @@ export const analyzeEmailFraud = ({
 }: ToolContext) =>
   tool({
     description: `Comprehensive email fraud analysis tool. Provides step-by-step guidance for users to check suspicious emails and performs AI-powered fraud risk assessment using the selected model (${selectedModel}).`,
-    inputSchema: analyzeEmailFraudInput,
+    inputSchema: analyzeEmailFraudInputSchema,
     execute: async (input) => {
+      const hasAdvancedContext =
+        (typeof input.receivedHeaders === 'string' &&
+          input.receivedHeaders.trim().length > 0) ||
+        Boolean(input.links && input.links.length > 0) ||
+        Boolean(input.userFlags && input.userFlags.length > 0);
+
       // Phase 1: Return guidance if basic info only
-      if (!input.receivedHeaders && !input.links && !input.userFlags) {
+      if (!hasAdvancedContext) {
         return getPhase1Guidance();
       }
 
