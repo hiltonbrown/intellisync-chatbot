@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, Eye, Database, Lock } from 'lucide-react';
 
 import {
@@ -30,6 +30,15 @@ export function PrivacyPreferencesComponent({
     dataSharing: initialPreferences?.dataSharing ?? false,
     chatVisibility: initialPreferences?.chatVisibility ?? 'private',
   });
+
+  useEffect(() => {
+    setPreferences({
+      analytics: initialPreferences?.analytics ?? true,
+      crashReporting: initialPreferences?.crashReporting ?? true,
+      dataSharing: initialPreferences?.dataSharing ?? false,
+      chatVisibility: initialPreferences?.chatVisibility ?? 'private',
+    });
+  }, [initialPreferences]);
 
   const handlePreferenceChange = (
     key: keyof PrivacyPreferences,

@@ -12,7 +12,17 @@ const filePartSchema = z.object({
   url: z.string().url(),
 });
 
-const partSchema = z.union([textPartSchema, filePartSchema]);
+const toolInvocationSchema = z.object({
+  type: z
+    .string()
+    .regex(/^tool-/)
+    .describe('Tool invocation payload identifier'),
+  toolCallId: z.string().uuid(),
+  state: z.literal('input-available'),
+  input: z.unknown(),
+});
+
+const partSchema = z.union([textPartSchema, filePartSchema, toolInvocationSchema]);
 
 export const postRequestBodySchema = z.object({
   id: z.string().uuid(),

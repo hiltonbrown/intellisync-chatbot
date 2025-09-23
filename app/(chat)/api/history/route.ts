@@ -1,7 +1,23 @@
 import { auth } from '@clerk/nextjs/server';
 import type { NextRequest } from 'next/server';
-import { getChatsByUserId } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
+
+type HistoryQueryInput = {
+  id: string;
+  limit: number;
+  startingAfter: string | null;
+  endingBefore: string | null;
+};
+
+async function loadUserChats(input: HistoryQueryInput) {
+  if (!process.env.POSTGRES_URL) {
+    return [] as const;
+  }
+
+  const { getChatsByUserId } = await import('@/lib/db/queries');
+
+  return getChatsByUserId(input);
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -23,7 +39,7 @@ export async function GET(request: NextRequest) {
     return new ChatSDKError('unauthorized:chat').toResponse();
   }
 
-  const chats = await getChatsByUserId({
+  const chats = await loadUserChats({
     id: session.userId,
     limit,
     startingAfter,

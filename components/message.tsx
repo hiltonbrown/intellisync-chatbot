@@ -201,7 +201,7 @@ const PurePreviewMessage = ({
 
               return (
                 <Tool key={toolCallId} defaultOpen={true}>
-                  <ToolHeader type={type} state={state} />
+                  <ToolHeader type="tool-analyzeEmailFraud" state={state} />
                   <ToolContent>
                     {state === 'input-available' && (
                       <ToolInput input={part.input} />
@@ -209,15 +209,7 @@ const PurePreviewMessage = ({
                     {state === 'output-available' && (
                       <ToolOutput
                         output={
-                          part.output &&
-                          typeof part.output === 'object' &&
-                          'error' in part.output ? (
-                            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-destructive">
-                              Error: {String(part.output.error)}
-                            </div>
-                          ) : (
-                            <EmailFraudAnalysisResult result={part.output} />
-                          )
+                          <EmailFraudAnalysisResult result={part.output} />
                         }
                         errorText={undefined}
                       />

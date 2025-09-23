@@ -22,7 +22,28 @@ import {
 } from '@/components/ui/sidebar';
 
 export function SidebarUserNav() {
-  const { user, isLoaded } = useUser();
+  const hasClerkConfiguration = Boolean(
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  );
+
+  let clerkState: ReturnType<typeof useUser> | undefined;
+  let clerkError: unknown;
+
+  try {
+    clerkState = useUser();
+  } catch (error) {
+    clerkError = error;
+  }
+
+  if (clerkError && hasClerkConfiguration) {
+    throw clerkError;
+  }
+
+  if (!hasClerkConfiguration || clerkError) {
+    return null;
+  }
+
+  const { user, isLoaded } = clerkState ?? { user: null, isLoaded: false };
   const { setTheme, resolvedTheme } = useTheme();
   const { setOpenMobile } = useSidebar();
   const [isHydrated, setIsHydrated] = useState(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ThemeSelector } from './theme-selector';
 import { AccentColorSelector } from './accent-color-selector';
@@ -33,6 +33,15 @@ export function AppearancePreferences({
     fontSize: initialPreferences?.fontSize || 'medium',
     reducedMotion: initialPreferences?.reducedMotion || false,
   });
+
+  useEffect(() => {
+    setPreferences({
+      mode: initialPreferences?.mode || 'system',
+      accentColor: initialPreferences?.accentColor || 'blue',
+      fontSize: initialPreferences?.fontSize || 'medium',
+      reducedMotion: initialPreferences?.reducedMotion || false,
+    });
+  }, [initialPreferences]);
 
   const handleThemeChange = (mode: ThemeMode) => {
     const newPreferences = { ...preferences, mode };
