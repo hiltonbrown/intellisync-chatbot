@@ -9,6 +9,11 @@ config({
 
 const runMigrate = async () => {
   if (!process.env.POSTGRES_URL) {
+    if (process.env.NODE_ENV === 'production') {
+      console.log('⚠️ POSTGRES_URL not available during build - skipping migrations');
+      console.log('💡 Migrations should be run separately in production environment');
+      process.exit(0);
+    }
     throw new Error('POSTGRES_URL is not defined');
   }
 

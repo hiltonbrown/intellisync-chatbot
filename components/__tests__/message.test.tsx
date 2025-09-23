@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import type { ComponentProps, ReactNode } from 'react';
 import { DataStreamProvider } from '../data-stream-provider';
 import { PreviewMessage } from '../message';

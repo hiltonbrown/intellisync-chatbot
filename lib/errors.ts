@@ -4,7 +4,8 @@ export type ErrorType =
   | 'forbidden'
   | 'not_found'
   | 'rate_limit'
-  | 'offline';
+  | 'offline'
+  | 'internal';
 
 export type Surface =
   | 'chat'
@@ -16,7 +17,8 @@ export type Surface =
   | 'vote'
   | 'document'
   | 'suggestions'
-  | 'activate_gateway';
+  | 'activate_gateway'
+  | 'integration';
 
 export type ErrorCode = `${ErrorType}:${Surface}`;
 
@@ -33,6 +35,7 @@ export const visibilityBySurface: Record<Surface, ErrorVisibility> = {
   document: 'response',
   suggestions: 'response',
   activate_gateway: 'response',
+  integration: 'response',
 };
 
 export class ChatSDKError extends Error {
@@ -109,6 +112,13 @@ export function getMessageByErrorCode(errorCode: ErrorCode): string {
     case 'bad_request:document':
       return 'The request to create or update the document was invalid. Please check your input and try again.';
 
+    case 'not_found:integration':
+      return 'The requested integration provider was not found. Please check the provider name and try again.';
+    case 'internal:integration':
+      return 'An internal error occurred while processing the integration request. Please try again later.';
+    case 'bad_request:integration':
+      return 'The integration request was invalid. Please check your input and try again.';
+
     default:
       return 'Something went wrong. Please try again later.';
   }
@@ -128,6 +138,8 @@ function getStatusCodeByType(type: ErrorType) {
       return 429;
     case 'offline':
       return 503;
+    case 'internal':
+      return 500;
     default:
       return 500;
   }
