@@ -3,6 +3,7 @@ import type { getWeather } from './ai/tools/get-weather';
 import type { createDocument } from './ai/tools/create-document';
 import type { updateDocument } from './ai/tools/update-document';
 import type { requestSuggestions } from './ai/tools/request-suggestions';
+import type { analyzeEmailFraud } from './ai/tools/analyze-email-fraud';
 import type { InferUITool, LanguageModelUsage, UIMessage } from 'ai';
 import type { UserType } from '@/lib/ai/entitlements';
 
@@ -23,12 +24,16 @@ type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
   ReturnType<typeof requestSuggestions>
 >;
+type analyzeEmailFraudTool = InferUITool<
+  ReturnType<typeof analyzeEmailFraud>
+>;
 
 export type ChatTools = {
   getWeather: weatherTool;
   createDocument: createDocumentTool;
   updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
+  analyzeEmailFraud: analyzeEmailFraudTool;
 };
 
 export type CustomUIDataTypes = {

@@ -1,20 +1,14 @@
 import { generateUUID } from '@/lib/utils';
 import { tool } from 'ai';
-import { z } from 'zod';
-import {
-  artifactKinds,
-  documentHandlersByArtifactKind,
-} from '@/lib/artifacts/server';
+import { documentHandlersByArtifactKind } from '@/lib/artifacts/server';
 import type { ToolContext } from './types';
+import { createDocumentInputSchema } from './schemas';
 
 export const createDocument = ({ session, dataStream }: ToolContext) =>
   tool({
     description:
       'Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind.',
-    inputSchema: z.object({
-      title: z.string(),
-      kind: z.enum(artifactKinds),
-    }),
+    inputSchema: createDocumentInputSchema,
     execute: async ({ title, kind }) => {
       const id = generateUUID();
 
