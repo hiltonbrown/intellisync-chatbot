@@ -70,8 +70,19 @@ export async function POST(request: Request) {
       selectedChatModel,
     );
 
+    const isTextPart = (
+      part: NonNullable<ChatMessage['parts']>[number],
+    ): part is Extract<
+      NonNullable<ChatMessage['parts']>[number],
+      { type: 'text'; text: string }
+    > => {
+      return (
+        part.type === 'text' && typeof (part as { text?: unknown }).text === 'string'
+      );
+    };
+
     const messageContainsText = (message.parts ?? []).some((part) => {
-      return part.type === 'text' && part.text.trim().length > 0;
+      return isTextPart(part) && part.text.trim().length > 0;
     });
 
     if (!messageContainsText) {
