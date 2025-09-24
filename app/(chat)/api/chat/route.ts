@@ -70,15 +70,12 @@ export async function POST(request: Request) {
       selectedChatModel,
     );
 
+    type RequestMessagePart = PostRequestBody['message']['parts'][number];
+
     const isTextPart = (
-      part: NonNullable<ChatMessage['parts']>[number],
-    ): part is Extract<
-      NonNullable<ChatMessage['parts']>[number],
-      { type: 'text'; text: string }
-    > => {
-      return (
-        part.type === 'text' && typeof (part as { text?: unknown }).text === 'string'
-      );
+      part: RequestMessagePart,
+    ): part is Extract<RequestMessagePart, { type: 'text'; text: string }> => {
+      return part.type === 'text' && typeof part.text === 'string';
     };
 
     const messageContainsText = (message.parts ?? []).some((part) => {
