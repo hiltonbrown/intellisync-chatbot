@@ -45,6 +45,10 @@ yarn-error.log*
 .kilocode/
 .roo/
 
+# IDE directories
+.idea/
+.subframe/
+
 # Playwright
 /test-results/
 /playwright-report/

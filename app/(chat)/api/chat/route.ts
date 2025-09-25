@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     const isTextPart = (
       part: RequestMessagePart,
     ): part is Extract<RequestMessagePart, { type: 'text'; text: string }> => {
-      return part.type === 'text' && typeof part.text === 'string';
+      return part.type === 'text' && 'text' in part && typeof part.text === 'string';
     };
 
     const messageContainsText = (message.parts ?? []).some((part) => {
