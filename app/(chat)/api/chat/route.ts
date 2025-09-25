@@ -458,6 +458,7 @@ export async function POST(request: Request) {
         );
 
         if (finalUsage) {
+          const usageForPersistence = finalUsage;
           try {
             if (keyService && !usingSharedKey) {
               const latestUsageTotal = await runWithDatabase('recordUsage', () =>
@@ -475,8 +476,8 @@ export async function POST(request: Request) {
               );
 
               if (typeof latestUsageTotal === 'number') {
-                finalUsage.currentUsage = latestUsageTotal;
-                finalUsage.remainingCredits =
+                usageForPersistence.currentUsage = latestUsageTotal;
+                usageForPersistence.remainingCredits =
                   creditLimit > 0
                     ? Math.max(creditLimit - latestUsageTotal, 0)
                     : undefined;
@@ -486,7 +487,7 @@ export async function POST(request: Request) {
             await runWithDatabase('updateChatLastContextById', () =>
               updateChatLastContextById({
                 chatId: id,
-                context: finalUsage,
+                context: usageForPersistence,
               }),
             );
           } catch (err) {
