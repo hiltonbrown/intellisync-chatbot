@@ -32,19 +32,12 @@ export function getLanguageModel(modelId: string) {
     return myProvider.languageModel(modelId);
   }
 
-  const isReasoningModel =
-    modelId.includes("reasoning") || modelId.endsWith("-thinking");
+  const gatewayModelId = modelId.replace(THINKING_SUFFIX_REGEX, "");
 
-  if (isReasoningModel) {
-    const gatewayModelId = modelId.replace(THINKING_SUFFIX_REGEX, "");
-
-    return wrapLanguageModel({
-      model: gateway.languageModel(gatewayModelId),
-      middleware: extractReasoningMiddleware({ tagName: "thinking" }),
-    });
-  }
-
-  return gateway.languageModel(modelId);
+  return wrapLanguageModel({
+    model: gateway.languageModel(gatewayModelId),
+    middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+  });
 }
 
 export function getTitleModel() {

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 import { initialArtifactData, useArtifact } from "@/hooks/use-artifact";
-import { artifactDefinitions } from "./artifact";
+import { artifactDefinitions, type ArtifactKind } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
 import { getChatHistoryPaginationKey } from "./sidebar-history";
 
@@ -22,15 +22,22 @@ export function DataStreamHandler() {
     const newDeltas = dataStream.slice();
     setDataStream([]);
 
+    let currentKind = artifact.kind;
+
     for (const delta of newDeltas) {
       // Handle chat title updates
       if (delta.type === "data-chat-title") {
         mutate(unstable_serialize(getChatHistoryPaginationKey));
         continue;
       }
+
+      if (delta.type === "data-kind") {
+        currentKind = delta.data as ArtifactKind;
+      }
+
       const artifactDefinition = artifactDefinitions.find(
         (currentArtifactDefinition) =>
-          currentArtifactDefinition.kind === artifact.kind
+          currentArtifactDefinition.kind === currentKind
       );
 
       if (artifactDefinition?.onStreamPart) {

@@ -67,7 +67,8 @@ export async function POST(request: Request) {
     content,
     title,
     kind,
-  }: { content: string; title: string; kind: ArtifactKind } =
+    chatId,
+  }: { content: string; title: string; kind: ArtifactKind; chatId: string } =
     await request.json();
 
   const documents = await getDocumentsById({ id });
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
     title,
     kind,
     userId: userId,
+    chatId,
   });
 
   return Response.json(document, { status: 200 });

@@ -183,17 +183,13 @@ export async function POST(request: Request) {
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: await convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
-          experimental_activeTools: isReasoningModel
-            ? []
-            : [
-                "getWeather",
-                "createDocument",
-                "updateDocument",
-                "requestSuggestions",
-              ],
-          experimental_transform: isReasoningModel
-            ? undefined
-            : smoothStream({ chunking: "word" }),
+          experimental_activeTools: [
+            "getWeather",
+            "createDocument",
+            "updateDocument",
+            "requestSuggestions",
+          ],
+          experimental_transform: smoothStream({ chunking: "word" }),
           providerOptions: isReasoningModel
             ? {
                 anthropic: {
@@ -203,8 +199,8 @@ export async function POST(request: Request) {
             : undefined,
           tools: {
             getWeather,
-            createDocument: createDocument({ userId, dataStream }),
-            updateDocument: updateDocument({ userId, dataStream }),
+            createDocument: createDocument({ userId, chatId: id, dataStream }),
+            updateDocument: updateDocument({ userId, chatId: id, dataStream }),
             requestSuggestions: requestSuggestions({
               userId,
               dataStream,

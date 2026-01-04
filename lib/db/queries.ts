@@ -304,12 +304,14 @@ export async function saveDocument({
   kind,
   content,
   userId,
+  chatId,
 }: {
   id: string;
   title: string;
   kind: ArtifactKind;
   content: string;
   userId: string;
+  chatId: string;
 }) {
   try {
     return await db
@@ -320,7 +322,17 @@ export async function saveDocument({
         kind,
         content,
         userId,
+        chatId,
         createdAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [document.id, document.createdAt],
+        set: {
+          title,
+          content,
+          kind,
+          chatId,
+        },
       })
       .returning();
   } catch (_error) {

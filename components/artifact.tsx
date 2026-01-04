@@ -113,13 +113,16 @@ function PureArtifact({
       if (mostRecentDocument) {
         setDocument(mostRecentDocument);
         setCurrentVersionIndex(documents.length - 1);
-        setArtifact((currentArtifact) => ({
-          ...currentArtifact,
-          content: mostRecentDocument.content ?? "",
-        }));
+
+        if (artifact.status !== "streaming") {
+          setArtifact((currentArtifact) => ({
+            ...currentArtifact,
+            content: mostRecentDocument.content ?? "",
+          }));
+        }
       }
     }
-  }, [documents, setArtifact]);
+  }, [documents, setArtifact, artifact.status]);
 
   useEffect(() => {
     mutateDocuments();
@@ -155,6 +158,7 @@ function PureArtifact({
                 title: artifact.title,
                 content: updatedContent,
                 kind: artifact.kind,
+                chatId,
               }),
             });
 

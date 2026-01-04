@@ -39,6 +39,8 @@ Do not update document right after creating it. Wait for user feedback or reques
 
 export const regularPrompt = `You are a friendly assistant! Keep your responses concise and helpful.
 
+Before responding, please think carefully about the user's request. Express your thinking process inside <thinking> tags.
+
 When asked to write, create, or help with something, just do it directly. Don't ask clarifying questions unless absolutely necessary - make reasonable assumptions and proceed with the task.`;
 
 export type RequestHints = {
@@ -57,21 +59,13 @@ About the origin of user's request:
 `;
 
 export const systemPrompt = ({
-  selectedChatModel,
+  selectedChatModel: _selectedChatModel,
   requestHints,
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
-
-  // reasoning models don't need artifacts prompt (they can't use tools)
-  if (
-    selectedChatModel.includes("reasoning") ||
-    selectedChatModel.includes("thinking")
-  ) {
-    return `${regularPrompt}\n\n${requestPrompt}`;
-  }
 
   return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
 };

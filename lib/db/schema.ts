@@ -114,6 +114,9 @@ export const document = pgTable(
     userId: text("userId")
       .notNull()
       .references(() => user.id),
+    chatId: uuid("chatId")
+      .notNull()
+      .references(() => chat.id),
   },
   (table) => {
     return {

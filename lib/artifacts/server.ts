@@ -18,8 +18,10 @@ export type SaveDocumentProps = {
 export type CreateDocumentCallbackProps = {
   id: string;
   title: string;
+  description?: string;
   dataStream: UIMessageStreamWriter<ChatMessage>;
   userId: string;
+  chatId: string;
 };
 
 export type UpdateDocumentCallbackProps = {
@@ -27,12 +29,13 @@ export type UpdateDocumentCallbackProps = {
   description: string;
   dataStream: UIMessageStreamWriter<ChatMessage>;
   userId: string;
+  chatId: string;
 };
 
 export type DocumentHandler<T = ArtifactKind> = {
   kind: T;
-  onCreateDocument: (args: CreateDocumentCallbackProps) => Promise<void>;
-  onUpdateDocument: (args: UpdateDocumentCallbackProps) => Promise<void>;
+  onCreateDocument: (args: CreateDocumentCallbackProps) => Promise<string>;
+  onUpdateDocument: (args: UpdateDocumentCallbackProps) => Promise<string>;
 };
 
 export function createDocumentHandler<T extends ArtifactKind>(config: {
@@ -46,8 +49,10 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
       const draftContent = await config.onCreateDocument({
         id: args.id,
         title: args.title,
+        description: args.description,
         dataStream: args.dataStream,
         userId: args.userId,
+        chatId: args.chatId,
       });
 
       if (args.userId) {
@@ -57,10 +62,11 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
           content: draftContent,
           kind: config.kind,
           userId: args.userId,
+          chatId: args.chatId,
         });
       }
 
-      return;
+      return draftContent;
     },
     onUpdateDocument: async (args: UpdateDocumentCallbackProps) => {
       const draftContent = await config.onUpdateDocument({
@@ -68,6 +74,7 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
         description: args.description,
         dataStream: args.dataStream,
         userId: args.userId,
+        chatId: args.chatId,
       });
 
       if (args.userId) {
@@ -77,10 +84,11 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
           content: draftContent,
           kind: config.kind,
           userId: args.userId,
+          chatId: args.chatId,
         });
       }
 
-      return;
+      return draftContent;
     },
   };
 }

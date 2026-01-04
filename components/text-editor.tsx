@@ -91,7 +91,7 @@ function PureEditor({
   }, [onSaveContent]);
 
   useEffect(() => {
-    if (editorRef.current && content) {
+    if (editorRef.current && content !== undefined) {
       const currentContent = buildContentFromDocument(
         editorRef.current.state.doc
       );
@@ -126,7 +126,7 @@ function PureEditor({
   }, [content, status]);
 
   useEffect(() => {
-    if (editorRef.current?.state.doc && content) {
+    if (editorRef.current?.state.doc && content !== undefined) {
       const projectedSuggestions = projectWithPositions(
         editorRef.current.state.doc,
         suggestions

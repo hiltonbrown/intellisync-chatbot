@@ -9,18 +9,27 @@ import { generateUUID } from "@/lib/utils";
 
 type CreateDocumentProps = {
   userId: string;
+  chatId: string;
   dataStream: UIMessageStreamWriter<ChatMessage>;
 };
 
-export const createDocument = ({ userId, dataStream }: CreateDocumentProps) =>
+export const createDocument = ({
+  userId,
+  chatId,
+  dataStream,
+}: CreateDocumentProps) =>
   tool({
     description:
       "Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind.",
     inputSchema: z.object({
       title: z.string(),
       kind: z.enum(artifactKinds),
+      description: z
+        .string()
+        .optional()
+        .describe("A detailed description of what should be in the document"),
     }),
-    execute: async ({ title, kind }) => {
+    execute: async ({ title, kind, description }) => {
       const id = generateUUID();
 
       dataStream.write({
@@ -56,11 +65,13 @@ export const createDocument = ({ userId, dataStream }: CreateDocumentProps) =>
         throw new Error(`No document handler found for kind: ${kind}`);
       }
 
-      await documentHandler.onCreateDocument({
+      const content = await documentHandler.onCreateDocument({
         id,
         title,
+        description,
         dataStream,
         userId,
+        chatId,
       });
 
       dataStream.write({ type: "data-finish", data: null, transient: true });
@@ -69,7 +80,7 @@ export const createDocument = ({ userId, dataStream }: CreateDocumentProps) =>
         id,
         title,
         kind,
-        content: "A document was created and is now visible to the user.",
+        content,
       };
     },
   });

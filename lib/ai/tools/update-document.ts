@@ -6,10 +6,15 @@ import type { ChatMessage } from "@/lib/types";
 
 type UpdateDocumentProps = {
   userId: string;
+  chatId: string;
   dataStream: UIMessageStreamWriter<ChatMessage>;
 };
 
-export const updateDocument = ({ userId, dataStream }: UpdateDocumentProps) =>
+export const updateDocument = ({
+  userId,
+  chatId,
+  dataStream,
+}: UpdateDocumentProps) =>
   tool({
     description: "Update a document with the given description.",
     inputSchema: z.object({
@@ -42,11 +47,12 @@ export const updateDocument = ({ userId, dataStream }: UpdateDocumentProps) =>
         throw new Error(`No document handler found for kind: ${document.kind}`);
       }
 
-      await documentHandler.onUpdateDocument({
+      const content = await documentHandler.onUpdateDocument({
         document,
         description,
         dataStream,
         userId,
+        chatId,
       });
 
       dataStream.write({ type: "data-finish", data: null, transient: true });
@@ -55,7 +61,7 @@ export const updateDocument = ({ userId, dataStream }: UpdateDocumentProps) =>
         id,
         title: document.title,
         kind: document.kind,
-        content: "The document has been updated successfully.",
+        content,
       };
     },
   });

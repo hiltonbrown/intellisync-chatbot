@@ -14,7 +14,7 @@ export const chatModels: ChatModel[] = [
     id: "anthropic/claude-haiku-4.5",
     name: "Claude Haiku 4.5",
     provider: "anthropic",
-    description: "Fast and affordable, great for everyday tasks",
+    description: "Fast and effective, great for everyday tasks",
   },
   {
     id: "anthropic/claude-sonnet-4.5",
@@ -27,7 +27,7 @@ export const chatModels: ChatModel[] = [
     id: "openai/gpt-5-mini",
     name: "GPT-5 Mini",
     provider: "openai",
-    description: "Fast and cost-effective for simple tasks",
+    description: "Fast and effective for simple tasks",
   },
   {
     id: "openai/gpt-5.2",
@@ -40,7 +40,7 @@ export const chatModels: ChatModel[] = [
     id: "google/gemini-2.5-flash-lite",
     name: "Gemini 2.5 Flash Lite",
     provider: "google",
-    description: "Ultra fast and affordable",
+    description: "Ultra fast and effective at a range of tasks",
   },
   {
     id: "google/gemini-3-pro-preview",
@@ -58,7 +58,7 @@ export const chatModels: ChatModel[] = [
   // Reasoning models (extended thinking)
   {
     id: "anthropic/claude-4.5-sonnet-thinking",
-    name: "Claude 4.5 Sonnet",
+    name: "Claude Sonnet 4.5 Thinking",
     provider: "reasoning",
     description: "Extended thinking for complex problems",
   },
