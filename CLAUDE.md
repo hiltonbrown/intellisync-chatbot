@@ -61,7 +61,6 @@ The app uses Next.js route groups for organization:
 
   - `/login` - Clerk sign-in page
   - `/register` - Clerk sign-up page
-  - `/organization-profile` - Organization management
   - Uses Clerk's pre-built components for authentication UI
 
 - **`app/(chat)/`** - Main chat application

@@ -37,8 +37,6 @@ function PureSettingsHeader() {
 
       <OrganizationSwitcher 
         hidePersonal
-        organizationProfileUrl="/organization-profile"
-        organizationProfileMode="navigation"
         appearance={{
           elements: {
             rootBox: "flex-shrink-0",
