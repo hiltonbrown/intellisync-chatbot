@@ -85,6 +85,7 @@
     "react-dom": "19.2.3",
     "react-resizable-panels": "^4.2.0",
     "react-syntax-highlighter": "^16.1.0",
+    "recharts": "^3.6.0",
     "redis": "^5.10.0",
     "resumable-stream": "^2.2.10",
     "server-only": "^0.0.1",
