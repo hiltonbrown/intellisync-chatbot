@@ -1,7 +1,16 @@
 "use client";
 
+import { useState, useMemo } from "react";
+import { subDays, format } from "date-fns";
 import { UsageChart } from "@/components/usage-chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const modelUsage = [
   // Mock data - replace with real data fetching
@@ -25,25 +34,59 @@ const modelUsage = [
   },
 ];
 
+function generateMockData(days: number) {
+  const data = [];
+  const today = new Date();
+  
+  for (let i = days; i >= 0; i--) {
+    const date = subDays(today, i);
+    data.push({
+      date: format(date, "MMM d"),
+      "Google Gemini": Math.floor(Math.random() * 5000) + 1000,
+      "Claude Sonnet": Math.floor(Math.random() * 3000) + 500,
+      "GPT-4o": Math.floor(Math.random() * 2000) + 200,
+    });
+  }
+  return data;
+}
+
 export function UsagePage() {
+  const [range, setRange] = useState("30");
+
+  const chartData = useMemo(() => {
+    return generateMockData(parseInt(range));
+  }, [range]);
+
   return (
     <div className="w-full space-y-6 p-1">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold">Token Usage</h1>
         <p className="text-muted-foreground">
-          View your token usage over the last 7 days.
+          View your token usage over time.
         </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Usage Overview</CardTitle>
-          <CardDescription>
-            Total tokens consumed across all models.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
+          <div className="space-y-1">
+            <CardTitle>Usage Overview</CardTitle>
+            <CardDescription>
+              Daily token consumption by model.
+            </CardDescription>
+          </div>
+          <Select value={range} onValueChange={setRange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="60">Last 60 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
         </CardHeader>
         <CardContent className="pl-2">
-          <UsageChart />
+          <UsageChart data={chartData} />
         </CardContent>
       </Card>
 
@@ -51,7 +94,7 @@ export function UsagePage() {
         <CardHeader>
           <CardTitle>Usage by Model</CardTitle>
           <CardDescription>
-            Detailed breakdown of input and output tokens per model.
+            Detailed breakdown of input and output tokens per model (Mock Total).
           </CardDescription>
         </CardHeader>
         <CardContent>

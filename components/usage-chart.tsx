@@ -8,42 +8,25 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  Legend,
 } from "recharts";
 import { useTheme } from "next-themes";
 
-const data = [
-  {
-    date: "Jan 1",
-    tokens: 2400,
-  },
-  {
-    date: "Jan 2",
-    tokens: 1398,
-  },
-  {
-    date: "Jan 3",
-    tokens: 9800,
-  },
-  {
-    date: "Jan 4",
-    tokens: 3908,
-  },
-  {
-    date: "Jan 5",
-    tokens: 4800,
-  },
-  {
-    date: "Jan 6",
-    tokens: 3800,
-  },
-  {
-    date: "Jan 7",
-    tokens: 4300,
-  },
+const colors = [
+  "#2563eb", // blue-600
+  "#dc2626", // red-600
+  "#16a34a", // green-600
+  "#9333ea", // purple-600
+  "#ea580c", // orange-600
 ];
 
-export function UsageChart() {
+export function UsageChart({ data }: { data: any[] }) {
   const { theme } = useTheme();
+
+  // Extract model names from the first data point, excluding 'date'
+  const models = data.length > 0 
+    ? Object.keys(data[0]).filter(key => key !== "date")
+    : [];
 
   return (
     <ResponsiveContainer width="100%" height={350}>
@@ -55,6 +38,7 @@ export function UsageChart() {
           fontSize={12}
           tickLine={false}
           axisLine={false}
+          minTickGap={30}
         />
         <YAxis
           stroke="#888888"
@@ -73,14 +57,18 @@ export function UsageChart() {
           itemStyle={{ color: theme === "dark" ? "#f3f4f6" : "#111827" }}
           labelStyle={{ color: theme === "dark" ? "#9ca3af" : "#6b7280" }}
         />
-        <Line
-          type="monotone"
-          dataKey="tokens"
-          stroke="#2563eb" // blue-600
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4, fill: "#2563eb" }}
-        />
+        <Legend />
+        {models.map((model, index) => (
+          <Line
+            key={model}
+            type="monotone"
+            dataKey={model}
+            stroke={colors[index % colors.length]}
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 4 }}
+          />
+        ))}
       </LineChart>
     </ResponsiveContainer>
   );
