@@ -7,6 +7,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -171,3 +172,153 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const integrationConnections = pgTable(
+  "integration_connections",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    provider: varchar("provider", { length: 32 }).notNull(),
+    clerkOrgId: text("clerk_org_id").notNull(),
+    createdByClerkUserId: text("created_by_clerk_user_id").notNull(),
+    externalAccountId: text("external_account_id").notNull(),
+    externalAccountName: text("external_account_name"),
+    accessTokenEncrypted: text("access_token_encrypted").notNull(),
+    refreshTokenEncrypted: text("refresh_token_encrypted").notNull(),
+    expiresAtUtc: timestamp("expires_at_utc").notNull(),
+    scopes: text("scopes"),
+    state: varchar("state", {
+      enum: [
+        "connected",
+        "active",
+        "error",
+        "reauth_required",
+        "disconnected",
+      ],
+    })
+      .notNull()
+      .default("connected"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueProviderExternalAccount: uniqueIndex(
+      "integration_connections_provider_external_account_unique"
+    ).on(table.provider, table.externalAccountId),
+  })
+);
+
+export type IntegrationConnection = InferSelectModel<
+  typeof integrationConnections
+>;
+
+export const integrationSyncJobs = pgTable(
+  "integration_sync_jobs",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    provider: varchar("provider", { length: 32 }).notNull(),
+    tenantId: text("tenant_id").notNull(),
+    entityType: text("entity_type").notNull(),
+    resourceId: text("resource_id").notNull(),
+    status: varchar("status", {
+      enum: ["pending", "processing", "completed", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    error: text("error"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueJob: uniqueIndex("integration_sync_jobs_dedupe_unique").on(
+      table.provider,
+      table.tenantId,
+      table.entityType,
+      table.resourceId
+    ),
+  })
+);
+
+export type IntegrationSyncJob = InferSelectModel<typeof integrationSyncJobs>;
+
+export const xeroWebhookEvents = pgTable(
+  "xero_webhook_events",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    eventCategory: text("event_category").notNull(),
+    eventType: text("event_type").notNull(),
+    resourceId: text("resource_id").notNull(),
+    eventDateUtc: timestamp("event_date_utc").notNull(),
+    receivedAt: timestamp("received_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueWebhookEvent: uniqueIndex(
+      "xero_webhook_events_tenant_event_unique"
+    ).on(
+      table.tenantId,
+      table.eventCategory,
+      table.eventType,
+      table.resourceId,
+      table.eventDateUtc
+    ),
+  })
+);
+
+export type XeroWebhookEvent = InferSelectModel<typeof xeroWebhookEvents>;
+
+export const xeroInvoices = pgTable(
+  "xero_invoices",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    xeroResourceId: text("xero_resource_id").notNull(),
+    data: json("data").notNull(),
+    deletedAt: timestamp("deleted_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueInvoice: uniqueIndex("xero_invoices_tenant_resource_unique").on(
+      table.tenantId,
+      table.xeroResourceId
+    ),
+  })
+);
+
+export const xeroContacts = pgTable(
+  "xero_contacts",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    xeroResourceId: text("xero_resource_id").notNull(),
+    data: json("data").notNull(),
+    deletedAt: timestamp("deleted_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniqueContact: uniqueIndex("xero_contacts_tenant_resource_unique").on(
+      table.tenantId,
+      table.xeroResourceId
+    ),
+  })
+);
+
+export const xeroPayments = pgTable(
+  "xero_payments",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    xeroResourceId: text("xero_resource_id").notNull(),
+    data: json("data").notNull(),
+    deletedAt: timestamp("deleted_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    uniquePayment: uniqueIndex("xero_payments_tenant_resource_unique").on(
+      table.tenantId,
+      table.xeroResourceId
+    ),
+  })
+);
