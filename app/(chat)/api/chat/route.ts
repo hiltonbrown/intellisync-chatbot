@@ -12,7 +12,7 @@ import {
   createResumableStreamContext,
   type ResumableStreamContext,
 } from "resumable-stream";
-import { auth, type UserType } from "@/app/(auth)/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
@@ -31,6 +31,7 @@ import {
   saveMessages,
   updateChatTitleById,
   updateMessage,
+  verifyUser,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
@@ -77,16 +78,22 @@ export async function POST(request: Request) {
     const { id, message, messages, selectedChatModel, selectedVisibilityType } =
       requestBody;
 
-    const session = await auth();
+    const user = await currentUser();
 
-    if (!session?.user) {
+    if (!user) {
       return new ChatSDKError("unauthorized:chat").toResponse();
     }
 
-    const userType: UserType = session.user.type;
+    const userId = user.id;
+    await verifyUser({
+      id: userId,
+      email: user.emailAddresses[0]?.emailAddress ?? "",
+    });
+
+    const userType = "regular";
 
     const messageCount = await getMessageCountByUserId({
-      id: session.user.id,
+      id: userId,
       differenceInHours: 24,
     });
 
@@ -102,7 +109,7 @@ export async function POST(request: Request) {
     let titlePromise: Promise<string> | null = null;
 
     if (chat) {
-      if (chat.userId !== session.user.id) {
+      if (chat.userId !== userId) {
         return new ChatSDKError("forbidden:chat").toResponse();
       }
       // Only fetch messages if chat already exists and not tool approval
@@ -113,7 +120,7 @@ export async function POST(request: Request) {
       // Save chat immediately with placeholder title
       await saveChat({
         id,
-        userId: session.user.id,
+        userId,
         title: "New chat",
         visibility: selectedVisibilityType,
       });
@@ -196,10 +203,10 @@ export async function POST(request: Request) {
             : undefined,
           tools: {
             getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
+            createDocument: createDocument({ userId, dataStream }),
+            updateDocument: updateDocument({ userId, dataStream }),
             requestSuggestions: requestSuggestions({
-              session,
+              userId,
               dataStream,
             }),
           },
@@ -311,15 +318,15 @@ export async function DELETE(request: Request) {
     return new ChatSDKError("bad_request:api").toResponse();
   }
 
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session?.user) {
+  if (!userId) {
     return new ChatSDKError("unauthorized:chat").toResponse();
   }
 
   const chat = await getChatById({ id });
 
-  if (chat?.userId !== session.user.id) {
+  if (chat?.userId !== userId) {
     return new ChatSDKError("forbidden:chat").toResponse();
   }
 

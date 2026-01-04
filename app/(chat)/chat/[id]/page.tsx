@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
-import { auth } from "@/app/(auth)/auth";
+import { auth } from "@clerk/nextjs/server";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
@@ -25,18 +25,18 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     redirect("/");
   }
 
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session) {
-    redirect("/api/auth/guest");
+  if (!userId) {
+    redirect("/login");
   }
 
   if (chat.visibility === "private") {
-    if (!session.user) {
+    if (!userId) {
       return notFound();
     }
 
-    if (session.user.id !== chat.userId) {
+    if (userId !== chat.userId) {
       return notFound();
     }
   }
@@ -59,7 +59,7 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
           initialChatModel={DEFAULT_CHAT_MODEL}
           initialMessages={uiMessages}
           initialVisibilityType={chat.visibility}
-          isReadonly={session?.user?.id !== chat.userId}
+          isReadonly={userId !== chat.userId}
         />
         <DataStreamHandler />
       </>
@@ -74,7 +74,7 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
         initialChatModel={chatModelFromCookie.value}
         initialMessages={uiMessages}
         initialVisibilityType={chat.visibility}
-        isReadonly={session?.user?.id !== chat.userId}
+        isReadonly={userId !== chat.userId}
       />
       <DataStreamHandler />
     </>

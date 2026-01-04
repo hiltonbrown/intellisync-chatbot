@@ -12,9 +12,8 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("User", {
-  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  id: text("id").primaryKey().notNull(),
   email: varchar("email", { length: 64 }).notNull(),
-  password: varchar("password", { length: 64 }),
 });
 
 export type User = InferSelectModel<typeof user>;
@@ -23,7 +22,7 @@ export const chat = pgTable("Chat", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
   createdAt: timestamp("createdAt").notNull(),
   title: text("title").notNull(),
-  userId: uuid("userId")
+  userId: text("userId")
     .notNull()
     .references(() => user.id),
   visibility: varchar("visibility", { enum: ["public", "private"] })
@@ -112,7 +111,7 @@ export const document = pgTable(
     kind: varchar("text", { enum: ["text", "code", "image", "sheet"] })
       .notNull()
       .default("text"),
-    userId: uuid("userId")
+    userId: text("userId")
       .notNull()
       .references(() => user.id),
   },
@@ -135,7 +134,7 @@ export const suggestion = pgTable(
     suggestedText: text("suggestedText").notNull(),
     description: text("description"),
     isResolved: boolean("isResolved").notNull().default(false),
-    userId: uuid("userId")
+    userId: text("userId")
       .notNull()
       .references(() => user.id),
     createdAt: timestamp("createdAt").notNull(),

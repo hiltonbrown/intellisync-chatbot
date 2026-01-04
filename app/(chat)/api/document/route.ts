@@ -1,9 +1,10 @@
-import { auth } from "@/app/(auth)/auth";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import type { ArtifactKind } from "@/components/artifact";
 import {
   deleteDocumentsByIdAfterTimestamp,
   getDocumentsById,
   saveDocument,
+  verifyUser,
 } from "@/lib/db/queries";
 import { ChatSDKError } from "@/lib/errors";
 
@@ -18,9 +19,9 @@ export async function GET(request: Request) {
     ).toResponse();
   }
 
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session?.user) {
+  if (!userId) {
     return new ChatSDKError("unauthorized:document").toResponse();
   }
 
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
     return new ChatSDKError("not_found:document").toResponse();
   }
 
-  if (document.userId !== session.user.id) {
+  if (document.userId !== userId) {
     return new ChatSDKError("forbidden:document").toResponse();
   }
 
@@ -50,11 +51,17 @@ export async function POST(request: Request) {
     ).toResponse();
   }
 
-  const session = await auth();
+  const user = await currentUser();
 
-  if (!session?.user) {
+  if (!user) {
     return new ChatSDKError("not_found:document").toResponse();
   }
+
+  const userId = user.id;
+  await verifyUser({
+    id: userId,
+    email: user.emailAddresses[0]?.emailAddress ?? "",
+  });
 
   const {
     content,
@@ -68,7 +75,7 @@ export async function POST(request: Request) {
   if (documents.length > 0) {
     const [doc] = documents;
 
-    if (doc.userId !== session.user.id) {
+    if (doc.userId !== userId) {
       return new ChatSDKError("forbidden:document").toResponse();
     }
   }
@@ -78,7 +85,7 @@ export async function POST(request: Request) {
     content,
     title,
     kind,
-    userId: session.user.id,
+    userId: userId,
   });
 
   return Response.json(document, { status: 200 });
@@ -103,9 +110,9 @@ export async function DELETE(request: Request) {
     ).toResponse();
   }
 
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session?.user) {
+  if (!userId) {
     return new ChatSDKError("unauthorized:document").toResponse();
   }
 
@@ -113,7 +120,7 @@ export async function DELETE(request: Request) {
 
   const [document] = documents;
 
-  if (document.userId !== session.user.id) {
+  if (document.userId !== userId) {
     return new ChatSDKError("forbidden:document").toResponse();
   }
 

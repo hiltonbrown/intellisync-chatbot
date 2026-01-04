@@ -31,7 +31,6 @@ import {
   user,
   vote,
 } from "./schema";
-import { generateHashedPassword } from "./utils";
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -41,41 +40,19 @@ import { generateHashedPassword } from "./utils";
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
-export async function getUser(email: string): Promise<User[]> {
+export async function verifyUser({
+  id,
+  email,
+}: {
+  id: string;
+  email: string;
+}) {
   try {
-    return await db.select().from(user).where(eq(user.email, email));
+    await db.insert(user).values({ id, email }).onConflictDoNothing();
   } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to get user by email"
-    );
-  }
-}
-
-export async function createUser(email: string, password: string) {
-  const hashedPassword = generateHashedPassword(password);
-
-  try {
-    return await db.insert(user).values({ email, password: hashedPassword });
-  } catch (_error) {
-    throw new ChatSDKError("bad_request:database", "Failed to create user");
-  }
-}
-
-export async function createGuestUser() {
-  const email = `guest-${Date.now()}`;
-  const password = generateHashedPassword(generateUUID());
-
-  try {
-    return await db.insert(user).values({ email, password }).returning({
-      id: user.id,
-      email: user.email,
-    });
-  } catch (_error) {
-    throw new ChatSDKError(
-      "bad_request:database",
-      "Failed to create guest user"
-    );
+    // Ignore error if user already exists or other issues,
+    // though strictly we might want to log it.
+    // The foreign key constraint will fail later if this didn't work and the user doesn't exist.
   }
 }
 

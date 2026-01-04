@@ -1,4 +1,4 @@
-import { auth } from "@/app/(auth)/auth";
+import { auth } from "@clerk/nextjs/server";
 import { getChatById, getVotesByChatId, voteMessage } from "@/lib/db/queries";
 import { ChatSDKError } from "@/lib/errors";
 
@@ -13,9 +13,9 @@ export async function GET(request: Request) {
     ).toResponse();
   }
 
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session?.user) {
+  if (!userId) {
     return new ChatSDKError("unauthorized:vote").toResponse();
   }
 
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     return new ChatSDKError("not_found:chat").toResponse();
   }
 
-  if (chat.userId !== session.user.id) {
+  if (chat.userId !== userId) {
     return new ChatSDKError("forbidden:vote").toResponse();
   }
 
@@ -49,9 +49,9 @@ export async function PATCH(request: Request) {
     ).toResponse();
   }
 
-  const session = await auth();
+  const { userId } = await auth();
 
-  if (!session?.user) {
+  if (!userId) {
     return new ChatSDKError("unauthorized:vote").toResponse();
   }
 
@@ -61,7 +61,7 @@ export async function PATCH(request: Request) {
     return new ChatSDKError("not_found:vote").toResponse();
   }
 
-  if (chat.userId !== session.user.id) {
+  if (chat.userId !== userId) {
     return new ChatSDKError("forbidden:vote").toResponse();
   }
 
