@@ -61,6 +61,13 @@ export function DataStreamHandler() {
               status: "streaming",
             };
 
+          case "data-chatId":
+            return {
+              ...draftArtifact,
+              chatId: delta.data,
+              status: "streaming",
+            };
+
           case "data-title":
             return {
               ...draftArtifact,

@@ -39,6 +39,12 @@ export const createDocument = ({
       });
 
       dataStream.write({
+        type: "data-chatId",
+        data: chatId,
+        transient: true,
+      });
+
+      dataStream.write({
         type: "data-id",
         data: id,
         transient: true,

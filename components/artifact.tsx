@@ -40,6 +40,7 @@ export type ArtifactKind = (typeof artifactDefinitions)[number]["kind"];
 export type UIArtifact = {
   title: string;
   documentId: string;
+  chatId: string;
   kind: ArtifactKind;
   content: string;
   isVisible: boolean;
@@ -88,6 +89,15 @@ function PureArtifact({
   selectedModelId: string;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
+
+  useEffect(() => {
+    if (chatId) {
+      setArtifact((currentArtifact) => ({
+        ...currentArtifact,
+        chatId,
+      }));
+    }
+  }, [chatId, setArtifact]);
 
   const {
     data: documents,

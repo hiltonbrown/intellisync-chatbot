@@ -92,6 +92,7 @@ export function DocumentPreview({
           kind: artifact.kind,
           content: artifact.content,
           id: artifact.documentId,
+          chatId: artifact.chatId,
           createdAt: new Date(),
           userId: "noop",
         }

@@ -6,6 +6,7 @@ import type { UIArtifact } from "@/components/artifact";
 
 export const initialArtifactData: UIArtifact = {
   documentId: "init",
+  chatId: "",
   content: "",
   kind: "text",
   title: "",
