@@ -28,8 +28,8 @@ This is a **Next.js AI Chatbot** application built with modern web technologies.
 - **Frontend**: Next.js 16 App Router with React Server Components
 - **Backend**: API routes in `app/api/`, server actions in `actions.ts` files
 - **Database**: PostgreSQL with Drizzle ORM
-- **AI Integration**: Vercel AI SDK with multiple model providers
-- **Authentication**: NextAuth v5 with credentials and guest modes
+- **AI Integration**: Vercel AI SDK with multiple model providers (Anthropic, OpenAI, Google, xAI)
+- **Authentication**: Clerk with OAuth and email/password support
 
 ## Common Tasks
 

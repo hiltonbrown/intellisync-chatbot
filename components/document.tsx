@@ -63,6 +63,7 @@ function PureDocumentToolResult({
           isVisible: true,
           status: "idle",
           boundingBox,
+          chatId: currentArtifact.chatId,
         }));
       }}
       type="button"

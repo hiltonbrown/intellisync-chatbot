@@ -27,6 +27,7 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
+  getUserById,
   saveChat,
   saveMessages,
   updateChatTitleById,
@@ -108,6 +109,8 @@ export async function POST(request: Request) {
     let messagesFromDb: DBMessage[] = [];
     let titlePromise: Promise<string> | null = null;
 
+    const dbUser = await getUserById({ id: userId });
+
     if (chat) {
       if (chat.userId !== userId) {
         return new ChatSDKError("forbidden:chat").toResponse();
@@ -180,7 +183,11 @@ export async function POST(request: Request) {
 
         const result = streamText({
           model: getLanguageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: systemPrompt({
+            selectedChatModel,
+            requestHints,
+            customPrompt: dbUser?.systemPrompt,
+          }),
           messages: await convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools: [

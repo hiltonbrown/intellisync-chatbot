@@ -4,7 +4,7 @@ import equal from "fast-deep-equal";
 import { memo, useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeText } from "@/lib/utils";
 import { useDataStream } from "./data-stream-provider";
 import { DocumentToolResult } from "./document";
 import { DocumentPreview } from "./document-preview";
@@ -137,7 +137,7 @@ const PurePreviewMessage = ({
                           : undefined
                       }
                     >
-                      <Response>{part.text}</Response>
+                      <Response>{sanitizeText(part.text)}</Response>
                     </MessageContent>
                   </div>
                 );

@@ -61,13 +61,15 @@ About the origin of user's request:
 export const systemPrompt = ({
   selectedChatModel: _selectedChatModel,
   requestHints,
+  customPrompt,
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
+  customPrompt?: string | null;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
-  return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  return `${customPrompt ? `${customPrompt}\n\n` : ""}${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `

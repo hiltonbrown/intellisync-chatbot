@@ -14,6 +14,7 @@ import {
 export const user = pgTable("User", {
   id: text("id").primaryKey().notNull(),
   email: varchar("email", { length: 64 }).notNull(),
+  systemPrompt: text("systemPrompt"),
 });
 
 export type User = InferSelectModel<typeof user>;

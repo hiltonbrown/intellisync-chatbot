@@ -49,9 +49,10 @@ export async function verifyUser({
 }) {
   try {
     await db.insert(user).values({ id, email }).onConflictDoNothing();
-  } catch (_error) {
-    // Ignore error if user already exists or other issues,
-    // though strictly we might want to log it.
+  } catch (error) {
+    console.error("Error verifying user:", error);
+    // Ignore error if user already exists via unique constraint,
+    // but log other errors for debugging.
     // The foreign key constraint will fail later if this didn't work and the user doesn't exist.
   }
 }
@@ -586,6 +587,51 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw new ChatSDKError(
       "bad_request:database",
       "Failed to get stream ids by chat id"
+    );
+  }
+}
+
+export async function getUserById({ id }: { id: string }) {
+  try {
+    const [selectedUser] = await db.select().from(user).where(eq(user.id, id));
+    return selectedUser || null;
+  } catch (error) {
+    console.error("Error getting user by id:", error);
+    throw new ChatSDKError("bad_request:database", "Failed to get user by id");
+  }
+}
+
+export async function updateUserSystemPrompt({
+  id,
+  systemPrompt,
+}: {
+  id: string;
+  systemPrompt: string | null;
+}) {
+  try {
+    return await db
+      .update(user)
+      .set({ systemPrompt })
+      .where(eq(user.id, id));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to update user system prompt"
+    );
+  }
+}
+
+export async function getSystemPromptByUserId({ id }: { id: string }) {
+  try {
+    const [selectedUser] = await db
+      .select({ systemPrompt: user.systemPrompt })
+      .from(user)
+      .where(eq(user.id, id));
+    return selectedUser?.systemPrompt || null;
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get system prompt by user id"
     );
   }
 }

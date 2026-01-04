@@ -3,10 +3,11 @@
 import { UserButton } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { Settings2, Sun, Moon, ChartArea } from "lucide-react";
+import { Settings2, Sun, Moon, ChartArea, UserRoundPen } from "lucide-react";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { UsagePage } from "@/components/usage-page";
+import { PersonalizationPage } from "@/components/personalization-page";
 
 export function SidebarUserNav({ user }: { user: { id: string } | null | undefined }) {
   const { setTheme, resolvedTheme } = useTheme();
@@ -35,6 +36,15 @@ export function SidebarUserNav({ user }: { user: { id: string } | null | undefin
           >
             <UsagePage />
           </UserButton.UserProfilePage>
+          
+          <UserButton.UserProfilePage 
+            label="Personalisation" 
+            url="personalization" 
+            labelIcon={<UserRoundPen size={16} />}
+          >
+            <PersonalizationPage />
+          </UserButton.UserProfilePage>
+
           <UserButton.MenuItems>
             <UserButton.Action
               label="Settings"

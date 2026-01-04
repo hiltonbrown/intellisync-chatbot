@@ -72,7 +72,7 @@ function PureCodeEditor({ content, onSaveContent, status }: EditorProps) {
   }, [onSaveContent]);
 
   useEffect(() => {
-    if (editorRef.current && content !== undefined) {
+    if (editorRef.current && content) {
       const currentContent = editorRef.current.state.doc.toString();
 
       if (status === "streaming" || currentContent !== content) {

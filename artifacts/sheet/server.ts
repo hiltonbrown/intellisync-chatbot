@@ -6,13 +6,13 @@ import { createDocumentHandler } from "@/lib/artifacts/server";
 
 export const sheetDocumentHandler = createDocumentHandler<"sheet">({
   kind: "sheet",
-  onCreateDocument: async ({ title, description, dataStream }) => {
+  onCreateDocument: async ({ title, dataStream }) => {
     let draftContent = "";
 
     const { fullStream } = streamObject({
       model: getArtifactModel(),
       system: sheetPrompt,
-      prompt: description ?? title,
+      prompt: title,
       schema: z.object({
         csv: z.string().describe("CSV data"),
       }),

@@ -40,11 +40,13 @@ function PureEditor({
 }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<EditorView | null>(null);
+  const lastContentRef = useRef<string>("");
 
+  // Initialize editor once on mount
   useEffect(() => {
     if (containerRef.current && !editorRef.current) {
       const state = EditorState.create({
-        doc: buildDocumentFromContent(content),
+        doc: buildDocumentFromContent(content || ""),
         plugins: [
           ...exampleSetup({ schema: documentSchema, menuBar: false }),
           inputRules({
@@ -64,6 +66,8 @@ function PureEditor({
       editorRef.current = new EditorView(containerRef.current, {
         state,
       });
+
+      lastContentRef.current = content || "";
     }
 
     return () => {
@@ -72,10 +76,10 @@ function PureEditor({
         editorRef.current = null;
       }
     };
-    // NOTE: we only want to run this effect once
-    // eslint-disable-next-line
-  }, [content]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // Update transaction handler when onSaveContent changes
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.setProps({
@@ -90,63 +94,63 @@ function PureEditor({
     }
   }, [onSaveContent]);
 
+  // Update editor content when content prop changes
   useEffect(() => {
-    if (editorRef.current && content !== undefined) {
-      const currentContent = buildContentFromDocument(
-        editorRef.current.state.doc
+    if (!editorRef.current) return;
+
+    const safeContent = content || "";
+
+    // Skip if content hasn't actually changed
+    if (safeContent === lastContentRef.current && status !== "streaming") {
+      return;
+    }
+
+    const currentContent = buildContentFromDocument(
+      editorRef.current.state.doc
+    );
+
+    // Update editor if content differs from what's displayed
+    if (currentContent !== safeContent) {
+      const newDocument = buildDocumentFromContent(safeContent);
+
+      const transaction = editorRef.current.state.tr.replaceWith(
+        0,
+        editorRef.current.state.doc.content.size,
+        newDocument.content
       );
 
-      if (status === "streaming") {
-        const newDocument = buildDocumentFromContent(content);
-
-        const transaction = editorRef.current.state.tr.replaceWith(
-          0,
-          editorRef.current.state.doc.content.size,
-          newDocument.content
-        );
-
-        transaction.setMeta("no-save", true);
-        editorRef.current.dispatch(transaction);
-        return;
-      }
-
-      if (currentContent !== content) {
-        const newDocument = buildDocumentFromContent(content);
-
-        const transaction = editorRef.current.state.tr.replaceWith(
-          0,
-          editorRef.current.state.doc.content.size,
-          newDocument.content
-        );
-
-        transaction.setMeta("no-save", true);
-        editorRef.current.dispatch(transaction);
-      }
+      transaction.setMeta("no-save", true);
+      editorRef.current.dispatch(transaction);
+      lastContentRef.current = safeContent;
     }
   }, [content, status]);
 
+  // Update suggestions decorations
   useEffect(() => {
-    if (editorRef.current?.state.doc && content !== undefined) {
-      const projectedSuggestions = projectWithPositions(
-        editorRef.current.state.doc,
-        suggestions
-      ).filter(
-        (suggestion) => suggestion.selectionStart && suggestion.selectionEnd
-      );
+    if (!editorRef.current?.state.doc) return;
 
-      const decorations = createDecorations(
-        projectedSuggestions,
-        editorRef.current
-      );
+    const projectedSuggestions = projectWithPositions(
+      editorRef.current.state.doc,
+      suggestions
+    ).filter(
+      (suggestion) => suggestion.selectionStart && suggestion.selectionEnd
+    );
 
-      const transaction = editorRef.current.state.tr;
-      transaction.setMeta(suggestionsPluginKey, { decorations });
-      editorRef.current.dispatch(transaction);
-    }
+    const decorations = createDecorations(
+      projectedSuggestions,
+      editorRef.current
+    );
+
+    const transaction = editorRef.current.state.tr;
+    transaction.setMeta(suggestionsPluginKey, { decorations });
+    editorRef.current.dispatch(transaction);
   }, [suggestions, content]);
 
   return (
-    <div className="prose dark:prose-invert relative" ref={containerRef} />
+    <div
+      className="prose dark:prose-invert relative min-h-[200px] w-full"
+      ref={containerRef}
+    />
   );
 }
 

@@ -4,11 +4,10 @@ This file provides guidance for working with Google Gemini models in this Next.j
 
 ## Gemini Model Support
 
-This project supports Google's Gemini models through the Vercel AI SDK. Current supported models include:
+This project supports Google's Gemini models through the Vercel AI SDK and AI Gateway. Current supported models include:
 
-- `google/gemini-2.5-flash-lite` (default)
-- `google/gemini-2.5-flash`
-- `google/gemini-2.5-pro`
+- `google/gemini-2.5-flash-lite` (default) - Ultra fast and effective at a range of tasks
+- `google/gemini-3-pro-preview` - Most capable Google model
 
 ## Model Configuration
 
@@ -22,19 +21,15 @@ To add a new Gemini model to the application:
    export const chatModels: ChatModel[] = [
      // ... existing models
      {
-       id: "google/gemini-2.5-pro",
-       name: "Gemini 2.5 Pro",
+       id: "google/gemini-3-pro-preview",
+       name: "Gemini 3 Pro",
        provider: "google",
-       tier: "premium",
-       contextWindow: 2000000, // 2M tokens
-       maxTokens: 8192,
-       inputPricing: 0.00125, // per 1K chars
-       outputPricing: 0.005, // per 1K chars
+       description: "Most capable Google model",
      },
    ];
    ```
 
-2. **Environment Variables**: Ensure `GOOGLE_GENERATIVE_AI_API_KEY` is set in `.env.local`
+2. **Environment Variables**: Models are accessed through Vercel AI Gateway, so ensure `AI_GATEWAY_API_KEY` is configured (or deploy on Vercel for automatic OIDC authentication)
 
 ### Model-Specific Features
 
@@ -48,7 +43,7 @@ Gemini models excel at processing multimodal inputs:
 
 #### Long Context Windows
 
-- Gemini 2.5 Pro: 2M token context window
+- Gemini 3 Pro: Large context window for handling extensive conversations
 - Efficient handling of large codebases and long conversations
 - Maintains coherence across extended interactions
 
@@ -132,9 +127,9 @@ Gemini models work seamlessly with the application's streaming architecture:
 
 ### Model Selection
 
-- Use `gemini-2.5-flash-lite` for fast, cost-effective responses
-- Reserve `gemini-2.5-pro` for complex reasoning tasks
-- Implement automatic model selection based on task complexity
+- Use `gemini-2.5-flash-lite` for fast, cost-effective responses (default)
+- Reserve `gemini-3-pro-preview` for complex reasoning tasks
+- Allow users to switch models via the model selector UI
 
 ## Troubleshooting
 
