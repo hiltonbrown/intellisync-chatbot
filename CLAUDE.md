@@ -10,7 +10,7 @@ This is a **Next.js AI Chatbot** template (Chat SDK) built with Next.js 16 App R
 
 - Next.js 16 with App Router and React Server Components
 - AI SDK (Vercel) with streaming responses and tool calling
-- Auth.js (NextAuth v5) for authentication (credentials + guest mode)
+- Clerk for authentication
 - Drizzle ORM with PostgreSQL (Neon)
 - Vercel Blob for file storage
 - Redis for resumable streams (optional)
@@ -59,11 +59,10 @@ The app uses Next.js route groups for organization:
 
 - **`app/(auth)/`** - Authentication routes and logic
 
-  - `/login` and `/register` pages
-  - `auth.ts` - NextAuth configuration with credentials + guest providers
-  - `auth.config.ts` - Shared auth configuration
-  - `actions.ts` - Server actions for auth operations
-  - API routes: `/api/auth/*` for NextAuth, `/api/auth/guest` for guest creation
+  - `/login` - Clerk sign-in page
+  - `/register` - Clerk sign-up page
+  - `/organization-profile` - Organization management
+  - Uses Clerk's pre-built components for authentication UI
 
 - **`app/(chat)/`** - Main chat application
   - Root `/` and `/chat/[id]` routes
@@ -92,6 +91,11 @@ The app uses Next.js route groups for organization:
 - **`models.ts`** - Model registry
 
   - Defines available models from Anthropic, OpenAI, Google, xAI
+  - Current models include:
+    - Anthropic: Claude Haiku 4.5, Claude Sonnet 4.5 (with thinking variant)
+    - OpenAI: GPT-5 Mini, GPT-5.2
+    - Google: Gemini 2.5 Flash Lite, Gemini 3 Pro
+    - xAI: Grok 4.1 Fast (with reasoning variant)
   - Groups models by provider for UI presentation
   - Default model: `google/gemini-2.5-flash-lite`
 
@@ -114,7 +118,7 @@ The app uses Next.js route groups for organization:
 
 - **`schema.ts`** - Drizzle schema definitions
 
-  - `User` - User accounts (regular and guest)
+  - `User` - User accounts (id and email only, managed by Clerk)
   - `Chat` - Chat sessions with visibility settings
   - `Message_v2` - Messages with parts-based structure (current)
   - `Message` - Legacy messages (deprecated)
@@ -171,17 +175,20 @@ The chat uses AI SDK's streaming with custom data types:
 
 ### Authentication Flow
 
-Two authentication methods:
+Authentication is handled by **Clerk**, providing:
 
-1. **Credentials** - Email/password with bcrypt
-2. **Guest** - Auto-generated temporary accounts (`guest-{timestamp}@email`)
+- Email/password authentication
+- OAuth providers (Google, GitHub, etc.)
+- User management and session handling
+- Pre-built UI components for auth flows
 
-Session includes:
+Session access:
 
-- `session.user.id` - User UUID
-- `session.user.type` - "regular" | "guest"
+- Use `auth()` from `@clerk/nextjs/server` for user ID in server components
+- Use `currentUser()` for full user details
+- User ID stored as text in database
 
-Rate limiting based on user type via `entitlements.ts`.
+Rate limiting based on user entitlements via `entitlements.ts`.
 
 ### Message Structure
 
@@ -214,7 +221,9 @@ Rate limiting based on user type via `entitlements.ts`.
 
 Required variables (see `.env.example`):
 
-- `AUTH_SECRET` - NextAuth secret (generate with `openssl rand -base64 32`)
+- `AUTH_SECRET` - General auth secret (generate with `openssl rand -base64 32`)
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
+- `CLERK_SECRET_KEY` - Clerk secret key
 - `POSTGRES_URL` - PostgreSQL connection string (Neon or other)
 - `BLOB_READ_WRITE_TOKEN` - Vercel Blob storage token
 
@@ -243,7 +252,7 @@ Run `pnpm lint` before committing. Auto-fix with `pnpm format`.
 
 **E2E tests** with Playwright (located in `tests/e2e/`):
 
-- `auth.test.ts` - Login/register flows
+- `auth.test.ts` - Clerk authentication flows
 - `chat.test.ts` - Chat interactions and streaming
 - `api.test.ts` - API endpoint tests
 - `model-selector.test.ts` - Model switching
@@ -323,146 +332,55 @@ This codebase migrated from content-based messages to parts-based messages. Lega
 
 Migration helper: `lib/db/helpers/01-core-to-parts.ts`
 
-# Project Overview
+## Additional Project Details
 
-This is a Next.js 16 AI Chatbot application, built using the Vercel AI SDK. It features a modern chat interface with support for various AI models (defaulting to xAI/Grok), artifacts, and multimodal input.
+### Styling
 
-**Key Technologies:**
+- **Tailwind CSS 4** - Utility-first CSS framework
+- **shadcn/ui** - Component library built on Radix UI
+- **Radix UI** - Unstyled, accessible components
 
-- **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS 4, shadcn/ui, Radix UI
-- **AI:** Vercel AI SDK (`ai`, `@ai-sdk/react`), Vercel AI Gateway
-- **Database:** PostgreSQL (Neon), Drizzle ORM
-- **Caching/Storage:** Redis, Vercel Blob
-- **Authentication:** Auth.js (NextAuth v5 beta)
-- **Testing:** Playwright
-- **Linting/Formatting:** Biome (via `ultracite`)
+### Package Manager
 
-# Building and Running
+This project uses **pnpm** for dependency management.
 
-**Package Manager:** `pnpm`
+## Repository Guidelines
 
-**Environment Setup:**
-Copy `.env.example` to `.env.local` and populate the required environment variables (Database URL, AI keys, Auth secrets, etc.).
+### Directory Structure
 
-**Key Commands:**
+- `app/` - Next.js App Router routes and layouts with grouped routes (`(auth)`, `(chat)`)
+- `components/` - React components (ui/, ai-elements/, elements/)
+- `lib/` - Shared utilities (db/, ai/)
+- `hooks/` - Custom React hooks
+- `tests/` - Playwright E2E tests
+- `artifacts/` - Artifact type implementations
+- `public/` - Static assets
+- Configuration files in repo root
 
-- **Development Server:**
+### Coding Style
 
-  ```bash
-  pnpm dev
-  ```
+- TypeScript strict mode everywhere
+- 2-space indentation, trailing commas
+- PascalCase for components, camelCase for utilities
+- Use `@/*` path alias for imports
+- Follow Biome/Ultracite formatting rules
 
-  Starts the app at `http://localhost:3000` with Turbopack.
+### Testing
 
-- **Build:**
+- Playwright for E2E tests (`tests/e2e/*.spec.ts`)
+- Keep selectors stable with data attributes
+- Run `pnpm test` before PRs
+- Set `PLAYWRIGHT=True` for mock models
 
-  ```bash
-  pnpm build
-  ```
+### Commits & PRs
 
-  Runs database migrations (`lib/db/migrate`) and builds the Next.js application.
+- Concise, imperative commit messages
+- Group schema changes with migrations
+- Include testing details and screenshots for UI changes
+- Document environment variable changes
 
-- **Testing:**
+### Security
 
-  ```bash
-  pnpm test
-  ```
-
-  Runs Playwright E2E tests. Sets `PLAYWRIGHT=True`.
-
-- **Linting:**
-
-  ```bash
-  pnpm lint
-  ```
-
-  Checks code quality using `ultracite` (Biome).
-
-- **Formatting:**
-
-  ```bash
-  pnpm format
-  ```
-
-  Fixes code formatting issues using `ultracite` (Biome).
-
-- **Database Management (Drizzle):**
-  - `pnpm db:generate`: Generate migrations based on schema changes.
-  - `pnpm db:migrate`: Run pending migrations.
-  - `pnpm db:studio`: Open Drizzle Studio to inspect the database.
-  - `pnpm db:push`: Push schema changes directly to the DB (prototyping).
-
-# Development Conventions
-
-- **Directory Structure:**
-
-  - `app/`: Next.js App Router routes and layouts.
-    - `(auth)`: Authentication-related routes.
-    - `(chat)`: Main chat interface routes.
-    - `api/`: Backend API routes.
-  - `components/`: React components.
-    - `ui/`: Reusable UI primitives (shadcn/ui).
-    - `ai-elements/`, `elements/`: AI-specific UI components.
-  - `lib/`: Shared utilities.
-    - `db/`: Drizzle ORM schema (`schema.ts`) and migration logic.
-    - `ai/`: AI-related logic and prompt definitions.
-  - `hooks/`: Custom React hooks.
-  - `tests/`: Playwright E2E tests.
-
-- **Database:**
-
-  - Schema definitions are located in `lib/db/schema.ts`.
-  - Always run `pnpm db:generate` after modifying the schema to create migration files.
-
-- **Styling:**
-
-  - Uses Tailwind CSS v4.
-  - Follows shadcn/ui patterns for component composition.
-
-- **Code Quality:**
-  - Strict adherence to Biome configuration (defined in `biome.jsonc`).
-  - `ultracite` config extends standard rules but disables some specific rules (e.g., `noExplicitAny`, `noMagicNumbers` in style).
-
-# Repository Guidelines
-
-## Project Structure & Module Organization
-
-- Next.js App Router lives in `app/`; grouped routes use segments like `app/(auth)` and `app/(chat)`. Server actions and layouts stay close to their routes.
-- Shared UI primitives are under `components/` and hooks in `hooks/`. Reusable logic and data access sit in `lib/` (`lib/db` for Drizzle schema/migrations, `lib/ai` for AI SDK wiring, `lib/utils.ts` for helpers).
-- Static assets go in `public/`. E2E test specs and fixtures live in `tests/` (see `tests/e2e`, `tests/helpers.ts`).
-- Configuration lives in repo root: `next.config.ts`, `vercel.json`, `drizzle.config.ts`, `biome.jsonc`, `playwright.config.ts`.
-
-## Build, Test, and Development Commands
-
-- `pnpm install` — install dependencies (uses `pnpm` per `packageManager`).
-- `pnpm dev` — start the Next.js dev server with Turbo.
-- `pnpm build` — run `tsx lib/db/migrate` then `next build`; requires DB env vars.
-- `pnpm start` — run the production build.
-- `pnpm lint` / `pnpm format` — check or auto-fix with Ultracite/Biome.
-- `pnpm db:generate` / `pnpm db:migrate` — generate and apply Drizzle migrations; keep schema changes committed.
-- `pnpm test` — run Playwright E2E suite (`PLAYWRIGHT=True` set in script). For debugging, use `pnpm exec playwright test --headed --debug`.
-
-## Coding Style & Naming Conventions
-
-- TypeScript everywhere; `tsconfig.json` is strict. Prefer server components unless client hooks are needed.
-- Stick to 2-space indentation and trailing commas; let `pnpm format` settle style. Avoid `any` unless unavoidable.
-- Components/pages: PascalCase filenames; helpers/hooks: camelCase; route folders mirror URL segments.
-- Use `@/*` path alias for imports; keep side-effectful code out of `lib/` utilities.
-
-## Testing Guidelines
-
-- Tests use Playwright (`tests/e2e/*.spec.ts`). Keep selectors stable with data attributes where possible.
-- When adding flows, extend shared helpers/fixtures in `tests/helpers.ts` and `tests/fixtures.ts` to minimize duplication.
-- Run `pnpm test` before PRs; for visual changes, add screenshots or describe expected behavior.
-
-## Commit & Pull Request Guidelines
-
-- Commits: concise, imperative subject (e.g., “Add chat retry handling”); include why when non-obvious. Group schema changes with generated migrations.
-- PRs: describe intent, scope, and testing performed (`pnpm lint`, `pnpm test`, migrations). Link issues/linear tickets. Include screenshots or recordings for UI-impacting work and note any env/config changes.
-
-## Security & Configuration Tips
-
-- Copy envs from `.env.example`; never commit secrets. Required keys include AI Gateway, Auth.js, Postgres/Neon, and Vercel Blob.
-- Local build/migrations expect a reachable Postgres instance; use `pnpm db:push` for schema sync and `pnpm db:studio` to inspect data.
+- Never commit secrets to version control
+- Use `.env.local` for local development
+- Required keys: Clerk, AI Gateway, Postgres, Vercel Blob

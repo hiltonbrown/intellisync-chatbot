@@ -16,7 +16,6 @@ export function SidebarUserNav({ user }: { user: { id: string } | null | undefin
       <SidebarMenuItem className="flex items-center gap-2">
         <UserButton 
           showName
-          userProfileUrl="/user-profile"
           appearance={{
             elements: {
               rootBox: "w-full",
