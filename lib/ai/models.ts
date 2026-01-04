@@ -22,16 +22,10 @@ export const chatModels: ChatModel[] = [
     provider: "anthropic",
     description: "Best balance of speed, intelligence, and cost",
   },
-  {
-    id: "anthropic/claude-opus-4.5",
-    name: "Claude Opus 4.5",
-    provider: "anthropic",
-    description: "Most capable Anthropic model",
-  },
   // OpenAI
   {
-    id: "openai/gpt-4.1-mini",
-    name: "GPT-4.1 Mini",
+    id: "openai/gpt-5-mini",
+    name: "GPT-5 Mini",
     provider: "openai",
     description: "Fast and cost-effective for simple tasks",
   },
@@ -63,16 +57,16 @@ export const chatModels: ChatModel[] = [
   },
   // Reasoning models (extended thinking)
   {
-    id: "anthropic/claude-3.7-sonnet-thinking",
-    name: "Claude 3.7 Sonnet",
+    id: "anthropic/claude-4.5-sonnet-thinking",
+    name: "Claude 4.5 Sonnet",
     provider: "reasoning",
     description: "Extended thinking for complex problems",
   },
   {
-    id: "xai/grok-code-fast-1-thinking",
-    name: "Grok Code Fast",
+    id: "xai/grok-4.1-fast-reasoning",
+    name: "Grok 4.1 Fast Reasoning",
     provider: "reasoning",
-    description: "Reasoning optimized for code",
+    description: "Fast tool-calling model with a 2M context window.",
   },
 ];
 

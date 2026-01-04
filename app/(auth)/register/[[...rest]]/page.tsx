@@ -1,0 +1,12 @@
+import { SignUp } from "@clerk/nextjs";
+
+export default function Page() {
+  return (
+    <SignUp
+      path="/register"
+      routing="path"
+      signInUrl="/login"
+      forceRedirectUrl="/"
+    />
+  );
+}
