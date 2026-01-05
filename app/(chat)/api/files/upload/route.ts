@@ -215,7 +215,7 @@ export async function POST(request: Request) {
         chatId,
       });
 
-      if (normalizedText) {
+      if (normalizedText.length >= MIN_TEXT_LENGTH) {
         const chunks = chunkText(normalizedText);
         const embeddings = await createEmbeddings(chunks);
 
