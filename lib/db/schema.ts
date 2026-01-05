@@ -131,7 +131,9 @@ export type Document = InferSelectModel<typeof document>;
 
 export const documentChunk = pgTable("DocumentChunk", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
-  artifactId: uuid("artifactId").notNull(),
+  artifactId: uuid("artifactId")
+    .notNull()
+    .references(() => document.id, { onDelete: "cascade" }),
   userId: text("userId")
     .notNull()
     .references(() => user.id),
