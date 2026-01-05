@@ -80,6 +80,7 @@ async function reindexDocumentChunks({
         content: chunk,
         embedding: embeddings[index] ?? [],
         createdAt: new Date(),
+        createdAt: new Date(),
       })),
     });
   } catch (error) {
