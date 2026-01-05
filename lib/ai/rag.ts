@@ -5,7 +5,17 @@ import { getEmbeddingModel } from "./providers";
 
 const DEFAULT_CHUNK_SIZE = 800;
 const DEFAULT_CHUNK_OVERLAP = 100;
+// Default number of chunks to retrieve per query.
+// 4 was chosen empirically as a balance between:
+// - enough context to answer most questions, and
+// - not overloading the model with too many chunks or diluting relevance.
+// Increase for broader recall (more context, more noise), decrease for stricter, more focused answers.
 const DEFAULT_TOP_K = 4;
+// Minimum cosine similarity score required for a chunk to be considered relevant.
+// 0.15 is a conservative lower bound that filters out clearly unrelated chunks
+// while still favoring recall over strict precision. Raise this to require
+// higher relevance (fewer but more on-topic chunks), or lower it to be more
+// permissive in low-signal or sparse-data scenarios.
 const DEFAULT_MIN_SCORE = 0.15;
 
 const normalizeWhitespace = (value: string) =>
