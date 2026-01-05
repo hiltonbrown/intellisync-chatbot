@@ -3,6 +3,7 @@ import {
   boolean,
   foreignKey,
   json,
+  integer,
   pgTable,
   primaryKey,
   text,
@@ -109,7 +110,12 @@ export const document = pgTable(
     createdAt: timestamp("createdAt").notNull(),
     title: text("title").notNull(),
     content: text("content"),
-    kind: varchar("text", { enum: ["text", "code", "image", "sheet"] })
+    textContent: text("textContent"),
+    summary: text("summary"),
+    blobUrl: text("blobUrl"),
+    kind: varchar("text", {
+      enum: ["text", "code", "image", "sheet", "pdf", "docx"],
+    })
       .notNull()
       .default("text"),
     userId: text("userId")
@@ -127,6 +133,21 @@ export const document = pgTable(
 );
 
 export type Document = InferSelectModel<typeof document>;
+
+export const documentChunk = pgTable("DocumentChunk", {
+  id: uuid("id").notNull().defaultRandom().primaryKey(),
+  artifactId: uuid("artifactId").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  chatId: uuid("chatId").notNull().references(() => chat.id),
+  chunkIndex: integer("chunkIndex").notNull(),
+  content: text("content").notNull(),
+  embedding: json("embedding").notNull(),
+  createdAt: timestamp("createdAt").notNull(),
+});
+
+export type DocumentChunk = InferSelectModel<typeof documentChunk>;
 
 export const suggestion = pgTable(
   "Suggestion",

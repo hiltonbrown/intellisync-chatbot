@@ -14,7 +14,6 @@ import {
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import type { ArtifactKind } from "@/components/artifact";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
 import { generateUUID } from "../utils";
@@ -23,6 +22,8 @@ import {
   chat,
   type DBMessage,
   document,
+  documentChunk,
+  type Document,
   message,
   type Suggestion,
   stream,
@@ -304,17 +305,25 @@ export async function saveDocument({
   title,
   kind,
   content,
+  textContent,
+  summary,
+  blobUrl,
   userId,
   chatId,
 }: {
   id: string;
   title: string;
-  kind: ArtifactKind;
+  kind: Document["kind"];
   content: string;
+  textContent?: string | null;
+  summary?: string | null;
+  blobUrl?: string | null;
   userId: string;
   chatId: string;
 }) {
   try {
+    const resolvedTextContent = textContent ?? content ?? null;
+
     return await db
       .insert(document)
       .values({
@@ -322,6 +331,9 @@ export async function saveDocument({
         title,
         kind,
         content,
+        textContent: resolvedTextContent,
+        summary,
+        blobUrl,
         userId,
         chatId,
         createdAt: new Date(),
@@ -333,11 +345,61 @@ export async function saveDocument({
           content,
           kind,
           chatId,
+          textContent: resolvedTextContent,
+          summary,
+          blobUrl,
         },
       })
       .returning();
   } catch (_error) {
     throw new ChatSDKError("bad_request:database", "Failed to save document");
+  }
+}
+
+export async function saveDocumentChunks({
+  chunks,
+}: {
+  chunks: Array<typeof documentChunk.$inferInsert>;
+}) {
+  try {
+    return await db.insert(documentChunk).values(chunks).returning();
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to save document chunks"
+    );
+  }
+}
+
+export async function getDocumentChunksByUserId({
+  userId,
+  chatId,
+}: {
+  userId: string;
+  chatId?: string;
+}) {
+  try {
+    if (chatId) {
+      return await db
+        .select()
+        .from(documentChunk)
+        .where(
+          and(
+            eq(documentChunk.userId, userId),
+            eq(documentChunk.chatId, chatId)
+          )
+        );
+    }
+
+    return await db
+      .select()
+      .from(documentChunk)
+      .where(eq(documentChunk.userId, userId));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get document chunks by user id"
+    );
   }
 }
 
