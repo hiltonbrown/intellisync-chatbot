@@ -1,21 +1,101 @@
 import { put } from "@vercel/blob";
+import mammoth from "mammoth";
 import { NextResponse } from "next/server";
+import { parse } from "papaparse";
+import pdf from "pdf-parse";
 import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
+import { chunkText, createEmbeddings } from "@/lib/ai/rag";
+import { saveDocument, saveDocumentChunks } from "@/lib/db/queries";
+import { generateUUID } from "@/lib/utils";
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
   file: z
     .instanceof(Blob)
-    .refine((file) => file.size <= 5 * 1024 * 1024, {
-      message: "File size should be less than 5MB",
+    .refine((file) => file.size <= 10 * 1024 * 1024, {
+      message: "File size should be less than 10MB",
     })
     // Update the file type based on the kind of files you want to accept
-    .refine((file) => ["image/jpeg", "image/png"].includes(file.type), {
-      message: "File type should be JPEG or PNG",
-    }),
+    .refine(
+      (file) =>
+        [
+          "image/jpeg",
+          "image/png",
+          "application/pdf",
+          "text/plain",
+          "text/csv",
+          "text/tab-separated-values",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ].includes(file.type),
+      {
+        message:
+          "File type should be JPEG, PNG, PDF, DOCX, TXT, CSV, or TSV",
+      }
+    ),
 });
+
+const summarizeSheet = (content: string) => {
+  const parsed = parse<string[]>(content, {
+    skipEmptyLines: true,
+  });
+  const rows = parsed.data.filter((row) =>
+    row.some((cell) => cell.trim() !== "")
+  );
+  const header = rows[0] ?? [];
+  const rowCount = Math.max(rows.length - 1, 0);
+  const columnCount = header.length;
+  const columns = header.filter(Boolean).join(", ");
+
+  return `Spreadsheet with ${rowCount} rows and ${columnCount} columns. Columns: ${columns}`;
+};
+
+const extractText = async (file: Blob, fileType: string) => {
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+  if (fileType === "text/plain") {
+    return fileBuffer.toString("utf-8");
+  }
+
+  if (fileType === "text/csv" || fileType === "text/tab-separated-values") {
+    return fileBuffer.toString("utf-8");
+  }
+
+  if (fileType === "application/pdf") {
+    const { text } = await pdf(fileBuffer);
+    return text;
+  }
+
+  if (
+    fileType ===
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    const result = await mammoth.extractRawText({ buffer: fileBuffer });
+    return result.value;
+  }
+
+  return "";
+};
+
+const resolveDocumentKind = (fileType: string) => {
+  if (fileType === "application/pdf") {
+    return "pdf";
+  }
+
+  if (
+    fileType ===
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return "docx";
+  }
+
+  if (fileType === "text/csv" || fileType === "text/tab-separated-values") {
+    return "sheet";
+  }
+
+  return "text";
+};
 
 export async function POST(request: Request) {
   const { userId } = await auth();
@@ -31,6 +111,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as Blob;
+    const chatId = formData.get("chatId")?.toString() ?? "";
 
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -55,7 +136,60 @@ export async function POST(request: Request) {
         access: "public",
       });
 
-      return NextResponse.json(data);
+      if (file.type.startsWith("image/")) {
+        return NextResponse.json(data);
+      }
+
+      if (!chatId) {
+        return NextResponse.json(
+          { error: "chatId is required for document uploads" },
+          { status: 400 }
+        );
+      }
+
+      const extractedText = await extractText(file, file.type);
+      const normalizedText = extractedText.trim();
+      const documentId = generateUUID();
+      const kind = resolveDocumentKind(file.type);
+      const summary =
+        kind === "sheet" ? summarizeSheet(normalizedText) : null;
+
+      const shouldStoreContent = kind === "text" || kind === "sheet";
+
+      await saveDocument({
+        id: documentId,
+        title: filename,
+        kind,
+        content: shouldStoreContent ? normalizedText : "",
+        textContent: normalizedText,
+        summary,
+        blobUrl: data.url,
+        userId,
+        chatId,
+      });
+
+      if (normalizedText) {
+        const chunks = chunkText(normalizedText);
+        const embeddings = await createEmbeddings(chunks);
+        const createdAt = new Date();
+
+        await saveDocumentChunks({
+          chunks: chunks.map((content, index) => ({
+            artifactId: documentId,
+            userId,
+            chatId,
+            chunkIndex: index,
+            content,
+            embedding: embeddings[index] ?? [],
+            createdAt,
+          })),
+        });
+      }
+
+      return NextResponse.json({
+        ...data,
+        documentId,
+      });
     } catch (_error) {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
