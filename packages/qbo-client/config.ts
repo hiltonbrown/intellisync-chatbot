@@ -27,7 +27,9 @@ export const loadQboConfig = (): QboConfig => {
     throw new Error("QBO_CLIENT_SECRET is required")
   }
 
-  const environment = (process.env.QBO_ENV as QboEnvironment) ?? "sandbox"
+  const rawEnv = process.env.QBO_ENV
+  const environment: QboEnvironment =
+    rawEnv === "production" || rawEnv === "sandbox" ? rawEnv : "sandbox"
   const baseUrl =
     process.env.QBO_API_BASE_URL ??
     (environment === "production" ? DEFAULT_API_BASE_URL : DEFAULT_SANDBOX_API_BASE_URL)
