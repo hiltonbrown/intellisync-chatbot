@@ -359,12 +359,15 @@ export async function saveDocumentChunks({
   }
 
   try {
-    return await db.insert(documentChunk).values(
-      chunks.map((chunk) => ({
-        ...chunk,
-        createdAt: new Date(),
-      }))
-    );
+    return await db
+      .insert(documentChunk)
+      .values(
+        chunks.map((chunk) => ({
+          ...chunk,
+          createdAt: new Date(),
+        }))
+      )
+      .returning();
   } catch (_error) {
     throw new ChatSDKError(
       "bad_request:database",
