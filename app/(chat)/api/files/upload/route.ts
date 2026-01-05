@@ -12,6 +12,8 @@ const allowedFileTypes = [
   "text/csv",
 ];
 
+const MIN_TEXT_LENGTH = 10;
+
 const extractText = async (file: Blob): Promise<string> => {
   try {
     return await file.text();
@@ -65,23 +67,25 @@ export async function POST(request: Request) {
 
     // Get filename from formData since Blob doesn't have name property
     const filename = (formData.get("file") as File).name;
-    const fileBuffer = await file.arrayBuffer();
     const isImageUpload = file.type.startsWith("image/");
 
+    // Extract and validate text for non-image uploads before consuming the blob
     if (!isImageUpload) {
       const extractedText = await extractText(file);
       const normalizedText = extractedText.replace(/\s+/g, " ").trim();
 
-      if (normalizedText.length === 0) {
+      if (normalizedText.length < MIN_TEXT_LENGTH) {
         return NextResponse.json(
           {
             error:
-              "Unable to extract text from the uploaded document. Please try another file.",
+              "The uploaded document does not contain enough text content. Please upload a file with at least 10 characters.",
           },
           { status: 400 }
         );
       }
     }
+
+    const fileBuffer = await file.arrayBuffer();
 
     try {
       const data = await put(`${filename}`, fileBuffer, {
