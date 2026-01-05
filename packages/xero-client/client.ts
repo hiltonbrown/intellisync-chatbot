@@ -72,7 +72,7 @@ export class XeroClient {
     const body = new URLSearchParams({
       grant_type: "authorization_code",
       code,
-      redirect_uri: this.config.redirectUri ?? "",
+      redirect_uri: this.config.redirectUri || "",
       code_verifier: codeVerifier,
     })
 
