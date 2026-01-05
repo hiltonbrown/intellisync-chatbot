@@ -116,12 +116,22 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
           chatId: args.chatId,
         });
 
-        await reindexDocumentChunks({
-          artifactId: args.id,
-          content: draftContent,
-          userId: args.userId,
-          chatId: args.chatId,
-        });
+        try {
+          await reindexDocumentChunks({
+            artifactId: args.id,
+            content: draftContent,
+            userId: args.userId,
+            chatId: args.chatId,
+          });
+        } catch (error) {
+          console.error("Failed to reindex document chunks after saveDocument", {
+            artifactId: args.id,
+            userId: args.userId,
+            chatId: args.chatId,
+            error,
+          });
+          throw error;
+        }
       }
 
       return draftContent;
