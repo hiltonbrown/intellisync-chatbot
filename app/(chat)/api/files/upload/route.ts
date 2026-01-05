@@ -218,7 +218,7 @@ export async function POST(request: Request) {
       if (normalizedText) {
         const chunks = chunkText(normalizedText);
         const embeddings = await createEmbeddings(chunks);
-        
+
         if (embeddings.length !== chunks.length) {
           console.error("Embeddings length mismatch", {
             chunksLength: chunks.length,
@@ -230,7 +230,7 @@ export async function POST(request: Request) {
             { status: 500 }
           );
         }
-        
+
         const createdAt = new Date();
 
         await saveDocumentChunks({
