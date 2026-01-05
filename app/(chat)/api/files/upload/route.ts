@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error:
-              "The uploaded document does not contain enough text content. Please upload a file with at least 10 characters.",
+              `The uploaded document does not contain enough text content. Please upload a file with at least ${MIN_TEXT_LENGTH} characters.`,
           },
           { status: 400 }
         );
