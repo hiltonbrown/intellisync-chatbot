@@ -110,25 +110,29 @@ test.describe("File Upload API", () => {
     expect(data.error).toContain("does not contain enough text content");
   });
 
-  test("rejects file with invalid MIME type", async ({ page, context }) => {
+  test("successfully uploads valid PDF file", async ({ page, context }) => {
     const response = await context.request.post("/api/files/upload", {
       multipart: {
         file: {
-          name: "invalid.pdf",
+          name: "valid.pdf",
           mimeType: "application/pdf",
-          buffer: Buffer.from("PDF content"),
+          buffer: Buffer.from(
+            "This is a valid PDF file with enough content for validation."
+          ),
         },
+        chatId: "test-chat-id",
       },
     });
 
-    expect(response.status()).toBe(400);
+    expect(response.status()).toBe(200);
     const data = await response.json();
-    expect(data.error).toContain("File type should be");
+    expect(data).toHaveProperty("url");
+    expect(data).toHaveProperty("documentId");
   });
 
-  test("rejects file larger than 5MB", async ({ page, context }) => {
-    // Create a buffer larger than 5MB
-    const largeBuffer = Buffer.alloc(6 * 1024 * 1024, "a");
+  test("rejects file larger than 10MB", async ({ page, context }) => {
+    // Create a buffer larger than 10MB
+    const largeBuffer = Buffer.alloc(11 * 1024 * 1024, "a");
 
     const response = await context.request.post("/api/files/upload", {
       multipart: {
@@ -142,7 +146,7 @@ test.describe("File Upload API", () => {
 
     expect(response.status()).toBe(400);
     const data = await response.json();
-    expect(data.error).toContain("File size should be less than 5MB");
+    expect(data.error).toContain("File size should be less than 10MB");
   });
 
   test("requires authentication", async ({ context }) => {
