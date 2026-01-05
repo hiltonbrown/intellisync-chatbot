@@ -18,6 +18,3 @@ export const createQboServer = (): MCPServer => {
 
   return new MCPServer(createQboRegistry(client))
 }
-
-const server = createQboServer()
-server.start()
