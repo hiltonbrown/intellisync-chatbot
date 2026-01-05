@@ -23,6 +23,7 @@ import {
   chat,
   type DBMessage,
   document,
+  documentChunk,
   message,
   type Suggestion,
   stream,
@@ -338,6 +339,64 @@ export async function saveDocument({
       .returning();
   } catch (_error) {
     throw new ChatSDKError("bad_request:database", "Failed to save document");
+  }
+}
+
+export async function saveDocumentChunks({
+  chunks,
+}: {
+  chunks: Array<{
+    artifactId: string;
+    userId: string;
+    chatId: string;
+    chunkIndex: number;
+    content: string;
+    embedding: number[];
+  }>;
+}) {
+  if (chunks.length === 0) {
+    return [];
+  }
+
+  try {
+    return await db.insert(documentChunk).values(
+      chunks.map((chunk) => ({
+        ...chunk,
+        createdAt: new Date(),
+      }))
+    );
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to save document chunks"
+    );
+  }
+}
+
+export async function deleteDocumentChunksByArtifactId({
+  artifactId,
+  userId,
+  chatId,
+}: {
+  artifactId: string;
+  userId: string;
+  chatId: string;
+}) {
+  try {
+    return await db
+      .delete(documentChunk)
+      .where(
+        and(
+          eq(documentChunk.artifactId, artifactId),
+          eq(documentChunk.userId, userId),
+          eq(documentChunk.chatId, chatId)
+        )
+      );
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to delete document chunks"
+    );
   }
 }
 

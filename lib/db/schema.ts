@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  integer,
   json,
   pgTable,
   primaryKey,
@@ -127,6 +128,23 @@ export const document = pgTable(
 );
 
 export type Document = InferSelectModel<typeof document>;
+
+export const documentChunk = pgTable("DocumentChunk", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  artifactId: uuid("artifactId").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  chatId: uuid("chatId")
+    .notNull()
+    .references(() => chat.id),
+  chunkIndex: integer("chunkIndex").notNull(),
+  content: text("content").notNull(),
+  embedding: json("embedding").$type<number[]>().notNull(),
+  createdAt: timestamp("createdAt").notNull(),
+});
+
+export type DocumentChunk = InferSelectModel<typeof documentChunk>;
 
 export const suggestion = pgTable(
   "Suggestion",
