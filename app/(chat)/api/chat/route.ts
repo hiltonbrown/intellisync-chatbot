@@ -16,6 +16,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { buildRagContext } from "@/lib/ai/rag";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
@@ -37,7 +38,12 @@ import {
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
-import { convertToUIMessages, generateUUID } from "@/lib/utils";
+import {
+  convertToUIMessages,
+  generateUUID,
+  getMostRecentUserMessage,
+  getTextFromMessage,
+} from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
@@ -79,13 +85,13 @@ export async function POST(request: Request) {
     const { id, message, messages, selectedChatModel, selectedVisibilityType } =
       requestBody;
 
-    const user = await currentUser();
+    const { userId } = await auth();
+    const user = userId ? await currentUser() : null;
 
-    if (!user) {
+    if (!userId || !user) {
       return new ChatSDKError("unauthorized:chat").toResponse();
     }
 
-    const userId = user.id;
     await verifyUser({
       id: userId,
       email: user.emailAddresses[0]?.emailAddress ?? "",
@@ -146,6 +152,29 @@ export async function POST(request: Request) {
       country,
     };
 
+    const ragMessage =
+      message?.role === "user" ? message : getMostRecentUserMessage(uiMessages);
+    const ragQuery = ragMessage ? getTextFromMessage(ragMessage) : "";
+    const { context: documentContext } = await buildRagContext({
+      userId,
+      chatId: id,
+      query: ragQuery,
+    });
+
+    const baseSystemPrompt = systemPrompt({
+      selectedChatModel,
+      requestHints,
+      customPrompt: dbUser?.systemPrompt,
+    });
+    const systemWithContext = documentContext
+      ? [
+          baseSystemPrompt,
+          "DOCUMENT CONTEXT:",
+          documentContext,
+          "Use the conversation below to answer the user.",
+        ].join("\n\n")
+      : baseSystemPrompt;
+
     // Only save user messages to the database (not tool approval responses)
     if (message?.role === "user") {
       await saveMessages({
@@ -183,11 +212,7 @@ export async function POST(request: Request) {
 
         const result = streamText({
           model: getLanguageModel(selectedChatModel),
-          system: systemPrompt({
-            selectedChatModel,
-            requestHints,
-            customPrompt: dbUser?.systemPrompt,
-          }),
+          system: systemWithContext,
           messages: await convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools: [

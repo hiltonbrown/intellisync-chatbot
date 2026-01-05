@@ -1,67 +1,167 @@
-import { createHash } from "node:crypto";
+import { embed, embedMany } from "ai";
+import { isTestEnvironment } from "@/lib/constants";
+import { getDocumentChunksByUserId } from "@/lib/db/queries";
+import { getEmbeddingModel } from "./providers";
 
-export type ChunkTextOptions = {
-  maxChunkLength?: number;
-  overlap?: number;
-};
+const DEFAULT_CHUNK_SIZE = 800;
+const DEFAULT_CHUNK_OVERLAP = 100;
+const DEFAULT_TOP_K = 4;
+const DEFAULT_MIN_SCORE = 0.15;
 
-const DEFAULT_MAX_CHUNK_LENGTH = 1200;
-const DEFAULT_OVERLAP = 0;
+const normalizeWhitespace = (value: string) =>
+  value.replace(/\s+/g, " ").trim();
 
-export function chunkText(
+const toWordChunks = (
   text: string,
-  options: ChunkTextOptions = {}
-): string[] {
-  const trimmed = text.trim();
-  if (!trimmed) {
+  chunkSize: number,
+  overlap: number
+) => {
+  const words = normalizeWhitespace(text).split(" ").filter(Boolean);
+  if (words.length === 0) {
     return [];
   }
 
-  const maxChunkLength = options.maxChunkLength ?? DEFAULT_MAX_CHUNK_LENGTH;
-  const overlap = options.overlap ?? DEFAULT_OVERLAP;
-  const words = trimmed.split(/\s+/);
   const chunks: string[] = [];
-  let currentWords: string[] = [];
-  let currentLength = 0;
+  const stride = Math.max(chunkSize - overlap, 1);
 
-  for (const word of words) {
-    const nextLength = currentLength + word.length + 1;
-    if (currentLength > 0 && nextLength > maxChunkLength) {
-      const chunk = currentWords.join(" ").trim();
-      if (chunk) {
-        chunks.push(chunk);
-      }
-
-      if (overlap > 0) {
-        const overlapWordCount = Math.max(1, Math.floor(overlap / 4));
-        const overlapWords = currentWords.slice(-overlapWordCount);
-        currentWords = [...overlapWords];
-        let newLength = 0;
-        for (const w of currentWords) {
-          newLength += w.length + 1;
-        }
-        currentLength = newLength;
-      } else {
-        currentWords = [];
-        currentLength = 0;
-      }
+  for (let start = 0; start < words.length; start += stride) {
+    const slice = words.slice(start, start + chunkSize);
+    if (slice.length === 0) {
+      break;
     }
-
-    currentWords.push(word);
-    currentLength += word.length + 1;
-  }
-
-  const lastChunk = currentWords.join(" ").trim();
-  if (lastChunk) {
-    chunks.push(lastChunk);
+    chunks.push(slice.join(" "));
   }
 
   return chunks;
-}
+};
 
-export async function createEmbeddings(chunks: string[]): Promise<number[][]> {
-  return chunks.map((chunk) => {
-    const digest = createHash("sha256").update(chunk).digest();
-    return Array.from(digest, (byte) => byte / 255);
+const createTestEmbedding = (value: string, dimensions = 64) => {
+  if (!value.length) {
+    return Array.from({ length: dimensions }, () => 0);
+  }
+
+  const embedding = Array.from({ length: dimensions }, () => 0);
+  for (let index = 0; index < value.length; index += 1) {
+    const bucket = index % dimensions;
+    embedding[bucket] += value.charCodeAt(index) % 97;
+  }
+  return embedding.map((entry) => entry / value.length);
+};
+
+const isEmbeddingArray = (embedding: unknown): embedding is number[] =>
+  Array.isArray(embedding) &&
+  embedding.every((value) => typeof value === "number");
+
+const cosineSimilarity = (a: number[], b: number[]) => {
+  if (a.length !== b.length || a.length === 0) {
+    return 0;
+  }
+
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+
+  for (let index = 0; index < a.length; index += 1) {
+    const valueA = a[index];
+    const valueB = b[index];
+    dot += valueA * valueB;
+    normA += valueA * valueA;
+    normB += valueB * valueB;
+  }
+
+  if (!normA || !normB) {
+    return 0;
+  }
+
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+};
+
+export const chunkText = (
+  text: string,
+  options?: { chunkSize?: number; overlap?: number }
+) =>
+  toWordChunks(
+    text,
+    options?.chunkSize ?? DEFAULT_CHUNK_SIZE,
+    options?.overlap ?? DEFAULT_CHUNK_OVERLAP
+  );
+
+export const createEmbeddings = async (values: string[]) => {
+  if (values.length === 0) {
+    return [];
+  }
+
+  if (isTestEnvironment) {
+    return values.map((value) => createTestEmbedding(value));
+  }
+
+  const { embeddings } = await embedMany({
+    model: getEmbeddingModel(),
+    values,
   });
-}
+
+  return embeddings;
+};
+
+export const createEmbedding = async (value: string) => {
+  if (isTestEnvironment) {
+    return createTestEmbedding(value);
+  }
+
+  const { embedding } = await embed({
+    model: getEmbeddingModel(),
+    value,
+  });
+
+  return embedding;
+};
+
+export const buildRagContext = async ({
+  userId,
+  chatId,
+  query,
+  topK = DEFAULT_TOP_K,
+  minScore = DEFAULT_MIN_SCORE,
+}: {
+  userId: string;
+  chatId?: string;
+  query: string;
+  topK?: number;
+  minScore?: number;
+}) => {
+  const trimmedQuery = normalizeWhitespace(query);
+  if (!trimmedQuery) {
+    return {
+      context: "",
+      chunks: [] as Array<{ content: string; score: number }>,
+    };
+  }
+
+  const chunks = await getDocumentChunksByUserId({ userId, chatId });
+  if (chunks.length === 0) {
+    return {
+      context: "",
+      chunks: [] as Array<{ content: string; score: number }>,
+    };
+  }
+
+  const queryEmbedding = await createEmbedding(trimmedQuery);
+
+  const scoredChunks = chunks
+    .map((chunk) => {
+      const embedding = isEmbeddingArray(chunk.embedding) ? chunk.embedding : [];
+      return {
+        content: chunk.content,
+        score: cosineSimilarity(queryEmbedding, embedding),
+      };
+    })
+    .filter((chunk) => chunk.score >= minScore)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+
+  const context = scoredChunks
+    .map((chunk, index) => `Source ${index + 1}:\n${chunk.content}`)
+    .join("\n\n");
+
+  return { context, chunks: scoredChunks };
+};
