@@ -4,6 +4,22 @@ import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
 
+const allowedFileTypes = [
+  "image/jpeg",
+  "image/png",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+];
+
+const extractText = async (file: Blob): Promise<string> => {
+  try {
+    return await file.text();
+  } catch {
+    return "";
+  }
+};
+
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
   file: z
@@ -12,8 +28,9 @@ const FileSchema = z.object({
       message: "File size should be less than 5MB",
     })
     // Update the file type based on the kind of files you want to accept
-    .refine((file) => ["image/jpeg", "image/png"].includes(file.type), {
-      message: "File type should be JPEG or PNG",
+    .refine((file) => allowedFileTypes.includes(file.type), {
+      message:
+        "File type should be JPEG, PNG, plain text, Markdown, or CSV",
     }),
 });
 
@@ -49,6 +66,22 @@ export async function POST(request: Request) {
     // Get filename from formData since Blob doesn't have name property
     const filename = (formData.get("file") as File).name;
     const fileBuffer = await file.arrayBuffer();
+    const isImageUpload = file.type.startsWith("image/");
+
+    if (!isImageUpload) {
+      const extractedText = await extractText(file);
+      const normalizedText = extractedText.replace(/\s+/g, " ").trim();
+
+      if (normalizedText.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Unable to extract text from the uploaded document. Please try another file.",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     try {
       const data = await put(`${filename}`, fileBuffer, {
