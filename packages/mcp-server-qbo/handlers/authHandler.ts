@@ -72,7 +72,7 @@ export const authenticate = (client: QboClient): MCPHandler<AuthenticateParams, 
     const query = new URLSearchParams({
       response_type: "code",
       client_id: config.clientId,
-      redirect_uri: params.redirectUri ?? config.redirectUri ?? "",
+      redirect_uri: params.redirectUri || config.redirectUri || "",
       scope: scopes.join(" "),
       state,
       code_challenge: codeChallenge,
