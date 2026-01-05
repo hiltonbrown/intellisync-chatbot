@@ -54,29 +54,39 @@ async function reindexDocumentChunks({
   userId: string;
   chatId: string;
 }): Promise<void> {
-  await deleteDocumentChunksByArtifactId({
-    artifactId,
-    userId,
-    chatId,
-  });
-
-  const chunks = chunkText(content);
-  if (chunks.length === 0) {
-    return;
-  }
-
-  const embeddings = await createEmbeddings(chunks);
-
-  await saveDocumentChunks({
-    chunks: chunks.map((chunk, index) => ({
+  try {
+    await deleteDocumentChunksByArtifactId({
       artifactId,
       userId,
       chatId,
-      chunkIndex: index,
-      content: chunk,
-      embedding: embeddings[index] ?? [],
-    })),
-  });
+    });
+
+    const chunks = chunkText(content);
+    if (chunks.length === 0) {
+      return;
+    }
+
+    const embeddings = await createEmbeddings(chunks);
+
+    await saveDocumentChunks({
+      chunks: chunks.map((chunk, index) => ({
+        artifactId,
+        userId,
+        chatId,
+        chunkIndex: index,
+        content: chunk,
+        embedding: embeddings[index] ?? [],
+      })),
+    });
+  } catch (error) {
+    console.error("Failed to reindex document chunks", {
+      artifactId,
+      userId,
+      chatId,
+      error,
+    });
+    throw error;
+  }
 }
 
 export function createDocumentHandler<T extends ArtifactKind>(config: {
