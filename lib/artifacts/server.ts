@@ -58,11 +58,20 @@ async function reindexDocumentChunks({
   chatId: string;
 }): Promise<void> {
   try {
-    await deleteDocumentChunksByArtifactId({
-      artifactId,
-      userId,
-      chatId,
-    });
+    if (typeof deleteDocumentChunksByArtifactId === "function") {
+      await deleteDocumentChunksByArtifactId({
+        artifactId,
+        userId,
+        chatId,
+      });
+    } else {
+      console.error("deleteDocumentChunksByArtifactId is not a function", {
+        artifactId,
+        userId,
+        chatId,
+      });
+      return;
+    }
 
     const chunks = chunkText(content);
     if (chunks.length === 0) {
