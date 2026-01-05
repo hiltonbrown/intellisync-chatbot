@@ -1,42 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-
-const TEST_FILES_DIR = join(__dirname, "..", "..", "tmp", "test-files");
-
-// Setup test files
-test.beforeAll(() => {
-  if (!existsSync(TEST_FILES_DIR)) {
-    mkdirSync(TEST_FILES_DIR, { recursive: true });
-  }
-
-  // Create valid text file with sufficient content
-  writeFileSync(
-    join(TEST_FILES_DIR, "valid-text.txt"),
-    "This is a valid text file with enough content for validation."
-  );
-
-  // Create text file with insufficient content (less than 10 characters)
-  writeFileSync(join(TEST_FILES_DIR, "short-text.txt"), "Short");
-
-  // Create empty text file
-  writeFileSync(join(TEST_FILES_DIR, "empty-text.txt"), "");
-
-  // Create valid markdown file
-  writeFileSync(
-    join(TEST_FILES_DIR, "valid-markdown.md"),
-    "# Markdown File\n\nThis is a valid markdown file with sufficient content."
-  );
-
-  // Create valid CSV file
-  writeFileSync(
-    join(TEST_FILES_DIR, "valid-csv.csv"),
-    "name,age,city\nJohn,30,New York\nJane,25,Los Angeles"
-  );
-
-  // Create a file with only whitespace
-  writeFileSync(join(TEST_FILES_DIR, "whitespace.txt"), "   \n\n\t\t  ");
-});
 
 test.describe("File Upload API", () => {
   test("successfully uploads valid text file", async ({ page, context }) => {
