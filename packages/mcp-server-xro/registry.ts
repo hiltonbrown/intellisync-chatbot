@@ -13,7 +13,7 @@ export const createXeroRegistry = (client: XeroClient): HandlerRegistry => ({
   list_contacts: contactsHandler.listContacts(client),
   create_contacts: contactsHandler.createContacts(client),
   list_accounts: accountsHandler.listAccounts(client),
-  create_invoices: invoicesHandler.createInvoice(client),
+  create_invoice: invoicesHandler.createInvoice(client),
   get_invoice: invoicesHandler.getInvoice(client),
   update_invoice: invoicesHandler.updateInvoice(client),
 })
