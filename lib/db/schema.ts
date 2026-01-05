@@ -143,7 +143,7 @@ export const documentChunk = pgTable("DocumentChunk", {
   chunkIndex: integer("chunkIndex").notNull(),
   content: text("content").notNull(),
   embedding: json("embedding").$type<number[]>().notNull(),
-  createdAt: timestamp("createdAt").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
 });
 
 export type DocumentChunk = InferSelectModel<typeof documentChunk>;
