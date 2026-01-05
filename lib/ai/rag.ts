@@ -33,12 +33,14 @@ export function chunkText(
       }
 
       if (overlap > 0) {
-        const overlapWords = currentWords
-          .join(" ")
-          .split(/\s+/)
-          .slice(-Math.max(1, Math.floor(overlap / 4)));
+        const overlapWordCount = Math.max(1, Math.floor(overlap / 4));
+        const overlapWords = currentWords.slice(-overlapWordCount);
         currentWords = [...overlapWords];
-        currentLength = currentWords.join(" ").length;
+        let newLength = 0;
+        for (const w of currentWords) {
+          newLength += w.length + 1;
+        }
+        currentLength = newLength;
       } else {
         currentWords = [];
         currentLength = 0;
