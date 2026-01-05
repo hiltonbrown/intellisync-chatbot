@@ -10,6 +10,24 @@ import { chunkText, createEmbeddings } from "@/lib/ai/rag";
 import { saveDocument, saveDocumentChunks } from "@/lib/db/queries";
 import { generateUUID } from "@/lib/utils";
 
+const allowedFileTypes = [
+  "image/jpeg",
+  "image/png",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+];
+
+const MIN_TEXT_LENGTH = 10;
+
+const extractText = async (file: Blob): Promise<string> => {
+  try {
+    return await file.text();
+  } catch {
+    return "";
+  }
+};
+
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
   file: z
@@ -129,6 +147,24 @@ export async function POST(request: Request) {
 
     // Get filename from formData since Blob doesn't have name property
     const filename = (formData.get("file") as File).name;
+    const isImageUpload = file.type.startsWith("image/");
+
+    // Extract and validate text for non-image uploads before consuming the blob
+    if (!isImageUpload) {
+      const extractedText = await extractText(file);
+      const normalizedText = extractedText.replace(/\s+/g, " ").trim();
+
+      if (normalizedText.length < MIN_TEXT_LENGTH) {
+        return NextResponse.json(
+          {
+            error:
+              `The uploaded document does not contain enough text content. Please upload a file with at least ${MIN_TEXT_LENGTH} characters.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const fileBuffer = await file.arrayBuffer();
 
     try {
