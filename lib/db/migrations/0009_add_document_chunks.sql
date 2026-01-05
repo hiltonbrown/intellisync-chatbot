@@ -1,6 +1,8 @@
 ALTER TABLE "Document" ADD COLUMN "textContent" text;
 ALTER TABLE "Document" ADD COLUMN "summary" text;
 ALTER TABLE "Document" ADD COLUMN "blobUrl" text;
+ALTER TYPE "Document_text" ADD VALUE IF NOT EXISTS 'pdf';
+ALTER TYPE "Document_text" ADD VALUE IF NOT EXISTS 'docx';
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "DocumentChunk" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
