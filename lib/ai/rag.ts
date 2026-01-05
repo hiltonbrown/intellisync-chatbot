@@ -57,15 +57,6 @@ export function buildRagContext({
   const contextParts: string[] = ["DOCUMENT CONTEXT"];
   const documentsWithSummary = new Set<string>();
 
-  for (const document of scopedDocuments) {
-    const summary = document.summary?.trim();
-
-    if (summary) {
-      contextParts.push(`Summary (${document.id}): ${summary}`);
-      documentsWithSummary.add(document.id);
-    }
-  }
-
   for (const chunk of scopedChunks) {
     const document = documentsById.get(chunk.documentId);
     const summary = document?.summary?.trim();
@@ -75,7 +66,10 @@ export function buildRagContext({
       documentsWithSummary.add(chunk.documentId);
     }
 
-    contextParts.push(chunk.content.trim());
+    const trimmedContent = chunk.content.trim();
+    if (trimmedContent) {
+      contextParts.push(trimmedContent);
+    }
   }
 
   return contextParts.join("\n\n");
