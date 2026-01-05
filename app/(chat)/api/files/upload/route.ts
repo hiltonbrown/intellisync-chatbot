@@ -7,26 +7,10 @@ import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
-import { saveDocument, saveDocumentChunks } from "@/lib/db/queries";
+import { getChatById, saveDocument, saveDocumentChunks } from "@/lib/db/queries";
 import { generateUUID } from "@/lib/utils";
 
-const allowedFileTypes = [
-  "image/jpeg",
-  "image/png",
-  "text/plain",
-  "text/markdown",
-  "text/csv",
-];
-
 const MIN_TEXT_LENGTH = 10;
-
-const extractText = async (file: Blob): Promise<string> => {
-  try {
-    return await file.text();
-  } catch {
-    return "";
-  }
-};
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
@@ -163,7 +147,7 @@ export async function POST(request: Request) {
 
     // Extract and validate text for non-image uploads before consuming the blob
     if (!isImageUpload) {
-      const extractedText = await extractText(file);
+      const extractedText = await extractText(file, file.type);
       const normalizedText = extractedText.replace(/\s+/g, " ").trim();
 
       if (normalizedText.length < MIN_TEXT_LENGTH) {
@@ -195,6 +179,21 @@ export async function POST(request: Request) {
         );
       }
 
+      // Verify that the chat exists and belongs to the authenticated user
+      const existingChat = await getChatById({ id: chatId });
+      if (!existingChat) {
+        return NextResponse.json(
+          { error: "Chat not found" },
+          { status: 404 }
+        );
+      }
+      if (existingChat.userId !== userId) {
+        return NextResponse.json(
+          { error: "Unauthorized: Chat does not belong to user" },
+          { status: 403 }
+        );
+      }
+
       const extractedText = await extractText(file, file.type);
       const normalizedText = extractedText.trim();
       const documentId = generateUUID();
@@ -219,6 +218,19 @@ export async function POST(request: Request) {
       if (normalizedText) {
         const chunks = chunkText(normalizedText);
         const embeddings = await createEmbeddings(chunks);
+
+        if (embeddings.length !== chunks.length) {
+          console.error("Embeddings length mismatch", {
+            chunksLength: chunks.length,
+            embeddingsLength: embeddings.length,
+            documentId,
+          });
+          return NextResponse.json(
+            { error: "Failed to generate embeddings for all chunks" },
+            { status: 500 }
+          );
+        }
+
         const createdAt = new Date();
 
         await saveDocumentChunks({

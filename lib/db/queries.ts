@@ -403,6 +403,34 @@ export async function getDocumentChunksByUserId({
   }
 }
 
+export async function deleteDocumentChunksByArtifactId({
+  artifactId,
+  userId,
+  chatId,
+}: {
+  artifactId: string;
+  userId: string;
+  chatId: string;
+}) {
+  try {
+    return await db
+      .delete(documentChunk)
+      .where(
+        and(
+          eq(documentChunk.artifactId, artifactId),
+          eq(documentChunk.userId, userId),
+          eq(documentChunk.chatId, chatId)
+        )
+      )
+      .returning();
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to delete document chunks by artifact id"
+    );
+  }
+}
+
 export async function getDocumentsById({ id }: { id: string }) {
   try {
     const documents = await db

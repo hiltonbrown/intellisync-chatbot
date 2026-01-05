@@ -4,7 +4,6 @@ import {
   foreignKey,
   integer,
   json,
-  integer,
   pgTable,
   primaryKey,
   text,

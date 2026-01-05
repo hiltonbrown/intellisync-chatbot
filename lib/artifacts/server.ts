@@ -58,20 +58,11 @@ async function reindexDocumentChunks({
   chatId: string;
 }): Promise<void> {
   try {
-    if (typeof deleteDocumentChunksByArtifactId === "function") {
-      await deleteDocumentChunksByArtifactId({
-        artifactId,
-        userId,
-        chatId,
-      });
-    } else {
-      console.error("deleteDocumentChunksByArtifactId is not a function", {
-        artifactId,
-        userId,
-        chatId,
-      });
-      return;
-    }
+    await deleteDocumentChunksByArtifactId({
+      artifactId,
+      userId,
+      chatId,
+    });
 
     const chunks = chunkText(content);
     if (chunks.length === 0) {
@@ -88,6 +79,7 @@ async function reindexDocumentChunks({
         chunkIndex: index,
         content: chunk,
         embedding: embeddings[index] ?? [],
+        createdAt: new Date(),
       })),
     });
   } catch (error) {
@@ -169,12 +161,25 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
           chatId: args.chatId,
         });
 
-        await reindexDocumentChunks({
-          artifactId: args.document.id,
-          content: draftContent,
-          userId: args.userId,
-          chatId: args.chatId,
-        });
+        try {
+          await reindexDocumentChunks({
+            artifactId: args.document.id,
+            content: draftContent,
+            userId: args.userId,
+            chatId: args.chatId,
+          });
+        } catch (error) {
+          console.error(
+            "Failed to reindex document chunks after updateDocument",
+            {
+              artifactId: args.document.id,
+              userId: args.userId,
+              chatId: args.chatId,
+              error,
+            }
+          );
+          throw error;
+        }
       }
 
       return draftContent;
