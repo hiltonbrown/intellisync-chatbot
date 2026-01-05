@@ -12,6 +12,9 @@ export type SaveDocumentProps = {
   title: string;
   kind: ArtifactKind;
   content: string;
+  textContent?: string | null;
+  summary?: string | null;
+  blobUrl?: string | null;
   userId: string;
 };
 
@@ -61,6 +64,7 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
           title: args.title,
           content: draftContent,
           kind: config.kind,
+          textContent: draftContent,
           userId: args.userId,
           chatId: args.chatId,
         });
@@ -83,6 +87,7 @@ export function createDocumentHandler<T extends ArtifactKind>(config: {
           title: args.document.title,
           content: draftContent,
           kind: config.kind,
+          textContent: draftContent,
           userId: args.userId,
           chatId: args.chatId,
         });
