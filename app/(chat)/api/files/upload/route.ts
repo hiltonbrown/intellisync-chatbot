@@ -61,11 +61,23 @@ const summarizeSheet = (content: string) => {
   const rows = parsed.data.filter((row) =>
     row.some((cell) => cell.trim() !== "")
   );
+
+  if (rows.length === 0) {
+    return "Empty spreadsheet";
+  }
+
   const header = rows[0] ?? [];
   const rowCount = Math.max(rows.length - 1, 0);
-  const columnCount = header.length;
-  const columns = header.filter(Boolean).join(", ");
+  const validColumns = header.filter(
+    (cell) => typeof cell === "string" && cell.trim() !== ""
+  );
 
+  if (validColumns.length === 0) {
+    return `Spreadsheet with ${rowCount} rows and no column headers.`;
+  }
+
+  const columnCount = validColumns.length;
+  const columns = validColumns.join(", ");
   return `Spreadsheet with ${rowCount} rows and ${columnCount} columns. Columns: ${columns}`;
 };
 
