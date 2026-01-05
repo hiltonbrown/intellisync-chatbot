@@ -66,7 +66,10 @@ export function buildRagContext({
       documentsWithSummary.add(chunk.documentId);
     }
 
-    contextParts.push(chunk.content.trim());
+    const trimmedContent = chunk.content.trim();
+    if (trimmedContent) {
+      contextParts.push(trimmedContent);
+    }
   }
 
   return contextParts.join("\n\n");
