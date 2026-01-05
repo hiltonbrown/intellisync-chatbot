@@ -156,7 +156,11 @@ function PureArtifact({
 
           const currentDocument = currentDocuments.at(-1);
 
-          if (!currentDocument || currentDocument.content == null) {
+          if (
+            !currentDocument ||
+            currentDocument.content === null ||
+            currentDocument.content === undefined
+          ) {
             setIsContentDirty(false);
             return currentDocuments;
           }
