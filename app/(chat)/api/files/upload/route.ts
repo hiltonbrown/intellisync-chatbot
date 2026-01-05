@@ -12,9 +12,9 @@ const allowedFileTypes = [
   "text/csv",
 ];
 
-const extractText = async (file: Blob): Promise<string> => {
+const extractText = (fileBuffer: ArrayBuffer): string => {
   try {
-    return await file.text();
+    return new TextDecoder().decode(fileBuffer);
   } catch {
     return "";
   }
@@ -65,11 +65,11 @@ export async function POST(request: Request) {
 
     // Get filename from formData since Blob doesn't have name property
     const filename = (formData.get("file") as File).name;
-    const fileBuffer = await file.arrayBuffer();
     const isImageUpload = file.type.startsWith("image/");
+    const fileBuffer = await file.arrayBuffer();
 
     if (!isImageUpload) {
-      const extractedText = await extractText(file);
+      const extractedText = extractText(fileBuffer);
       const normalizedText = extractedText.replace(/\s+/g, " ").trim();
 
       if (normalizedText.length === 0) {
