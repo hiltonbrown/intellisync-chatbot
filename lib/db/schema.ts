@@ -10,6 +10,7 @@ import {
   timestamp,
   uuid,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("User", {
@@ -143,7 +144,7 @@ export const documentChunk = pgTable("DocumentChunk", {
   chatId: uuid("chatId").notNull().references(() => chat.id),
   chunkIndex: integer("chunkIndex").notNull(),
   content: text("content").notNull(),
-  embedding: json("embedding").notNull(),
+  embedding: vector("embedding", { dimensions: 1536 }).notNull(),
   createdAt: timestamp("createdAt").notNull(),
 });
 

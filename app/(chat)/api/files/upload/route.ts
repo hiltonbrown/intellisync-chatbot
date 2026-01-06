@@ -2,7 +2,7 @@ import { put } from "@vercel/blob";
 import mammoth from "mammoth";
 import { NextResponse } from "next/server";
 import { parse } from "papaparse";
-import pdf from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
@@ -77,8 +77,9 @@ const extractText = async (file: Blob, fileType: string) => {
   }
 
   if (fileType === "application/pdf") {
-    const { text } = await pdf(fileBuffer);
-    return text;
+    const parser = new PDFParse({ data: fileBuffer });
+    const result = await parser.getText();
+    return result.text;
   }
 
   if (

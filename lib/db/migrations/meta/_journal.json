@@ -64,6 +64,27 @@
       "when": 1767528000000,
       "tag": "0008_add_system_prompt",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1767529200000,
+      "tag": "0009_add_document_chunks",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1767529500000,
+      "tag": "0010_enable_pgvector",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1767529800000,
+      "tag": "0011_convert_embedding_to_vector",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { toast } from "sonner";
 import { useArtifact } from "@/hooks/use-artifact";
+import type { Document } from "@/lib/db/schema";
 import type { ArtifactKind } from "./artifact";
 import { FileIcon, LoaderIcon, MessageIcon, PencilEditIcon } from "./icons";
 
@@ -24,7 +25,7 @@ const getActionText = (
 
 type DocumentToolResultProps = {
   type: "create" | "update" | "request-suggestions";
-  result: { id: string; title: string; kind: ArtifactKind };
+  result: { id: string; title: string; kind: Document["kind"] };
   isReadonly: boolean;
 };
 
@@ -34,6 +35,10 @@ function PureDocumentToolResult({
   isReadonly,
 }: DocumentToolResultProps) {
   const { setArtifact } = useArtifact();
+
+  const isArtifactKind = (kind: Document["kind"]): kind is ArtifactKind => {
+    return ["text", "code", "image", "sheet"].includes(kind);
+  };
 
   return (
     <button
@@ -46,6 +51,14 @@ function PureDocumentToolResult({
           return;
         }
 
+        if (!isArtifactKind(result.kind)) {
+          toast.error(
+            "Viewing this file type in the artifact panel is not supported."
+          );
+          return;
+        }
+
+        const artifactKind = result.kind; // TypeScript now knows this is ArtifactKind
         const rect = event.currentTarget.getBoundingClientRect();
 
         const boundingBox = {
@@ -57,7 +70,7 @@ function PureDocumentToolResult({
 
         setArtifact((currentArtifact) => ({
           documentId: result.id,
-          kind: result.kind,
+          kind: artifactKind,
           content: currentArtifact.content,
           title: result.title,
           isVisible: true,
