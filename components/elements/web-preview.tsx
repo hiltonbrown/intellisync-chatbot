@@ -50,9 +50,26 @@ export const WebPreview = ({
   const [url, setUrl] = useState(defaultUrl);
   const [consoleOpen, setConsoleOpen] = useState(false);
 
+  const sanitizeUrl = (rawUrl: string): string => {
+    const trimmed = rawUrl.trim();
+    if (!trimmed) {
+      return "";
+    }
+    try {
+      const parsed = new URL(trimmed, window.location.origin);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.toString();
+      }
+    } catch {
+      // Ignore parsing errors and treat as invalid URL.
+    }
+    return "";
+  };
+
   const handleUrlChange = (newUrl: string) => {
-    setUrl(newUrl);
-    onUrlChange?.(newUrl);
+    const safeUrl = sanitizeUrl(newUrl);
+    setUrl(safeUrl);
+    onUrlChange?.(safeUrl);
   };
 
   const contextValue: WebPreviewContextValue = {
@@ -165,13 +182,34 @@ export const WebPreviewBody = ({
   ...props
 }: WebPreviewBodyProps) => {
   const { url } = useWebPreview();
+  const sanitizeUrl = (rawUrl: string | undefined | null): string | undefined => {
+    if (!rawUrl) {
+      return undefined;
+    }
+    const trimmed = rawUrl.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    try {
+      const parsed = new URL(trimmed, window.location.origin);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.toString();
+      }
+    } catch {
+      // Ignore parsing errors and treat as invalid URL.
+    }
+    return undefined;
+  };
+
+  const effectiveSrc = sanitizeUrl(src ?? url);
+
 
   return (
     <div className="flex-1">
       <iframe
         className={cn("size-full", className)}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        src={(src ?? url) || undefined}
+        src={effectiveSrc}
         title="Preview"
         {...props}
       />
