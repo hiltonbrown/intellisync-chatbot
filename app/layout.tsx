@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ClerkProvider } from "@clerk/nextjs";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import "./globals.css";
 
@@ -81,6 +82,7 @@ export default function RootLayout({
           >
             <Toaster position="top-center" />
             {children}
+            <SpeedInsights />
           </ThemeProvider>
         </body>
       </html>
