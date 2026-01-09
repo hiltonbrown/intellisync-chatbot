@@ -79,7 +79,12 @@ export async function verifyUser({
       error.code === POSTGRES_UNIQUE_VIOLATION;
 
     if (!isUniqueViolation) {
-      console.error("Failed to verify user:", error);
+      console.error("Failed to verify user:", {
+        userId: id,
+        email,
+        errorCode: error && typeof error === "object" && "code" in error ? error.code : "unknown",
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw new ChatSDKError(
         "bad_request:database",
         "User verification failed. Please ensure you are properly authenticated."

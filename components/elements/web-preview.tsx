@@ -168,13 +168,12 @@ export const WebPreviewBody = ({
   const { url } = useWebPreview();
   const effectiveSrc = sanitizeUrl(src ?? url);
 
-
   return (
     <div className="flex-1">
       <iframe
         className={cn("size-full", className)}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        src={effectiveSrc}
+        src={effectiveSrc || undefined}
         title="Preview"
         {...props}
       />
