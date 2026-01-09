@@ -1,5 +1,22 @@
 -- Fix User.id and all userId foreign keys from UUID to TEXT to support Clerk authentication
 -- Clerk provides user IDs as TEXT strings (format: "user_xxxxxxxxxxxx"), not UUIDs
+--
+-- IMPORTANT: Data Migration Notes
+-- ================================
+-- This migration converts User.id from UUID to TEXT type to support Clerk authentication.
+--
+-- For NEW deployments (empty database):
+--   - This migration will run without issues
+--   - Users will be created with Clerk's text-based IDs
+--
+-- For EXISTING deployments with data:
+--   - UUID values will be converted to their text representations
+--   - WARNING: These converted UUIDs will NOT match Clerk's "user_*" format
+--   - Existing users will need to re-authenticate after migration
+--   - Consider running a data cleanup script to remove old UUID-based users
+--   - Alternatively, create a mapping table if you need to preserve user associations
+--
+-- RECOMMENDED: Backup your database before running this migration!
 
 -- Step 1: Drop all foreign key constraints that reference User.id
 DO $$ BEGIN

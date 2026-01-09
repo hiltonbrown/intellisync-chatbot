@@ -16,7 +16,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
-import { generateUUID } from "../utils";
+import { generateUUID, isValidClerkUserId } from "../utils";
 import {
   type Chat,
   chat,
@@ -41,6 +41,9 @@ import {
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
+// PostgreSQL error code for unique constraint violations
+const POSTGRES_UNIQUE_VIOLATION = "23505";
+
 export async function verifyUser({
   id,
   email,
@@ -48,6 +51,22 @@ export async function verifyUser({
   id: string;
   email: string;
 }) {
+  // Validate Clerk user ID format
+  if (!isValidClerkUserId(id)) {
+    throw new ChatSDKError(
+      "bad_request:auth",
+      "Invalid user ID format. Expected Clerk user ID."
+    );
+  }
+
+  // Validate email is not empty
+  if (!email || email.trim() === "") {
+    throw new ChatSDKError(
+      "bad_request:auth",
+      "User email is required for verification."
+    );
+  }
+
   try {
     await db.insert(user).values({ id, email }).onConflictDoNothing();
   } catch (error) {
@@ -57,7 +76,7 @@ export async function verifyUser({
       error &&
       typeof error === "object" &&
       "code" in error &&
-      error.code === "23505";
+      error.code === POSTGRES_UNIQUE_VIOLATION;
 
     if (!isUniqueViolation) {
       console.error("Failed to verify user:", error);

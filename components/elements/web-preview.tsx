@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeUrl } from "@/lib/utils";
 
 export type WebPreviewContextValue = {
   url: string;
@@ -50,24 +50,8 @@ export const WebPreview = ({
   const [url, setUrl] = useState(defaultUrl);
   const [consoleOpen, setConsoleOpen] = useState(false);
 
-  const sanitizeUrl = (rawUrl: string): string => {
-    const trimmed = rawUrl.trim();
-    if (!trimmed) {
-      return "";
-    }
-    try {
-      const parsed = new URL(trimmed, window.location.origin);
-      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-        return parsed.toString();
-      }
-    } catch {
-      // Ignore parsing errors and treat as invalid URL.
-    }
-    return "";
-  };
-
   const handleUrlChange = (newUrl: string) => {
-    const safeUrl = sanitizeUrl(newUrl);
+    const safeUrl = sanitizeUrl(newUrl) ?? "";
     setUrl(safeUrl);
     onUrlChange?.(safeUrl);
   };
@@ -182,25 +166,6 @@ export const WebPreviewBody = ({
   ...props
 }: WebPreviewBodyProps) => {
   const { url } = useWebPreview();
-  const sanitizeUrl = (rawUrl: string | undefined | null): string | undefined => {
-    if (!rawUrl) {
-      return undefined;
-    }
-    const trimmed = rawUrl.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-    try {
-      const parsed = new URL(trimmed, window.location.origin);
-      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-        return parsed.toString();
-      }
-    } catch {
-      // Ignore parsing errors and treat as invalid URL.
-    }
-    return undefined;
-  };
-
   const effectiveSrc = sanitizeUrl(src ?? url);
 
 
