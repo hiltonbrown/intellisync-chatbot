@@ -14,7 +14,6 @@ import {
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import type { ArtifactKind } from "@/components/artifact";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
 import { generateUUID } from "../utils";
@@ -23,6 +22,8 @@ import {
   chat,
   type DBMessage,
   document,
+  documentChunk,
+  type Document,
   message,
   type Suggestion,
   stream,
@@ -50,10 +51,21 @@ export async function verifyUser({
   try {
     await db.insert(user).values({ id, email }).onConflictDoNothing();
   } catch (error) {
-    console.error("Error verifying user:", error);
-    // Ignore error if user already exists via unique constraint,
-    // but log other errors for debugging.
-    // The foreign key constraint will fail later if this didn't work and the user doesn't exist.
+    // PostgreSQL error code 23505 = unique_violation (user already exists)
+    // This is expected and safe to ignore
+    const isUniqueViolation =
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "23505";
+
+    if (!isUniqueViolation) {
+      console.error("Failed to verify user:", error);
+      throw new ChatSDKError(
+        "bad_request:database",
+        "User verification failed. Please ensure you are properly authenticated."
+      );
+    }
   }
 }
 
@@ -304,17 +316,25 @@ export async function saveDocument({
   title,
   kind,
   content,
+  textContent,
+  summary,
+  blobUrl,
   userId,
   chatId,
 }: {
   id: string;
   title: string;
-  kind: ArtifactKind;
+  kind: Document["kind"];
   content: string;
+  textContent?: string | null;
+  summary?: string | null;
+  blobUrl?: string | null;
   userId: string;
   chatId: string;
 }) {
   try {
+    const resolvedTextContent = textContent ?? content ?? null;
+
     return await db
       .insert(document)
       .values({
@@ -322,6 +342,9 @@ export async function saveDocument({
         title,
         kind,
         content,
+        textContent: resolvedTextContent,
+        summary,
+        blobUrl,
         userId,
         chatId,
         createdAt: new Date(),
@@ -333,11 +356,89 @@ export async function saveDocument({
           content,
           kind,
           chatId,
+          textContent: resolvedTextContent,
+          summary,
+          blobUrl,
         },
       })
       .returning();
   } catch (_error) {
     throw new ChatSDKError("bad_request:database", "Failed to save document");
+  }
+}
+
+export async function saveDocumentChunks({
+  chunks,
+}: {
+  chunks: Array<typeof documentChunk.$inferInsert>;
+}) {
+  try {
+    return await db.insert(documentChunk).values(chunks).returning();
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to save document chunks"
+    );
+  }
+}
+
+export async function getDocumentChunksByUserId({
+  userId,
+  chatId,
+}: {
+  userId: string;
+  chatId?: string;
+}) {
+  try {
+    if (chatId) {
+      return await db
+        .select()
+        .from(documentChunk)
+        .where(
+          and(
+            eq(documentChunk.userId, userId),
+            eq(documentChunk.chatId, chatId)
+          )
+        );
+    }
+
+    return await db
+      .select()
+      .from(documentChunk)
+      .where(eq(documentChunk.userId, userId));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get document chunks by user id"
+    );
+  }
+}
+
+export async function deleteDocumentChunksByArtifactId({
+  artifactId,
+  userId,
+  chatId,
+}: {
+  artifactId: string;
+  userId: string;
+  chatId: string;
+}) {
+  try {
+    return await db
+      .delete(documentChunk)
+      .where(
+        and(
+          eq(documentChunk.artifactId, artifactId),
+          eq(documentChunk.userId, userId),
+          eq(documentChunk.chatId, chatId)
+        )
+      )
+      .returning();
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to delete document chunks by artifact id"
+    );
   }
 }
 

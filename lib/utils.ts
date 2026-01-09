@@ -15,6 +15,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Validates that a userId from Clerk is in the expected format.
+ * Clerk user IDs are text strings that start with "user_".
+ *
+ * @param userId - The user ID to validate
+ * @returns true if the userId is a valid Clerk ID format
+ */
+export function isValidClerkUserId(userId: string | null | undefined): userId is string {
+  return !!userId && typeof userId === "string" && userId.startsWith("user_");
+}
+
 export const fetcher = async (url: string) => {
   const response = await fetch(url);
 

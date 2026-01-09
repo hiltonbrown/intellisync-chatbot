@@ -20,10 +20,16 @@ export async function GET(request: Request) {
   }
 
   const { userId } = await auth();
+  const user = userId ? await currentUser() : null;
 
-  if (!userId) {
+  if (!userId || !user) {
     return new ChatSDKError("unauthorized:document").toResponse();
   }
+
+  await verifyUser({
+    id: userId,
+    email: user.emailAddresses[0]?.emailAddress ?? "",
+  });
 
   const documents = await getDocumentsById({ id });
 
@@ -51,13 +57,13 @@ export async function POST(request: Request) {
     ).toResponse();
   }
 
-  const user = await currentUser();
+  const { userId } = await auth();
+  const user = userId ? await currentUser() : null;
 
-  if (!user) {
-    return new ChatSDKError("not_found:document").toResponse();
+  if (!userId || !user) {
+    return new ChatSDKError("unauthorized:document").toResponse();
   }
 
-  const userId = user.id;
   await verifyUser({
     id: userId,
     email: user.emailAddresses[0]?.emailAddress ?? "",
@@ -113,10 +119,16 @@ export async function DELETE(request: Request) {
   }
 
   const { userId } = await auth();
+  const user = userId ? await currentUser() : null;
 
-  if (!userId) {
+  if (!userId || !user) {
     return new ChatSDKError("unauthorized:document").toResponse();
   }
+
+  await verifyUser({
+    id: userId,
+    email: user.emailAddresses[0]?.emailAddress ?? "",
+  });
 
   const documents = await getDocumentsById({ id });
 
