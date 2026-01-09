@@ -73,11 +73,11 @@ Updated `lib/db/queries.ts`:
 
 #### 8. Created Shared Authentication Helper
 New file `lib/auth/helpers.ts`:
-- `getAuthenticatedUser()` function reduces code duplication
+- `getAuthenticatedUser()` function is intended to reduce code duplication when used in API routes
 - Centralizes auth + verification logic in one place
 - Validates email exists before proceeding
-- Can be used across all API routes for consistency
-- Throws clear `ChatSDKError` for all failure cases
+- Is available to be used across API routes for consistency in future refactors
+- Throws clear `ChatSDKError` for all failure cases when the helper is invoked
 
 #### 9. Enhanced Migration Documentation
 Updated `lib/db/migrations/0012_fix_user_id_types.sql`:
