@@ -14,7 +14,9 @@ This mismatch caused:
 3. Foreign key constraints failed when creating chats/documents
 4. Users appeared to have "remaining ID from previous authentication" issues
 
-## Changes Made
+## Changes Made (2 Commits)
+
+### Commit 1: Critical Authentication Fix
 
 ### 1. Database Migration (0012_fix_user_id_types.sql)
 Created comprehensive migration to fix the type mismatch:
@@ -51,6 +53,40 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=****
 CLERK_SECRET_KEY=****
 ```
 
+### Commit 2: Security and Code Quality Improvements
+
+#### 6. Fixed URL Sanitization Vulnerability (CRITICAL)
+Updated `components/elements/web-preview.tsx`:
+- **Security Issue**: Local `sanitizeUrl()` used `window.location.origin` as base URL
+- **Attack Vector**: Protocol-relative URLs like `//evil.com` became `https://evil.com`
+- **Fix**: Created secure shared `sanitizeUrl()` in `lib/utils.ts`
+- **New Behavior**: Requires fully qualified http:// or https:// URLs only
+- **Impact**: Prevents URL injection attacks in web preview iframe
+
+#### 7. Enhanced verifyUser() Validation
+Updated `lib/db/queries.ts`:
+- Added Clerk user ID format validation (`user_*` prefix)
+- Added email validation (rejects empty strings)
+- Added PostgreSQL error code constant (`POSTGRES_UNIQUE_VIOLATION`)
+- Provides specific error messages for different failure modes
+- Fails fast with clear errors instead of silent failures
+
+#### 8. Created Shared Authentication Helper
+New file `lib/auth/helpers.ts`:
+- `getAuthenticatedUser()` function reduces code duplication
+- Centralizes auth + verification logic in one place
+- Validates email exists before proceeding
+- Can be used across all API routes for consistency
+- Throws clear `ChatSDKError` for all failure cases
+
+#### 9. Enhanced Migration Documentation
+Updated `lib/db/migrations/0012_fix_user_id_types.sql`:
+- Added comprehensive data migration notes
+- Explains impact on NEW vs EXISTING deployments
+- Warns about UUID-to-TEXT conversion implications
+- Recommends database backup before migration
+- Provides guidance for handling existing users
+
 ## Migration Instructions
 
 ### For New Deployments
@@ -81,6 +117,15 @@ CLERK_SECRET_KEY=****
 - [ ] No "remaining ID from previous authentication" errors
 - [ ] Check database logs for any user verification errors
 
+## Security Vulnerabilities Fixed
+
+### High Severity
+1. **URL Injection in Web Preview**: Fixed protocol-relative URL vulnerability that allowed attackers to inject arbitrary external URLs into iframe preview
+
+### Medium Severity
+2. **Missing Email Validation**: verifyUser() now rejects empty email addresses
+3. **Invalid User ID Format**: verifyUser() now validates Clerk ID format early
+
 ## Related Issues
 
 This fix resolves:
@@ -88,6 +133,8 @@ This fix resolves:
 - Silent failures in verifyUser()
 - Incomplete user verification across API endpoints
 - Missing Clerk environment variable documentation
+- URL sanitization security vulnerability
+- Code duplication across authentication flows
 
 ## Additional Notes
 
