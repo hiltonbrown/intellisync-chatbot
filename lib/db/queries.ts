@@ -16,7 +16,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
-import { generateUUID } from "../utils";
+import { generateUUID, isValidClerkUserId } from "../utils";
 import {
   type Chat,
   chat,
@@ -41,6 +41,9 @@ import {
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
+// PostgreSQL error code for unique constraint violations
+const POSTGRES_UNIQUE_VIOLATION = "23505";
+
 export async function verifyUser({
   id,
   email,
@@ -48,13 +51,45 @@ export async function verifyUser({
   id: string;
   email: string;
 }) {
+  // Validate Clerk user ID format
+  if (!isValidClerkUserId(id)) {
+    throw new ChatSDKError(
+      "bad_request:auth",
+      "Invalid user ID format. Expected Clerk user ID."
+    );
+  }
+
+  // Validate email is not empty
+  if (!email || email.trim() === "") {
+    throw new ChatSDKError(
+      "bad_request:auth",
+      "User email is required for verification."
+    );
+  }
+
   try {
     await db.insert(user).values({ id, email }).onConflictDoNothing();
   } catch (error) {
-    console.error("Error verifying user:", error);
-    // Ignore error if user already exists via unique constraint,
-    // but log other errors for debugging.
-    // The foreign key constraint will fail later if this didn't work and the user doesn't exist.
+    // PostgreSQL error code 23505 = unique_violation (user already exists)
+    // This is expected and safe to ignore
+    const isUniqueViolation =
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === POSTGRES_UNIQUE_VIOLATION;
+
+    if (!isUniqueViolation) {
+      console.error("Failed to verify user:", {
+        userId: id,
+        email,
+        errorCode: error && typeof error === "object" && "code" in error ? error.code : "unknown",
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      throw new ChatSDKError(
+        "bad_request:database",
+        "User verification failed. Please ensure you are properly authenticated."
+      );
+    }
   }
 }
 

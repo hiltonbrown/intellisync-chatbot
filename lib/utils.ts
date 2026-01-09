@@ -15,6 +15,41 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Sanitizes a URL string to prevent security vulnerabilities.
+ * Only allows fully qualified http:// or https:// URLs.
+ * Prevents protocol-relative URLs (//evil.com) and other attack vectors.
+ *
+ * @param rawUrl - The URL string to sanitize
+ * @returns The sanitized URL or undefined if invalid
+ */
+export function sanitizeUrl(rawUrl: string | undefined | null): string | undefined {
+  if (!rawUrl) {
+    return undefined;
+  }
+
+  const trimmed = rawUrl.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  try {
+    // Don't use a base URL - require fully qualified URLs
+    // This prevents protocol-relative URLs like //evil.com
+    const parsed = new URL(trimmed);
+
+    // Only allow http and https protocols
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return undefined;
+    }
+
+    return parsed.toString();
+  } catch {
+    // Invalid URL format
+    return undefined;
+  }
+}
+
 export const fetcher = async (url: string) => {
   const response = await fetch(url);
 

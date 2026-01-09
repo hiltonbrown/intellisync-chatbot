@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeUrl } from "@/lib/utils";
 
 export type WebPreviewContextValue = {
   url: string;
@@ -51,8 +51,9 @@ export const WebPreview = ({
   const [consoleOpen, setConsoleOpen] = useState(false);
 
   const handleUrlChange = (newUrl: string) => {
-    setUrl(newUrl);
-    onUrlChange?.(newUrl);
+    const safeUrl = sanitizeUrl(newUrl) ?? "";
+    setUrl(safeUrl);
+    onUrlChange?.(safeUrl);
   };
 
   const contextValue: WebPreviewContextValue = {
@@ -165,13 +166,14 @@ export const WebPreviewBody = ({
   ...props
 }: WebPreviewBodyProps) => {
   const { url } = useWebPreview();
+  const effectiveSrc = sanitizeUrl(src ?? url);
 
   return (
     <div className="flex-1">
       <iframe
         className={cn("size-full", className)}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        src={(src ?? url) || undefined}
+        src={effectiveSrc || undefined}
         title="Preview"
         {...props}
       />

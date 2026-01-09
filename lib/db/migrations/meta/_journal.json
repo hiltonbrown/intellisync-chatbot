@@ -85,6 +85,13 @@
       "when": 1767529800000,
       "tag": "0011_convert_embedding_to_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1767530100000,
+      "tag": "0012_fix_user_id_types",
+      "breakpoints": true
     }
   ]
 }
