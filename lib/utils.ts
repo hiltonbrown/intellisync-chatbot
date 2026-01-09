@@ -16,17 +16,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Validates that a userId from Clerk is in the expected format.
- * Clerk user IDs are text strings that start with "user_".
- *
- * @param userId - The user ID to validate
- * @returns true if the userId is a valid Clerk ID format
- */
-export function isValidClerkUserId(userId: string | null | undefined): userId is string {
-  return !!userId && typeof userId === "string" && userId.startsWith("user_");
-}
-
-/**
  * Sanitizes a URL string to prevent security vulnerabilities.
  * Only allows fully qualified http:// or https:// URLs.
  * Prevents protocol-relative URLs (//evil.com) and other attack vectors.
