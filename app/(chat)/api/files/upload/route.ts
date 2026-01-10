@@ -17,6 +17,13 @@ import { generateUUID } from "@/lib/utils";
 
 const MIN_TEXT_LENGTH = 10;
 
+// Normalize content type to match chat API schema exactly
+const normalizeContentType = (contentType: string): string => {
+	// Remove charset and other parameters
+	const baseType = contentType.split(";")[0]?.trim() || contentType;
+	return baseType;
+};
+
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
   file: z
@@ -189,8 +196,14 @@ export async function POST(request: Request) {
         addRandomSuffix: true, // Generate unique filename to prevent overwrites
       });
 
+      // Normalize contentType to match chat API schema (remove charset, etc.)
+      const normalizedData = {
+        ...data,
+        contentType: normalizeContentType(data.contentType),
+      };
+
       if (file.type.startsWith("image/")) {
-        return NextResponse.json(data);
+        return NextResponse.json(normalizedData);
       }
 
       if (!chatId) {
@@ -275,7 +288,7 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json({
-        ...data,
+        ...normalizedData,
         documentId,
       });
     } catch (error) {
