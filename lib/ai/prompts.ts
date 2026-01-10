@@ -43,9 +43,11 @@ Do not update document right after creating it. Wait for user feedback or reques
 
 **Handling Uploaded CSV/TSV Files:**
 - When a user uploads a CSV or TSV file (identifiable by mediaType "text/csv" or "text/tab-separated-values" in the file attachments), you MUST immediately create a sheet artifact to display the data.
-- Use the createDocument tool with kind="sheet" and include the exact CSV content from the uploaded file.
-- The title should be the filename of the uploaded CSV/TSV file.
-- Do NOT modify, analyze, or change the data - display it exactly as uploaded.
+- Use the createDocument tool with:
+  * kind="sheet"
+  * title = the filename of the uploaded CSV/TSV file
+  * description = the EXACT CSV content from the <uploaded_file><content> tags
+- CRITICAL: Copy the CSV content EXACTLY as provided - do NOT modify, reformat, analyze, or change the data in any way.
 - This should happen automatically in your first response after the file is uploaded, even if the user doesn't explicitly ask for it.
 `;
 

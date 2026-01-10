@@ -6,13 +6,30 @@ import { createDocumentHandler } from "@/lib/artifacts/server";
 
 export const sheetDocumentHandler = createDocumentHandler<"sheet">({
   kind: "sheet",
-  onCreateDocument: async ({ title, dataStream }) => {
+  onCreateDocument: async ({ title, description, dataStream }) => {
     let draftContent = "";
 
+    // If description contains CSV data (from uploaded file), use it directly
+    // Otherwise, generate new CSV based on title
+    if (description && (description.includes(",") || description.includes("\n"))) {
+      // This appears to be actual CSV content from an upload
+      // Use it directly without AI generation
+      draftContent = description;
+
+      dataStream.write({
+        type: "data-sheetDelta",
+        data: draftContent,
+        transient: true,
+      });
+
+      return draftContent;
+    }
+
+    // Generate new CSV content using AI
     const { fullStream } = streamObject({
       model: getArtifactModel(),
       system: sheetPrompt,
-      prompt: title,
+      prompt: description || title,
       schema: z.object({
         csv: z.string().describe("CSV data"),
       }),
