@@ -1,4 +1,12 @@
-import "server-only";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-// This file is intentionally left minimal. Previously defined helpers here
-// were unused across the codebase and have been removed to avoid dead code.
+export async function getAuthenticatedUser() {
+	const { userId } = await auth();
+
+	if (!userId) {
+		redirect("/sign-in");
+	}
+
+	return { userId };
+}

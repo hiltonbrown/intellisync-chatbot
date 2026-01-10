@@ -15,6 +15,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function isValidClerkUserId(id: string) {
+  return typeof id === "string" && id.startsWith("user_");
+}
+
 /**
  * Sanitizes a URL string to prevent security vulnerabilities.
  * Only allows fully qualified http:// or https:// URLs.
