@@ -31,12 +31,6 @@ export const textDocumentHandler = createDocumentHandler<"text">({
 			}
 		}
 
-		dataStream.write({
-			type: "data-textDelta",
-			data: draftContent,
-			transient: true,
-		});
-
 		return draftContent;
 	},
 	onUpdateDocument: async ({ document, description, dataStream }) => {
@@ -71,12 +65,6 @@ export const textDocumentHandler = createDocumentHandler<"text">({
 				});
 			}
 		}
-
-		dataStream.write({
-			type: "data-textDelta",
-			data: draftContent,
-			transient: true,
-		});
 
 		return draftContent;
 	},
