@@ -7,7 +7,12 @@ import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
-import { getChatById, saveDocument, saveDocumentChunks } from "@/lib/db/queries";
+import {
+	getChatById,
+	saveChat,
+	saveDocument,
+	saveDocumentChunks,
+} from "@/lib/db/queries";
 import { generateUUID } from "@/lib/utils";
 
 const MIN_TEXT_LENGTH = 10;
@@ -196,14 +201,21 @@ export async function POST(request: Request) {
       }
 
       // Verify that the chat exists and belongs to the authenticated user
-      const existingChat = await getChatById({ id: chatId });
+      // If it doesn't exist, create it (this handles file uploads on the main page before first message)
+      let existingChat = await getChatById({ id: chatId });
+
       if (!existingChat) {
-        return NextResponse.json(
-          { error: "Chat not found" },
-          { status: 404 }
-        );
+        // Create the chat with a temporary title (will be updated when first message is sent)
+        await saveChat({
+          id: chatId,
+          userId,
+          title: "New Chat",
+          visibility: "private",
+        });
+        existingChat = await getChatById({ id: chatId });
       }
-      if (existingChat.userId !== userId) {
+
+      if (existingChat && existingChat.userId !== userId) {
         return NextResponse.json(
           { error: "Unauthorized: Chat does not belong to user" },
           { status: 403 }
