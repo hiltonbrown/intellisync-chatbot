@@ -177,12 +177,31 @@ export const WebPreviewBody = ({
 }: WebPreviewBodyProps) => {
   const { url } = useWebPreview();
 
+  const getSafeSrc = (value?: string | null): string | undefined => {
+    if (!value) {
+      return undefined;
+    }
+
+    try {
+      const parsed = new URL(value, window.location.origin);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.toString();
+      }
+    } catch {
+      // Invalid URL; fall through and return undefined.
+    }
+
+    return undefined;
+  };
+
+  const safeSrc = getSafeSrc(src ?? url);
+
   return (
     <div className="flex-1">
       <iframe
         className={cn("size-full", className)}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        src={(src ?? url) || undefined}
+        src={safeSrc}
         title="Preview"
         {...props}
       />
