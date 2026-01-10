@@ -65,8 +65,10 @@ const summarizeSheet = (content: string) => {
   return `Spreadsheet with ${rowCount} rows and ${columnCount} columns. Columns: ${columns}`;
 };
 
-const extractText = async (file: Blob, fileType: string) => {
-  const fileBuffer = Buffer.from(await file.arrayBuffer());
+const extractText = async (
+  fileBuffer: Buffer,
+  fileType: string
+): Promise<string> => {
 
   if (fileType === "text/plain") {
     return fileBuffer.toString("utf-8");
@@ -77,9 +79,19 @@ const extractText = async (file: Blob, fileType: string) => {
   }
 
   if (fileType === "application/pdf") {
-    const parser = new PDFParse({ data: fileBuffer });
-    const result = await parser.getText();
-    return result.text;
+    let pdfParser: PDFParse | null = null;
+    try {
+      pdfParser = new PDFParse({ data: fileBuffer });
+      const result = await pdfParser.getText();
+      return result.text;
+    } catch (error) {
+      console.error("PDF parsing error:", error);
+      return ""; // Triggers validation error downstream
+    } finally {
+      if (pdfParser) {
+        await pdfParser.destroy(); // REQUIRED for memory cleanup
+      }
+    }
   }
 
   if (
@@ -146,9 +158,13 @@ export async function POST(request: Request) {
     const filename = (formData.get("file") as File).name;
     const isImageUpload = file.type.startsWith("image/");
 
-    // Extract and validate text for non-image uploads before consuming the blob
+    // CRITICAL: Read blob once and convert to Buffer (single source of truth)
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+    // Extract and validate text for non-image uploads
+    let extractedText = "";
     if (!isImageUpload) {
-      const extractedText = await extractText(file, file.type);
+      extractedText = await extractText(fileBuffer, file.type);
       const normalizedText = extractedText.replace(/\s+/g, " ").trim();
 
       if (normalizedText.length < MIN_TEXT_LENGTH) {
@@ -162,11 +178,10 @@ export async function POST(request: Request) {
       }
     }
 
-    const fileBuffer = await file.arrayBuffer();
-
     try {
       const data = await put(`${filename}`, fileBuffer, {
         access: "public",
+        addRandomSuffix: true, // Generate unique filename to prevent overwrites
       });
 
       if (file.type.startsWith("image/")) {
@@ -195,7 +210,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const extractedText = await extractText(file, file.type);
+      // Reuse extracted text from earlier validation
       const normalizedText = extractedText.trim();
       const documentId = generateUUID();
       const kind = resolveDocumentKind(file.type);
@@ -251,10 +266,12 @@ export async function POST(request: Request) {
         ...data,
         documentId,
       });
-    } catch (_error) {
+    } catch (error) {
+      console.error("Upload failed:", error);
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
-  } catch (_error) {
+  } catch (error) {
+    console.error("Failed to process request:", error);
     return NextResponse.json(
       { error: "Failed to process request" },
       { status: 500 }
