@@ -175,7 +175,11 @@ export async function POST(request: Request) {
 
     // Extract and validate text for non-image uploads
     let extractedText = "";
-    if (!isImageUpload) {
+    const isPDF = file.type === "application/pdf";
+
+    if (!isImageUpload && !isPDF) {
+      // Skip text extraction for PDFs due to worker issues in Next.js
+      // PDFs will still be uploaded and accessible via blob URL
       extractedText = await extractText(fileBuffer, file.type);
       const normalizedText = extractedText.replace(/\s+/g, " ").trim();
 
@@ -187,6 +191,14 @@ export async function POST(request: Request) {
           },
           { status: 400 }
         );
+      }
+    } else if (isPDF) {
+      // For PDFs, attempt text extraction but don't fail if it errors
+      try {
+        extractedText = await extractText(fileBuffer, file.type);
+      } catch (error) {
+        console.warn("PDF text extraction failed, uploading without text content:", error);
+        extractedText = ""; // Upload PDF without text content
       }
     }
 
