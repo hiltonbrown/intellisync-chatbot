@@ -10,7 +10,6 @@ import { twMerge } from 'tailwind-merge';
 import type { DBMessage, Document } from '@/lib/db/schema';
 import { ChatSDKError, type ErrorCode } from './errors';
 import type { ChatMessage, ChatTools, CustomUIDataTypes } from './types';
-import { randomUUID } from 'crypto';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -96,9 +95,15 @@ export function getLocalStorage(key: string) {
 }
 
 export function generateUUID(): string {
-  // Use a cryptographically secure UUID generator provided by Node.js.
-  // This avoids the predictability issues of Math.random-based UUIDs.
-  return randomUUID();
+  // Use crypto.randomUUID() which is available in both modern browsers
+  // and Node.js 16+. This is cryptographically secure and avoids the
+  // predictability issues of Math.random-based UUIDs.
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  // Fallback for older environments (shouldn't happen in Next.js 16+)
+  throw new Error('crypto.randomUUID is not available');
 }
 
 type ResponseMessageWithoutId = ToolModelMessage | AssistantModelMessage;
