@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Turbopack configuration (for Next.js 16+)
+  turbopack: {},
+  // External packages that should not be bundled on the server
+  serverExternalPackages: ['pdfjs-dist', 'canvas'],
+  // Webpack configuration (for backward compatibility)
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Ignore pdf.worker.mjs in server builds since it's not needed

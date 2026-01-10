@@ -150,7 +150,10 @@ function PureMultimodalInput({
 		window.history.pushState({}, "", `/chat/${chatId}`);
 
 		// Build parts array: file attachments + optional text
-		const parts = [
+		const parts: Array<
+			| { type: "file"; url: string; name: string; mediaType: string; documentId?: string }
+			| { type: "text"; text: string }
+		> = [
 			...attachments.map((attachment) => ({
 				type: "file" as const,
 				url: attachment.url,
