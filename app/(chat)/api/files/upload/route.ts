@@ -2,9 +2,14 @@ import { put } from "@vercel/blob";
 import mammoth from "mammoth";
 import { NextResponse } from "next/server";
 import { parse } from "papaparse";
-import { PDFParse } from "pdf-parse";
 import { z } from "zod";
 
+// Disable PDF.js worker BEFORE importing PDFParse
+// This prevents the "fake worker failed" error in Next.js server environment
+import { GlobalWorkerOptions } from "pdfjs-dist";
+GlobalWorkerOptions.workerSrc = "";
+
+import { PDFParse } from "pdf-parse";
 import { auth } from "@clerk/nextjs/server";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
 import {
@@ -93,10 +98,6 @@ const extractText = async (
   if (fileType === "application/pdf") {
     let pdfParser: PDFParse | null = null;
     try {
-      // Disable PDF.js worker in server environment to avoid worker loading errors
-      const { GlobalWorkerOptions } = await import("pdfjs-dist");
-      GlobalWorkerOptions.workerSrc = "";
-
       pdfParser = new PDFParse({ data: fileBuffer });
       const result = await pdfParser.getText();
       return result.text;
