@@ -149,21 +149,28 @@ function PureMultimodalInput({
 	const submitForm = useCallback(() => {
 		window.history.pushState({}, "", `/chat/${chatId}`);
 
+		// Build parts array: file attachments + optional text
+		const parts = [
+			...attachments.map((attachment) => ({
+				type: "file" as const,
+				url: attachment.url,
+				name: attachment.name,
+				mediaType: attachment.contentType,
+			})),
+		];
+
+		// Only add text part if there's actual text content
+		if (input.trim()) {
+			parts.push({
+				type: "text",
+				text: input,
+			});
+		}
+
 		sendMessage(
 			{
 				role: "user",
-				parts: [
-					...attachments.map((attachment) => ({
-						type: "file" as const,
-						url: attachment.url,
-						name: attachment.name,
-						mediaType: attachment.contentType,
-					})),
-					{
-						type: "text",
-						text: input,
-					},
-				],
+				parts,
 			},
 			{
 				body: {
