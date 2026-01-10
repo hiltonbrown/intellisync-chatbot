@@ -93,6 +93,10 @@ const extractText = async (
   if (fileType === "application/pdf") {
     let pdfParser: PDFParse | null = null;
     try {
+      // Disable PDF.js worker in server environment to avoid worker loading errors
+      const { GlobalWorkerOptions } = await import("pdfjs-dist");
+      GlobalWorkerOptions.workerSrc = "";
+
       pdfParser = new PDFParse({ data: fileBuffer });
       const result = await pdfParser.getText();
       return result.text;
