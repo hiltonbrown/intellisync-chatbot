@@ -39,7 +39,10 @@ export function DocumentPreview({
     Document[]
   >(result ? `/api/document?id=${result.id}` : null, fetcher);
 
-  const previewDocument = useMemo(() => documents?.[0], [documents]);
+  const previewDocument = useMemo(
+    () => documents?.at(-1),
+    [documents]
+  );
   const hitboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -91,6 +94,9 @@ export function DocumentPreview({
           title: artifact.title,
           kind: artifact.kind,
           content: artifact.content,
+          textContent: null,
+          summary: null,
+          blobUrl: null,
           id: artifact.documentId,
           createdAt: new Date(),
           userId: "noop",
@@ -210,7 +216,7 @@ const PureDocumentHeader = ({
   isStreaming,
 }: {
   title: string;
-  kind: ArtifactKind;
+  kind: Document["kind"];
   isStreaming: boolean;
 }) => (
   <div className="flex flex-row items-start justify-between gap-2 rounded-t-2xl border border-b-0 p-4 sm:items-center dark:border-zinc-700 dark:bg-muted">
@@ -290,6 +296,23 @@ const DocumentContent = ({ document }: { document: Document }) => {
           status={artifact.status}
           title={document.title}
         />
+      ) : document.kind === "pdf" || document.kind === "docx" ? (
+        <div className="flex flex-col items-center justify-center gap-4 p-8">
+          <FileIcon />
+          <div className="text-center text-sm text-muted-foreground">
+            {document.kind === "pdf" ? "PDF" : "Word"} document uploaded
+          </div>
+          {document.blobUrl ? (
+            <a
+              className="text-sm text-blue-500 hover:underline"
+              href={document.blobUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              View document
+            </a>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

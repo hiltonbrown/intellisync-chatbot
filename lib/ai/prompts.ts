@@ -35,19 +35,24 @@ Do not update document right after creating it. Wait for user feedback or reques
 - ONLY use when the user explicitly asks for suggestions on an existing document
 - Requires a valid document ID from a previously created document
 - Never use for general questions or information requests
+
+**Working with Spreadsheets:**
+- The spreadsheet content is provided to you as CSV text.
+- You CAN and SHOULD perform calculations, aggregations, and analysis on this data to answer user questions.
+- You do not need a special tool to read the data; it is directly in your context.
 `;
 
 export const regularPrompt = `You are a friendly assistant! Keep your responses concise and helpful.
 
-Before responding, please think carefully about the user's request. Express your thinking process inside <thinking> tags.
-
 When asked to write, create, or help with something, just do it directly. Don't ask clarifying questions unless absolutely necessary - make reasonable assumptions and proceed with the task.`;
 
+const reasoningInstruction = `Before responding, please think carefully about the user's request. Express your thinking process inside <thinking> tags. After the thinking block, you MUST provide a final response to the user.`;
+
 export type RequestHints = {
-  latitude: Geo["latitude"];
-  longitude: Geo["longitude"];
-  city: Geo["city"];
-  country: Geo["country"];
+	latitude: Geo["latitude"];
+	longitude: Geo["longitude"];
+	city: Geo["city"];
+	country: Geo["country"];
 };
 
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
@@ -59,17 +64,28 @@ About the origin of user's request:
 `;
 
 export const systemPrompt = ({
-  selectedChatModel: _selectedChatModel,
-  requestHints,
-  customPrompt,
+	selectedChatModel,
+	requestHints,
+	customPrompt,
 }: {
-  selectedChatModel: string;
-  requestHints: RequestHints;
-  customPrompt?: string | null;
+	selectedChatModel: string;
+	requestHints: RequestHints;
+	customPrompt?: string | null;
 }) => {
-  const requestPrompt = getRequestPromptFromHints(requestHints);
+	const requestPrompt = getRequestPromptFromHints(requestHints);
+	const isReasoningModel =
+		selectedChatModel.includes("reasoning") ||
+		selectedChatModel.includes("thinking");
 
-  return `${customPrompt ? `${customPrompt}\n\n` : ""}${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+	return [
+		customPrompt,
+		regularPrompt,
+		!isReasoningModel ? reasoningInstruction : null,
+		requestPrompt,
+		artifactsPrompt,
+	]
+		.filter(Boolean)
+		.join("\n\n");
 };
 
 export const codePrompt = `
@@ -103,18 +119,18 @@ You are a spreadsheet creation assistant. Create a spreadsheet in csv format bas
 `;
 
 export const updateDocumentPrompt = (
-  currentContent: string | null,
-  type: ArtifactKind
+	currentContent: string | null,
+	type: ArtifactKind,
 ) => {
-  let mediaType = "document";
+	let mediaType = "document";
 
-  if (type === "code") {
-    mediaType = "code snippet";
-  } else if (type === "sheet") {
-    mediaType = "spreadsheet";
-  }
+	if (type === "code") {
+		mediaType = "code snippet";
+	} else if (type === "sheet") {
+		mediaType = "spreadsheet";
+	}
 
-  return `Improve the following contents of the ${mediaType} based on the given prompt.
+	return `Improve the following contents of the ${mediaType} based on the given prompt.
 
 ${currentContent}`;
 };

@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  integer,
   json,
   pgTable,
   primaryKey,
@@ -9,6 +10,7 @@ import {
   timestamp,
   uuid,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("User", {
@@ -109,7 +111,12 @@ export const document = pgTable(
     createdAt: timestamp("createdAt").notNull(),
     title: text("title").notNull(),
     content: text("content"),
-    kind: varchar("text", { enum: ["text", "code", "image", "sheet"] })
+    textContent: text("textContent"),
+    summary: text("summary"),
+    blobUrl: text("blobUrl"),
+    kind: varchar("text", {
+      enum: ["text", "code", "image", "sheet", "pdf", "docx"],
+    })
       .notNull()
       .default("text"),
     userId: text("userId")
@@ -127,6 +134,21 @@ export const document = pgTable(
 );
 
 export type Document = InferSelectModel<typeof document>;
+
+export const documentChunk = pgTable("DocumentChunk", {
+  id: uuid("id").notNull().defaultRandom().primaryKey(),
+  artifactId: uuid("artifactId").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  chatId: uuid("chatId").notNull().references(() => chat.id),
+  chunkIndex: integer("chunkIndex").notNull(),
+  content: text("content").notNull(),
+  embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+  createdAt: timestamp("createdAt").notNull(),
+});
+
+export type DocumentChunk = InferSelectModel<typeof documentChunk>;
 
 export const suggestion = pgTable(
   "Suggestion",

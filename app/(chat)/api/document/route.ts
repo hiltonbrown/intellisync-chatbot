@@ -1,10 +1,9 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import type { ArtifactKind } from "@/components/artifact";
+import { getAuthenticatedUser } from "@/lib/auth/helpers";
 import {
   deleteDocumentsByIdAfterTimestamp,
   getDocumentsById,
   saveDocument,
-  verifyUser,
 } from "@/lib/db/queries";
 import { ChatSDKError } from "@/lib/errors";
 
@@ -19,12 +18,7 @@ export async function GET(request: Request) {
     ).toResponse();
   }
 
-  const { userId } = await auth();
-
-  if (!userId) {
-    return new ChatSDKError("unauthorized:document").toResponse();
-  }
-
+  const { userId } = await getAuthenticatedUser();
   const documents = await getDocumentsById({ id });
 
   const [document] = documents;
@@ -51,17 +45,7 @@ export async function POST(request: Request) {
     ).toResponse();
   }
 
-  const user = await currentUser();
-
-  if (!user) {
-    return new ChatSDKError("not_found:document").toResponse();
-  }
-
-  const userId = user.id;
-  await verifyUser({
-    id: userId,
-    email: user.emailAddresses[0]?.emailAddress ?? "",
-  });
+  const { userId } = await getAuthenticatedUser();
 
   const {
     content,
@@ -112,12 +96,7 @@ export async function DELETE(request: Request) {
     ).toResponse();
   }
 
-  const { userId } = await auth();
-
-  if (!userId) {
-    return new ChatSDKError("unauthorized:document").toResponse();
-  }
-
+  const { userId } = await getAuthenticatedUser();
   const documents = await getDocumentsById({ id });
 
   const [document] = documents;

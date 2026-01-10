@@ -1,43 +1,50 @@
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { geolocation } from "@vercel/functions";
 import {
-  convertToModelMessages,
-  createUIMessageStream,
-  JsonToSseTransformStream,
-  smoothStream,
-  stepCountIs,
-  streamText,
+	convertToModelMessages,
+	createUIMessageStream,
+	JsonToSseTransformStream,
+	smoothStream,
+	stepCountIs,
+	streamText,
 } from "ai";
 import { after } from "next/server";
 import {
-  createResumableStreamContext,
-  type ResumableStreamContext,
+	createResumableStreamContext,
+	type ResumableStreamContext,
 } from "resumable-stream";
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { buildRagContext } from "@/lib/ai/rag";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
-  createStreamId,
-  deleteChatById,
-  getChatById,
-  getMessageCountByUserId,
-  getMessagesByChatId,
-  getUserById,
-  saveChat,
-  saveMessages,
-  updateChatTitleById,
-  updateMessage,
-  verifyUser,
+	createStreamId,
+	deleteChatById,
+	getChatById,
+	getDocumentById,
+	getMessageCountByUserId,
+	getMessagesByChatId,
+	getUserById,
+	saveChat,
+	saveMessages,
+	updateChatTitleById,
+	updateMessage,
+	verifyUser,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
-import { convertToUIMessages, generateUUID } from "@/lib/utils";
+import {
+	convertToUIMessages,
+	generateUUID,
+	getMostRecentUserMessage,
+	getTextFromMessage,
+} from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
@@ -46,294 +53,345 @@ export const maxDuration = 60;
 let globalStreamContext: ResumableStreamContext | null = null;
 
 export function getStreamContext() {
-  if (!globalStreamContext) {
-    try {
-      globalStreamContext = createResumableStreamContext({
-        waitUntil: after,
-      });
-    } catch (error: any) {
-      if (error.message.includes("REDIS_URL")) {
-        console.log(
-          " > Resumable streams are disabled due to missing REDIS_URL"
-        );
-      } else {
-        console.error(error);
-      }
-    }
-  }
+	if (!globalStreamContext) {
+		try {
+			globalStreamContext = createResumableStreamContext({
+				waitUntil: after,
+			});
+		} catch (error: any) {
+			if (error.message.includes("REDIS_URL")) {
+				console.log(
+					" > Resumable streams are disabled due to missing REDIS_URL",
+				);
+			} else {
+				console.error(error);
+			}
+		}
+	}
 
-  return globalStreamContext;
+	return globalStreamContext;
 }
 
 export async function POST(request: Request) {
-  let requestBody: PostRequestBody;
+	let requestBody: PostRequestBody;
 
-  try {
-    const json = await request.json();
-    requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
-    return new ChatSDKError("bad_request:api").toResponse();
-  }
+	try {
+		const json = await request.json();
+		requestBody = postRequestBodySchema.parse(json);
+	} catch (_) {
+		return new ChatSDKError("bad_request:api").toResponse();
+	}
 
-  try {
-    const { id, message, messages, selectedChatModel, selectedVisibilityType } =
-      requestBody;
+	try {
+		const {
+			id,
+			message,
+			messages,
+			selectedChatModel,
+			selectedVisibilityType,
+			currentDocumentId,
+		} = requestBody;
 
-    const user = await currentUser();
+		const { userId } = await auth();
+		const user = userId ? await currentUser() : null;
 
-    if (!user) {
-      return new ChatSDKError("unauthorized:chat").toResponse();
-    }
+		if (!userId || !user) {
+			return new ChatSDKError("unauthorized:chat").toResponse();
+		}
 
-    const userId = user.id;
-    await verifyUser({
-      id: userId,
-      email: user.emailAddresses[0]?.emailAddress ?? "",
-    });
+		await verifyUser({
+			id: userId,
+			email: user.emailAddresses[0]?.emailAddress ?? "",
+		});
 
-    const userType = "regular";
+		const userType = "regular";
 
-    const messageCount = await getMessageCountByUserId({
-      id: userId,
-      differenceInHours: 24,
-    });
+		const messageCount = await getMessageCountByUserId({
+			id: userId,
+			differenceInHours: 24,
+		});
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
-      return new ChatSDKError("rate_limit:chat").toResponse();
-    }
+		if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
+			return new ChatSDKError("rate_limit:chat").toResponse();
+		}
 
-    // Check if this is a tool approval flow (all messages sent)
-    const isToolApprovalFlow = Boolean(messages);
+		// Check if this is a tool approval flow (all messages sent)
+		const isToolApprovalFlow = Boolean(messages);
 
-    const chat = await getChatById({ id });
-    let messagesFromDb: DBMessage[] = [];
-    let titlePromise: Promise<string> | null = null;
+		const chat = await getChatById({ id });
+		let messagesFromDb: DBMessage[] = [];
+		let titlePromise: Promise<string> | null = null;
 
-    const dbUser = await getUserById({ id: userId });
+		const dbUser = await getUserById({ id: userId });
 
-    if (chat) {
-      if (chat.userId !== userId) {
-        return new ChatSDKError("forbidden:chat").toResponse();
-      }
-      // Only fetch messages if chat already exists and not tool approval
-      if (!isToolApprovalFlow) {
-        messagesFromDb = await getMessagesByChatId({ id });
-      }
-    } else if (message?.role === "user") {
-      // Save chat immediately with placeholder title
-      await saveChat({
-        id,
-        userId,
-        title: "New chat",
-        visibility: selectedVisibilityType,
-      });
+		if (chat) {
+			if (chat.userId !== userId) {
+				return new ChatSDKError("forbidden:chat").toResponse();
+			}
+			// Only fetch messages if chat already exists and not tool approval
+			if (!isToolApprovalFlow) {
+				messagesFromDb = await getMessagesByChatId({ id });
+			}
+		} else if (message?.role === "user") {
+			// Save chat immediately with placeholder title
+			await saveChat({
+				id,
+				userId,
+				title: "New chat",
+				visibility: selectedVisibilityType,
+			});
 
-      // Start title generation in parallel (don't await)
-      titlePromise = generateTitleFromUserMessage({ message });
-    }
+			// Start title generation in parallel (don't await)
+			titlePromise = generateTitleFromUserMessage({ message });
+		}
 
-    // Use all messages for tool approval, otherwise DB messages + new message
-    const uiMessages = isToolApprovalFlow
-      ? (messages as ChatMessage[])
-      : [...convertToUIMessages(messagesFromDb), message as ChatMessage];
+		// Use all messages for tool approval, otherwise DB messages + new message
+		const uiMessages = isToolApprovalFlow
+			? (messages as ChatMessage[])
+			: [...convertToUIMessages(messagesFromDb), message as ChatMessage];
 
-    const { longitude, latitude, city, country } = geolocation(request);
+		const { longitude, latitude, city, country } = geolocation(request);
 
-    const requestHints: RequestHints = {
-      longitude,
-      latitude,
-      city,
-      country,
-    };
+		const requestHints: RequestHints = {
+			longitude,
+			latitude,
+			city,
+			country,
+		};
 
-    // Only save user messages to the database (not tool approval responses)
-    if (message?.role === "user") {
-      await saveMessages({
-        messages: [
-          {
-            chatId: id,
-            id: message.id,
-            role: "user",
-            parts: message.parts,
-            attachments: [],
-            createdAt: new Date(),
-          },
-        ],
-      });
-    }
+		const ragMessage =
+			message?.role === "user" ? message : getMostRecentUserMessage(uiMessages);
+		const ragQuery = ragMessage ? getTextFromMessage(ragMessage) : "";
+		const { context: documentContext } = await buildRagContext({
+			userId,
+			chatId: id,
+			query: ragQuery,
+		});
 
-    const streamId = generateUUID();
-    await createStreamId({ streamId, chatId: id });
+		const baseSystemPrompt = systemPrompt({
+			selectedChatModel,
+			requestHints,
+			customPrompt: dbUser?.systemPrompt,
+		});
 
-    const stream = createUIMessageStream({
-      // Pass original messages for tool approval continuation
-      originalMessages: isToolApprovalFlow ? uiMessages : undefined,
-      execute: async ({ writer: dataStream }) => {
-        // Handle title generation in parallel
-        if (titlePromise) {
-          titlePromise.then((title) => {
-            updateChatTitleById({ chatId: id, title });
-            dataStream.write({ type: "data-chat-title", data: title });
-          });
-        }
+		let currentDocumentContext = "";
+		if (currentDocumentId) {
+			const currentDocument = await getDocumentById({ id: currentDocumentId });
 
-        const isReasoningModel =
-          selectedChatModel.includes("reasoning") ||
-          selectedChatModel.includes("thinking");
+			if (currentDocument && currentDocument.content) {
+				currentDocumentContext = `
+<active_artifact>
+  <id>${currentDocument.id}</id>
+  <title>${currentDocument.title}</title>
+  <kind>${currentDocument.kind}</kind>
+  <content>
+${currentDocument.content}
+  </content>
+  <instruction>
+    The user is currently viewing the artifact above. 
+    The content provided in the <content> tag is the RAW data of the file. 
+    You have full access to read, analyze, calculate, and summarize this data.
+    If the user asks "what is in this file" or "analyze this", use the content above to answer.
+    Do NOT claim you cannot read the file. It is right here.
+  </instruction>
+</active_artifact>
+`;
+			}
+		}
 
-        const result = streamText({
-          model: getLanguageModel(selectedChatModel),
-          system: systemPrompt({
-            selectedChatModel,
-            requestHints,
-            customPrompt: dbUser?.systemPrompt,
-          }),
-          messages: await convertToModelMessages(uiMessages),
-          stopWhen: stepCountIs(5),
-          experimental_activeTools: [
-            "getWeather",
-            "createDocument",
-            "updateDocument",
-            "requestSuggestions",
-          ],
-          experimental_transform: smoothStream({ chunking: "word" }),
-          providerOptions: isReasoningModel
-            ? {
-                anthropic: {
-                  thinking: { type: "enabled", budgetTokens: 10_000 },
-                },
-              }
-            : undefined,
-          tools: {
-            getWeather,
-            createDocument: createDocument({ userId, chatId: id, dataStream }),
-            updateDocument: updateDocument({ userId, chatId: id, dataStream }),
-            requestSuggestions: requestSuggestions({
-              userId,
-              dataStream,
-            }),
-          },
-          experimental_telemetry: {
-            isEnabled: isProductionEnvironment,
-            functionId: "stream-text",
-          },
-        });
+		const systemWithContext = [
+			baseSystemPrompt,
+			documentContext ? `DOCUMENT CONTEXT:\n${documentContext}` : null,
+			currentDocumentContext,
+			"Use the conversation below to answer the user.",
+		]
+			.filter(Boolean)
+			.join("\n\n");
 
-        result.consumeStream();
+		// Only save user messages to the database (not tool approval responses)
+		if (message?.role === "user") {
+			await saveMessages({
+				messages: [
+					{
+						chatId: id,
+						id: message.id,
+						role: "user",
+						parts: message.parts,
+						attachments: [],
+						createdAt: new Date(),
+					},
+				],
+			});
+		}
 
-        dataStream.merge(
-          result.toUIMessageStream({
-            sendReasoning: true,
-          })
-        );
-      },
-      generateId: generateUUID,
-      onFinish: async ({ messages: finishedMessages }) => {
-        if (isToolApprovalFlow) {
-          // For tool approval, update existing messages (tool state changed) and save new ones
-          for (const finishedMsg of finishedMessages) {
-            const existingMsg = uiMessages.find((m) => m.id === finishedMsg.id);
-            if (existingMsg) {
-              // Update existing message with new parts (tool state changed)
-              await updateMessage({
-                id: finishedMsg.id,
-                parts: finishedMsg.parts,
-              });
-            } else {
-              // Save new message
-              await saveMessages({
-                messages: [
-                  {
-                    id: finishedMsg.id,
-                    role: finishedMsg.role,
-                    parts: finishedMsg.parts,
-                    createdAt: new Date(),
-                    attachments: [],
-                    chatId: id,
-                  },
-                ],
-              });
-            }
-          }
-        } else if (finishedMessages.length > 0) {
-          // Normal flow - save all finished messages
-          await saveMessages({
-            messages: finishedMessages.map((currentMessage) => ({
-              id: currentMessage.id,
-              role: currentMessage.role,
-              parts: currentMessage.parts,
-              createdAt: new Date(),
-              attachments: [],
-              chatId: id,
-            })),
-          });
-        }
-      },
-      onError: () => {
-        return "Oops, an error occurred!";
-      },
-    });
+		const streamId = generateUUID();
+		await createStreamId({ streamId, chatId: id });
 
-    const streamContext = getStreamContext();
+		const stream = createUIMessageStream({
+			// Pass original messages for tool approval continuation
+			originalMessages: isToolApprovalFlow ? uiMessages : undefined,
+			execute: async ({ writer: dataStream }) => {
+				// Handle title generation in parallel
+				if (titlePromise) {
+					titlePromise.then((title) => {
+						updateChatTitleById({ chatId: id, title });
+						dataStream.write({ type: "data-chat-title", data: title });
+					});
+				}
 
-    if (streamContext) {
-      try {
-        const resumableStream = await streamContext.resumableStream(
-          streamId,
-          () => stream.pipeThrough(new JsonToSseTransformStream())
-        );
-        if (resumableStream) {
-          return new Response(resumableStream);
-        }
-      } catch (error) {
-        console.error("Failed to create resumable stream:", error);
-      }
-    }
+				const isReasoningModel =
+					selectedChatModel.includes("reasoning") ||
+					selectedChatModel.includes("thinking");
 
-    return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
-  } catch (error) {
-    const vercelId = request.headers.get("x-vercel-id");
+				const result = streamText({
+					model: getLanguageModel(selectedChatModel),
+					system: systemWithContext,
+					messages: await convertToModelMessages(uiMessages),
+					stopWhen: stepCountIs(5),
+					experimental_activeTools: [
+						"getWeather",
+						"createDocument",
+						"updateDocument",
+						"requestSuggestions",
+					],
+					experimental_transform: smoothStream({ chunking: "word" }),
+					providerOptions: isReasoningModel
+						? {
+								anthropic: {
+									thinking: { type: "enabled", budgetTokens: 10_000 },
+								},
+							}
+						: undefined,
+					tools: {
+						getWeather,
+						createDocument: createDocument({ userId, chatId: id, dataStream }),
+						updateDocument: updateDocument({ userId, chatId: id, dataStream }),
+						requestSuggestions: requestSuggestions({
+							userId,
+							dataStream,
+						}),
+					},
+					experimental_telemetry: {
+						isEnabled: isProductionEnvironment,
+						functionId: "stream-text",
+					},
+				});
 
-    if (error instanceof ChatSDKError) {
-      return error.toResponse();
-    }
+				result.consumeStream();
 
-    // Check for Vercel AI Gateway credit card error
-    if (
-      error instanceof Error &&
-      error.message?.includes(
-        "AI Gateway requires a valid credit card on file to service requests"
-      )
-    ) {
-      return new ChatSDKError("bad_request:activate_gateway").toResponse();
-    }
+				dataStream.merge(
+					result.toUIMessageStream({
+						sendReasoning: true,
+					}),
+				);
+			},
+			generateId: generateUUID,
+			onFinish: async ({ messages: finishedMessages }) => {
+				if (isToolApprovalFlow) {
+					// For tool approval, update existing messages (tool state changed) and save new ones
+					for (const finishedMsg of finishedMessages) {
+						const existingMsg = uiMessages.find((m) => m.id === finishedMsg.id);
+						if (existingMsg) {
+							// Update existing message with new parts (tool state changed)
+							await updateMessage({
+								id: finishedMsg.id,
+								parts: finishedMsg.parts,
+							});
+						} else {
+							// Save new message
+							await saveMessages({
+								messages: [
+									{
+										id: finishedMsg.id,
+										role: finishedMsg.role,
+										parts: finishedMsg.parts,
+										createdAt: new Date(),
+										attachments: [],
+										chatId: id,
+									},
+								],
+							});
+						}
+					}
+				} else if (finishedMessages.length > 0) {
+					// Normal flow - save all finished messages
+					await saveMessages({
+						messages: finishedMessages.map((currentMessage) => ({
+							id: currentMessage.id,
+							role: currentMessage.role,
+							parts: currentMessage.parts,
+							createdAt: new Date(),
+							attachments: [],
+							chatId: id,
+						})),
+					});
+				}
+			},
+			onError: () => {
+				return "Oops, an error occurred!";
+			},
+		});
 
-    console.error("Unhandled error in chat API:", error, { vercelId });
-    return new ChatSDKError("offline:chat").toResponse();
-  }
+		const streamContext = getStreamContext();
+
+		if (streamContext) {
+			try {
+				const resumableStream = await streamContext.resumableStream(
+					streamId,
+					() => stream.pipeThrough(new JsonToSseTransformStream()),
+				);
+				if (resumableStream) {
+					return new Response(resumableStream);
+				}
+			} catch (error) {
+				console.error("Failed to create resumable stream:", error);
+			}
+		}
+
+		return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
+	} catch (error) {
+		const vercelId = request.headers.get("x-vercel-id");
+
+		if (error instanceof ChatSDKError) {
+			return error.toResponse();
+		}
+
+		// Check for Vercel AI Gateway credit card error
+		if (
+			error instanceof Error &&
+			error.message?.includes(
+				"AI Gateway requires a valid credit card on file to service requests",
+			)
+		) {
+			return new ChatSDKError("bad_request:activate_gateway").toResponse();
+		}
+
+		console.error("Unhandled error in chat API:", error, { vercelId });
+		return new ChatSDKError("offline:chat").toResponse();
+	}
 }
 
 export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+	const { searchParams } = new URL(request.url);
+	const id = searchParams.get("id");
 
-  if (!id) {
-    return new ChatSDKError("bad_request:api").toResponse();
-  }
+	if (!id) {
+		return new ChatSDKError("bad_request:api").toResponse();
+	}
 
-  const { userId } = await auth();
+	const { userId } = await auth();
 
-  if (!userId) {
-    return new ChatSDKError("unauthorized:chat").toResponse();
-  }
+	if (!userId) {
+		return new ChatSDKError("unauthorized:chat").toResponse();
+	}
 
-  const chat = await getChatById({ id });
+	const chat = await getChatById({ id });
 
-  if (chat?.userId !== userId) {
-    return new ChatSDKError("forbidden:chat").toResponse();
-  }
+	if (chat?.userId !== userId) {
+		return new ChatSDKError("forbidden:chat").toResponse();
+	}
 
-  const deletedChat = await deleteChatById({ id });
+	const deletedChat = await deleteChatById({ id });
 
-  return Response.json(deletedChat, { status: 200 });
+	return Response.json(deletedChat, { status: 200 });
 }
