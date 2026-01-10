@@ -55,4 +55,5 @@ export type Attachment = {
   name: string;
   url: string;
   contentType: string;
+  documentId?: string; // For CSV/TSV files, includes the document ID to fetch full content
 };

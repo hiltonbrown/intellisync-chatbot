@@ -156,6 +156,7 @@ function PureMultimodalInput({
 				url: attachment.url,
 				name: attachment.name,
 				mediaType: attachment.contentType,
+				...(attachment.documentId && { documentId: attachment.documentId }), // Include documentId for CSV/TSV files
 			})),
 		];
 
@@ -214,12 +215,13 @@ function PureMultimodalInput({
 
 				if (response.ok) {
 					const data = await response.json();
-					const { url, pathname, contentType } = data;
+					const { url, pathname, contentType, documentId } = data;
 
 					return {
 						url,
 						name: pathname,
 						contentType,
+						documentId, // Include documentId for fetching file content later
 					};
 				}
 				const { error } = await response.json();

@@ -40,6 +40,13 @@ Do not update document right after creating it. Wait for user feedback or reques
 - The spreadsheet content is provided to you as CSV text.
 - You CAN and SHOULD perform calculations, aggregations, and analysis on this data to answer user questions.
 - You do not need a special tool to read the data; it is directly in your context.
+
+**Handling Uploaded CSV/TSV Files:**
+- When a user uploads a CSV or TSV file (identifiable by mediaType "text/csv" or "text/tab-separated-values" in the file attachments), you MUST immediately create a sheet artifact to display the data.
+- Use the createDocument tool with kind="sheet" and include the exact CSV content from the uploaded file.
+- The title should be the filename of the uploaded CSV/TSV file.
+- Do NOT modify, analyze, or change the data - display it exactly as uploaded.
+- This should happen automatically in your first response after the file is uploaded, even if the user doesn't explicitly ask for it.
 `;
 
 export const regularPrompt = `You are a friendly assistant! Keep your responses concise and helpful.

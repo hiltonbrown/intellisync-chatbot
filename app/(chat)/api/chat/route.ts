@@ -200,10 +200,65 @@ ${currentDocument.content}
 			}
 		}
 
+		// Check for newly uploaded CSV/TSV files and provide their content
+		let uploadedFileContext = "";
+		if (message?.role === "user" && message.parts) {
+			const fileParts = message.parts.filter(
+				(part: any) =>
+					part.type === "file" &&
+					part.documentId && // Must have documentId
+					(part.mediaType === "text/csv" ||
+						part.mediaType === "text/tab-separated-values"),
+			);
+
+			if (fileParts.length > 0) {
+				const fileContents = await Promise.all(
+					fileParts.map(async (filePart: any) => {
+						const fileName = filePart.name;
+						const documentId = filePart.documentId;
+
+						// Fetch the full CSV content from the database using documentId
+						const document = await getDocumentById({ id: documentId });
+
+						if (document && document.content) {
+							return {
+								name: fileName,
+								content: document.content,
+							};
+						}
+
+						return null;
+					}),
+				);
+
+				const validFileContents = fileContents.filter(Boolean);
+				if (validFileContents.length > 0) {
+					uploadedFileContext = validFileContents
+						.map(
+							(file) => `
+<uploaded_file>
+  <filename>${file!.name}</filename>
+  <content>
+${file!.content}
+  </content>
+  <instruction>
+    The user has just uploaded this CSV/TSV file. You MUST create a sheet artifact to display this data.
+    Use the createDocument tool with kind="sheet", title="${file!.name}", and include the exact content above.
+    Do this automatically in your first response, even if the user doesn't ask for it.
+  </instruction>
+</uploaded_file>
+`,
+						)
+						.join("\n");
+				}
+			}
+		}
+
 		const systemWithContext = [
 			baseSystemPrompt,
 			documentContext ? `DOCUMENT CONTEXT:\n${documentContext}` : null,
 			currentDocumentContext,
+			uploadedFileContext,
 			"Use the conversation below to answer the user.",
 		]
 			.filter(Boolean)
