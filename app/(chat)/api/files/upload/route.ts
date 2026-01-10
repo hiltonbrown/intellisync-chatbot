@@ -2,14 +2,9 @@ import { put } from "@vercel/blob";
 import mammoth from "mammoth";
 import { NextResponse } from "next/server";
 import { parse } from "papaparse";
+import { PDFParse } from "pdf-parse";
 import { z } from "zod";
 
-// Disable PDF.js worker BEFORE importing PDFParse
-// This prevents the "fake worker failed" error in Next.js server environment
-import { GlobalWorkerOptions } from "pdfjs-dist";
-GlobalWorkerOptions.workerSrc = "";
-
-import { PDFParse } from "pdf-parse";
 import { auth } from "@clerk/nextjs/server";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
 import {
