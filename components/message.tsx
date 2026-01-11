@@ -11,11 +11,11 @@ import { DocumentPreview } from "./document-preview";
 import { MessageContent } from "./elements/message";
 import { Response } from "./elements/response";
 import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
+	Tool,
+	ToolContent,
+	ToolHeader,
+	ToolInput,
+	ToolOutput,
 } from "./elements/tool";
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
@@ -23,503 +23,515 @@ import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import {
-  getApprovalId,
-  getIsDenied,
-  ToolApprovalButtons,
-  TOOL_WIDTH_CLASS,
+	getApprovalId,
+	getIsDenied,
+	TOOL_WIDTH_CLASS,
+	ToolApprovalButtons,
 } from "./tool-helpers";
 import { Weather } from "./weather";
 
 const PurePreviewMessage = ({
-  addToolApprovalResponse,
-  chatId,
-  message,
-  vote,
-  isLoading,
-  setMessages,
-  regenerate,
-  isReadonly,
-  requiresScrollPadding: _requiresScrollPadding,
+	addToolApprovalResponse,
+	chatId,
+	message,
+	vote,
+	isLoading,
+	setMessages,
+	regenerate,
+	isReadonly,
+	requiresScrollPadding: _requiresScrollPadding,
 }: {
-  addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
-  chatId: string;
-  message: ChatMessage;
-  vote: Vote | undefined;
-  isLoading: boolean;
-  setMessages: UseChatHelpers<ChatMessage>["setMessages"];
-  regenerate: UseChatHelpers<ChatMessage>["regenerate"];
-  isReadonly: boolean;
-  requiresScrollPadding: boolean;
+	addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
+	chatId: string;
+	message: ChatMessage;
+	vote: Vote | undefined;
+	isLoading: boolean;
+	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+	isReadonly: boolean;
+	requiresScrollPadding: boolean;
 }) => {
-  const [mode, setMode] = useState<"view" | "edit">("view");
+	const [mode, setMode] = useState<"view" | "edit">("view");
 
-  const attachmentsFromMessage = message.parts.filter(
-    (part) => part.type === "file"
-  );
+	const attachmentsFromMessage = message.parts.filter(
+		(part) => part.type === "file",
+	);
 
-  useDataStream();
+	useDataStream();
 
-  return (
-    <div
-      className="group/message fade-in w-full animate-in duration-200"
-      data-role={message.role}
-      data-testid={`message-${message.role}`}
-    >
-      <div
-        className={cn("flex w-full items-start gap-2 md:gap-3", {
-          "justify-end": message.role === "user" && mode !== "edit",
-          "justify-start": message.role === "assistant",
-        })}
-      >
-        {message.role === "assistant" && (
-          <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-            <SparklesIcon size={14} />
-          </div>
-        )}
+	return (
+		<div
+			className="group/message fade-in w-full animate-in duration-200"
+			data-role={message.role}
+			data-testid={`message-${message.role}`}
+		>
+			<div
+				className={cn("flex w-full items-start gap-2 md:gap-3", {
+					"justify-end": message.role === "user" && mode !== "edit",
+					"justify-start": message.role === "assistant",
+				})}
+			>
+				{message.role === "assistant" && (
+					<div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
+						<SparklesIcon size={14} />
+					</div>
+				)}
 
-        <div
-          className={cn("flex flex-col", {
-            "gap-2 md:gap-4": message.parts?.some(
-              (p) => p.type === "text" && p.text?.trim()
-            ),
-            "w-full":
-              (message.role === "assistant" &&
-                (message.parts?.some(
-                  (p) => p.type === "text" && p.text?.trim()
-                ) ||
-                  message.parts?.some((p) => p.type.startsWith("tool-")))) ||
-              mode === "edit",
-            "max-w-[calc(100%-2.5rem)] sm:max-w-[min(fit-content,80%)]":
-              message.role === "user" && mode !== "edit",
-          })}
-        >
-          {attachmentsFromMessage.length > 0 && (
-            <div
-              className="flex flex-row justify-end gap-2"
-              data-testid={"message-attachments"}
-            >
-              {attachmentsFromMessage.map((attachment) => (
-                <PreviewAttachment
-                  attachment={{
-                    name: attachment.filename ?? "file",
-                    contentType: attachment.mediaType,
-                    url: attachment.url,
-                  }}
-                  key={attachment.url}
-                />
-              ))}
-            </div>
-          )}
+				<div
+					className={cn("flex flex-col", {
+						"gap-2 md:gap-4": message.parts?.some(
+							(p) => p.type === "text" && p.text?.trim(),
+						),
+						"w-full":
+							(message.role === "assistant" &&
+								(message.parts?.some(
+									(p) => p.type === "text" && p.text?.trim(),
+								) ||
+									message.parts?.some((p) => p.type.startsWith("tool-")))) ||
+							mode === "edit",
+						"max-w-[calc(100%-2.5rem)] sm:max-w-[min(fit-content,80%)]":
+							message.role === "user" && mode !== "edit",
+					})}
+				>
+					{attachmentsFromMessage.length > 0 && (
+						<div
+							className="flex flex-row justify-end gap-2"
+							data-testid={"message-attachments"}
+						>
+							{attachmentsFromMessage.map((attachment) => (
+								<PreviewAttachment
+									attachment={{
+										name: attachment.filename ?? "file",
+										contentType: attachment.mediaType,
+										url: attachment.url,
+									}}
+									key={attachment.url}
+								/>
+							))}
+						</div>
+					)}
 
-          {message.parts?.map((part, index) => {
-            const { type } = part;
-            const key = `message-${message.id}-part-${index}`;
+					{message.parts?.map((part, index) => {
+						const { type } = part;
+						const key = `message-${message.id}-part-${index}`;
 
-            if (type === "reasoning" && part.text?.trim().length > 0) {
-              return (
-                <MessageReasoning
-                  isLoading={isLoading}
-                  key={key}
-                  reasoning={part.text}
-                />
-              );
-            }
+						if (type === "reasoning" && part.text?.trim().length > 0) {
+							return (
+								<MessageReasoning
+									isLoading={isLoading}
+									key={key}
+									reasoning={part.text}
+								/>
+							);
+						}
 
-            if (type === "text") {
-              if (mode === "view") {
-                return (
-                  <div key={key}>
-                    <MessageContent
-                      className={cn({
-                        "wrap-break-word w-fit rounded-2xl px-3 py-2 text-right text-white":
-                          message.role === "user",
-                        "bg-transparent px-0 py-0 text-left":
-                          message.role === "assistant",
-                      })}
-                      data-testid="message-content"
-                      style={
-                        message.role === "user"
-                          ? { backgroundColor: "#006cff" }
-                          : undefined
-                      }
-                    >
-                      <Response>{sanitizeText(part.text)}</Response>
-                    </MessageContent>
-                  </div>
-                );
-              }
+						if (type === "text") {
+							if (mode === "view") {
+								return (
+									<div key={key}>
+										<MessageContent
+											className={cn({
+												"wrap-break-word w-fit rounded-2xl px-3 py-2 text-right text-white":
+													message.role === "user",
+												"bg-transparent px-0 py-0 text-left":
+													message.role === "assistant",
+											})}
+											data-testid="message-content"
+											style={
+												message.role === "user"
+													? { backgroundColor: "#006cff" }
+													: undefined
+											}
+										>
+											<Response>{sanitizeText(part.text)}</Response>
+										</MessageContent>
+									</div>
+								);
+							}
 
-              if (mode === "edit") {
-                return (
-                  <div
-                    className="flex w-full flex-row items-start gap-3"
-                    key={key}
-                  >
-                    <div className="size-8" />
-                    <div className="min-w-0 flex-1">
-                      <MessageEditor
-                        key={message.id}
-                        message={message}
-                        regenerate={regenerate}
-                        setMessages={setMessages}
-                        setMode={setMode}
-                      />
-                    </div>
-                  </div>
-                );
-              }
-            }
+							if (mode === "edit") {
+								return (
+									<div
+										className="flex w-full flex-row items-start gap-3"
+										key={key}
+									>
+										<div className="size-8" />
+										<div className="min-w-0 flex-1">
+											<MessageEditor
+												key={message.id}
+												message={message}
+												regenerate={regenerate}
+												setMessages={setMessages}
+												setMode={setMode}
+											/>
+										</div>
+									</div>
+								);
+							}
+						}
 
-            if (type === "tool-getWeather") {
-              const { toolCallId, state } = part;
-              const approvalId = getApprovalId(part);
-              const isDenied = getIsDenied(part);
+						if (type === "tool-getWeather") {
+							const { toolCallId, state } = part;
+							const approvalId = getApprovalId(part);
+							const isDenied = getIsDenied(part);
 
-              if (state === "output-available") {
-                return (
-                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
-                    <Weather weatherAtLocation={part.output} />
-                  </div>
-                );
-              }
+							if (state === "output-available") {
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Weather weatherAtLocation={part.output} />
+									</div>
+								);
+							}
 
-              if (isDenied) {
-                return (
-                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
-                    <Tool className="w-full" defaultOpen={true}>
-                      <ToolHeader
-                        state="output-denied"
-                        type="tool-getWeather"
-                      />
-                      <ToolContent>
-                        <div className="px-4 py-3 text-muted-foreground text-sm">
-                          Weather lookup was denied.
-                        </div>
-                      </ToolContent>
-                    </Tool>
-                  </div>
-                );
-              }
+							if (isDenied) {
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Tool className="w-full" defaultOpen={true}>
+											<ToolHeader
+												state="output-denied"
+												type="tool-getWeather"
+											/>
+											<ToolContent>
+												<div className="px-4 py-3 text-muted-foreground text-sm">
+													Weather lookup was denied.
+												</div>
+											</ToolContent>
+										</Tool>
+									</div>
+								);
+							}
 
-              if (state === "approval-responded") {
-                return (
-                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
-                    <Tool className="w-full" defaultOpen={true}>
-                      <ToolHeader state={state} type="tool-getWeather" />
-                      <ToolContent>
-                        <ToolInput input={part.input} />
-                      </ToolContent>
-                    </Tool>
-                  </div>
-                );
-              }
+							if (state === "approval-responded") {
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Tool className="w-full" defaultOpen={true}>
+											<ToolHeader state={state} type="tool-getWeather" />
+											<ToolContent>
+												<ToolInput input={part.input} />
+											</ToolContent>
+										</Tool>
+									</div>
+								);
+							}
 
-              return (
-                <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
-                  <Tool className="w-full" defaultOpen={true}>
-                    <ToolHeader state={state} type="tool-getWeather" />
-                    <ToolContent>
-                      {(state === "input-available" ||
-                        state === "approval-requested") && (
-                        <ToolInput input={part.input} />
-                      )}
-                      {state === "approval-requested" && approvalId && (
-                        <ToolApprovalButtons
-                          addToolApprovalResponse={addToolApprovalResponse}
-                          approvalId={approvalId}
-                          toolName="weather lookup"
-                        />
-                      )}
-                    </ToolContent>
-                  </Tool>
-                </div>
-              );
-            }
+							return (
+								<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+									<Tool className="w-full" defaultOpen={true}>
+										<ToolHeader state={state} type="tool-getWeather" />
+										<ToolContent>
+											{(state === "input-available" ||
+												state === "approval-requested") && (
+												<ToolInput input={part.input} />
+											)}
+											{state === "approval-requested" && approvalId && (
+												<ToolApprovalButtons
+													addToolApprovalResponse={addToolApprovalResponse}
+													approvalId={approvalId}
+													toolName="weather lookup"
+												/>
+											)}
+										</ToolContent>
+									</Tool>
+								</div>
+							);
+						}
 
-            if (type === "tool-createDocument") {
-              const { toolCallId } = part;
+						if (type === "tool-createDocument") {
+							const { toolCallId } = part;
 
-              if (part.output && "error" in part.output) {
-                return (
-                  <div
-                    className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
-                    key={toolCallId}
-                  >
-                    Error creating document: {String(part.output.error)}
-                  </div>
-                );
-              }
+							if (part.output && "error" in part.output) {
+								return (
+									<div
+										className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+										key={toolCallId}
+									>
+										Error creating document: {String(part.output.error)}
+									</div>
+								);
+							}
 
-              return (
-                <DocumentPreview
-                  isReadonly={isReadonly}
-                  key={toolCallId}
-                  result={part.output}
-                />
-              );
-            }
+							return (
+								<DocumentPreview
+									isReadonly={isReadonly}
+									key={toolCallId}
+									result={part.output}
+								/>
+							);
+						}
 
-            if (type === "tool-updateDocument") {
-              const { toolCallId } = part;
+						if (type === "tool-updateDocument") {
+							const { toolCallId } = part;
 
-              if (part.output && "error" in part.output) {
-                return (
-                  <div
-                    className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
-                    key={toolCallId}
-                  >
-                    Error updating document: {String(part.output.error)}
-                  </div>
-                );
-              }
+							if (part.output && "error" in part.output) {
+								return (
+									<div
+										className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+										key={toolCallId}
+									>
+										Error updating document: {String(part.output.error)}
+									</div>
+								);
+							}
 
-              return (
-                <div className="relative" key={toolCallId}>
-                  <DocumentPreview
-                    args={{ ...part.output, isUpdate: true }}
-                    isReadonly={isReadonly}
-                    result={part.output}
-                  />
-                </div>
-              );
-            }
+							return (
+								<div className="relative" key={toolCallId}>
+									<DocumentPreview
+										args={{ ...part.output, isUpdate: true }}
+										isReadonly={isReadonly}
+										result={part.output}
+									/>
+								</div>
+							);
+						}
 
-            if (type === "tool-requestSuggestions") {
-              const { toolCallId, state } = part;
+						if (type === "tool-requestSuggestions") {
+							const { toolCallId, state } = part;
 
-              return (
-                <Tool defaultOpen={true} key={toolCallId}>
-                  <ToolHeader state={state} type="tool-requestSuggestions" />
-                  <ToolContent>
-                    {state === "input-available" && (
-                      <ToolInput input={part.input} />
-                    )}
-                    {state === "output-available" && (
-                      <ToolOutput
-                        errorText={undefined}
-                        output={
-                          "error" in part.output ? (
-                            <div className="rounded border p-2 text-red-500">
-                              Error: {String(part.output.error)}
-                            </div>
-                          ) : (
-                            <DocumentToolResult
-                              isReadonly={isReadonly}
-                              result={part.output}
-                              type="request-suggestions"
-                            />
-                          )
-                        }
-                      />
-                    )}
-                  </ToolContent>
-                </Tool>
-              );
-            }
+							return (
+								<Tool defaultOpen={true} key={toolCallId}>
+									<ToolHeader state={state} type="tool-requestSuggestions" />
+									<ToolContent>
+										{state === "input-available" && (
+											<ToolInput input={part.input} />
+										)}
+										{state === "output-available" && (
+											<ToolOutput
+												errorText={undefined}
+												output={
+													"error" in part.output ? (
+														<div className="rounded border p-2 text-red-500">
+															Error: {String(part.output.error)}
+														</div>
+													) : (
+														<DocumentToolResult
+															isReadonly={isReadonly}
+															result={part.output}
+															type="request-suggestions"
+														/>
+													)
+												}
+											/>
+										)}
+									</ToolContent>
+								</Tool>
+							);
+						}
 
-            if (type === "tool-getABNDetails") {
-              const { toolCallId, state } = part;
-              const approvalId = getApprovalId(part);
-              const isDenied = getIsDenied(part);
+						if (type === "tool-getABNDetails") {
+							const { toolCallId, state } = part;
+							const approvalId = getApprovalId(part);
+							const isDenied = getIsDenied(part);
 
-              if (state === "output-available") {
-                return (
-                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
-                    <Tool className="w-full" defaultOpen={true}>
-                      <ToolHeader
-                        state="output-available"
-                        type="tool-getABNDetails"
-                      />
-                      <ToolContent>
-                        {"error" in part.output ? (
-                          <div className="px-4 py-3 text-red-500 text-sm">
-                            {String(part.output.error)}
-                          </div>
-                        ) : (
-                          <div className="space-y-3 px-4 py-3 text-sm">
-                            <div>
-                              <div className="font-medium text-foreground">
-                                {part.output.entityName}
-                              </div>
-                              <div className="text-muted-foreground text-xs">
-                                ABN: {part.output.abn}
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  Status:
-                                </span>
-                                <span className="font-medium">
-                                  {part.output.status}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  Entity Type:
-                                </span>
-                                <span className="font-medium">
-                                  {part.output.entityType}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  GST Registered:
-                                </span>
-                                <span className="font-medium">
-                                  {part.output.gstRegistered ? "Yes" : "No"}
-                                </span>
-                              </div>
-                              {part.output.businessAddress?.state && (
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">
-                                    Location:
-                                  </span>
-                                  <span className="font-medium">
-                                    {part.output.businessAddress.state}{" "}
-                                    {part.output.businessAddress.postcode}
-                                  </span>
-                                </div>
-                              )}
-                              {part.output.registeredBusinessNames &&
-                                part.output.registeredBusinessNames.length >
-                                  0 && (
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">
-                                      Business Names:
-                                    </span>
-                                    <span className="font-medium text-right">
-                                      {part.output.registeredBusinessNames.join(
-                                        ", "
-                                      )}
-                                    </span>
-                                  </div>
-                                )}
-                            </div>
-                            <div className="border-t pt-2 text-muted-foreground text-xs">
-                              Source: {part.output.source}
-                            </div>
-                          </div>
-                        )}
-                      </ToolContent>
-                    </Tool>
-                  </div>
-                );
-              }
+							if (state === "output-available") {
+								const output = part.output as
+									| { error: string }
+									| {
+											entityName: string;
+											abn: string;
+											status: string;
+											entityType: string;
+											gstRegistered: boolean;
+											businessAddress?: { state: string; postcode: string };
+											registeredBusinessNames?: Array<string>;
+											source: string;
+									  };
 
-              if (isDenied) {
-                return (
-                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
-                    <Tool className="w-full" defaultOpen={true}>
-                      <ToolHeader
-                        state="output-denied"
-                        type="tool-getABNDetails"
-                      />
-                      <ToolContent>
-                        <div className="px-4 py-3 text-muted-foreground text-sm">
-                          ABN lookup was denied.
-                        </div>
-                      </ToolContent>
-                    </Tool>
-                  </div>
-                );
-              }
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Tool className="w-full" defaultOpen={true}>
+											<ToolHeader
+												state="output-available"
+												type="tool-getABNDetails"
+											/>
+											<ToolContent>
+												{"error" in output ? (
+													<div className="px-4 py-3 text-red-500 text-sm">
+														{String(output.error)}
+													</div>
+												) : (
+													<div className="space-y-3 px-4 py-3 text-sm">
+														<div>
+															<div className="font-medium text-foreground">
+																{output.entityName}
+															</div>
+															<div className="text-muted-foreground text-xs">
+																ABN: {output.abn}
+															</div>
+														</div>
+														<div className="space-y-1.5">
+															<div className="flex justify-between">
+																<span className="text-muted-foreground">
+																	Status:
+																</span>
+																<span className="font-medium">
+																	{output.status}
+																</span>
+															</div>
+															<div className="flex justify-between">
+																<span className="text-muted-foreground">
+																	Entity Type:
+																</span>
+																<span className="font-medium">
+																	{output.entityType}
+																</span>
+															</div>
+															<div className="flex justify-between">
+																<span className="text-muted-foreground">
+																	GST Registered:
+																</span>
+																<span className="font-medium">
+																	{output.gstRegistered ? "Yes" : "No"}
+																</span>
+															</div>
+															{output.businessAddress?.state && (
+																<div className="flex justify-between">
+																	<span className="text-muted-foreground">
+																		Location:
+																	</span>
+																	<span className="font-medium">
+																		{output.businessAddress.state}{" "}
+																		{output.businessAddress.postcode}
+																	</span>
+																</div>
+															)}
+															{output.registeredBusinessNames &&
+																output.registeredBusinessNames.length > 0 && (
+																	<div className="flex justify-between">
+																		<span className="text-muted-foreground">
+																			Business Names:
+																		</span>
+																		<span className="font-medium text-right">
+																			{output.registeredBusinessNames.join(
+																				", ",
+																			)}
+																		</span>
+																	</div>
+																)}
+														</div>
+														<div className="border-t pt-2 text-muted-foreground text-xs">
+															Source: {output.source}
+														</div>
+													</div>
+												)}
+											</ToolContent>
+										</Tool>
+									</div>
+								);
+							}
 
-              if (state === "approval-responded") {
-                return (
-                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
-                    <Tool className="w-full" defaultOpen={true}>
-                      <ToolHeader state={state} type="tool-getABNDetails" />
-                      <ToolContent>
-                        <ToolInput input={part.input} />
-                      </ToolContent>
-                    </Tool>
-                  </div>
-                );
-              }
+							if (isDenied) {
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Tool className="w-full" defaultOpen={true}>
+											<ToolHeader
+												state="output-denied"
+												type="tool-getABNDetails"
+											/>
+											<ToolContent>
+												<div className="px-4 py-3 text-muted-foreground text-sm">
+													ABN lookup was denied.
+												</div>
+											</ToolContent>
+										</Tool>
+									</div>
+								);
+							}
 
-              return (
-                <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
-                  <Tool className="w-full" defaultOpen={true}>
-                    <ToolHeader state={state} type="tool-getABNDetails" />
-                    <ToolContent>
-                      {(state === "input-available" ||
-                        state === "approval-requested") && (
-                        <ToolInput input={part.input} />
-                      )}
-                      {state === "approval-requested" && approvalId && (
-                        <ToolApprovalButtons
-                          addToolApprovalResponse={addToolApprovalResponse}
-                          approvalId={approvalId}
-                          toolName="ABN lookup"
-                        />
-                      )}
-                    </ToolContent>
-                  </Tool>
-                </div>
-              );
-            }
+							if (state === "approval-responded") {
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Tool className="w-full" defaultOpen={true}>
+											<ToolHeader state={state} type="tool-getABNDetails" />
+											<ToolContent>
+												<ToolInput input={part.input} />
+											</ToolContent>
+										</Tool>
+									</div>
+								);
+							}
 
-            return null;
-          })}
+							return (
+								<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+									<Tool className="w-full" defaultOpen={true}>
+										<ToolHeader state={state} type="tool-getABNDetails" />
+										<ToolContent>
+											{(state === "input-available" ||
+												state === "approval-requested") && (
+												<ToolInput input={part.input} />
+											)}
+											{state === "approval-requested" && approvalId && (
+												<ToolApprovalButtons
+													addToolApprovalResponse={addToolApprovalResponse}
+													approvalId={approvalId}
+													toolName="ABN lookup"
+												/>
+											)}
+										</ToolContent>
+									</Tool>
+								</div>
+							);
+						}
 
-          {!isReadonly && (
-            <MessageActions
-              chatId={chatId}
-              isLoading={isLoading}
-              key={`action-${message.id}`}
-              message={message}
-              setMode={setMode}
-              vote={vote}
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  );
+						return null;
+					})}
+
+					{!isReadonly && (
+						<MessageActions
+							chatId={chatId}
+							isLoading={isLoading}
+							key={`action-${message.id}`}
+							message={message}
+							setMode={setMode}
+							vote={vote}
+						/>
+					)}
+				</div>
+			</div>
+		</div>
+	);
 };
 
 export const PreviewMessage = memo(
-  PurePreviewMessage,
-  (prevProps, nextProps) => {
-    if (
-      prevProps.isLoading === nextProps.isLoading &&
-      prevProps.message.id === nextProps.message.id &&
-      prevProps.requiresScrollPadding === nextProps.requiresScrollPadding &&
-      equal(prevProps.message.parts, nextProps.message.parts) &&
-      equal(prevProps.vote, nextProps.vote)
-    ) {
-      return true;
-    }
-    return false;
-  }
+	PurePreviewMessage,
+	(prevProps, nextProps) => {
+		if (
+			prevProps.isLoading === nextProps.isLoading &&
+			prevProps.message.id === nextProps.message.id &&
+			prevProps.requiresScrollPadding === nextProps.requiresScrollPadding &&
+			equal(prevProps.message.parts, nextProps.message.parts) &&
+			equal(prevProps.vote, nextProps.vote)
+		) {
+			return true;
+		}
+		return false;
+	},
 );
 
 export const ThinkingMessage = () => {
-  return (
-    <div
-      className="group/message fade-in w-full animate-in duration-300"
-      data-role="assistant"
-      data-testid="message-assistant-loading"
-    >
-      <div className="flex items-start justify-start gap-3">
-        <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-          <div className="animate-pulse">
-            <SparklesIcon size={14} />
-          </div>
-        </div>
+	return (
+		<div
+			className="group/message fade-in w-full animate-in duration-300"
+			data-role="assistant"
+			data-testid="message-assistant-loading"
+		>
+			<div className="flex items-start justify-start gap-3">
+				<div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
+					<div className="animate-pulse">
+						<SparklesIcon size={14} />
+					</div>
+				</div>
 
-        <div className="flex w-full flex-col gap-2 md:gap-4">
-          <div className="flex items-center gap-1 p-0 text-muted-foreground text-sm">
-            <span className="animate-pulse">Thinking</span>
-            <span className="inline-flex">
-              <span className="animate-bounce [animation-delay:0ms]">.</span>
-              <span className="animate-bounce [animation-delay:150ms]">.</span>
-              <span className="animate-bounce [animation-delay:300ms]">.</span>
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+				<div className="flex w-full flex-col gap-2 md:gap-4">
+					<div className="flex items-center gap-1 p-0 text-muted-foreground text-sm">
+						<span className="animate-pulse">Thinking</span>
+						<span className="inline-flex">
+							<span className="animate-bounce [animation-delay:0ms]">.</span>
+							<span className="animate-bounce [animation-delay:150ms]">.</span>
+							<span className="animate-bounce [animation-delay:300ms]">.</span>
+						</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 };
