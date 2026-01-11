@@ -151,3 +151,11 @@ Rules:
 - Just the topic/intent, not a full sentence
 - If the message is a greeting like "hi" or "hello", respond with just "New conversation"
 - Be concise: "Weather in NYC" not "User asking about the weather in New York City"`;
+
+export const fileTitlePrompt = `Generate a very short chat title (2-5 words max) based on an uploaded file's metadata and content summary.
+Rules:
+- Maximum 30 characters
+- No quotes, colons, hashtags, or markdown
+- Use filename, document kind, and summary/excerpt to infer a topic
+- Favor specific subjects over generic words like "document" or "file"
+- Keep it concise and noun-focused`;

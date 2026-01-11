@@ -1,18 +1,21 @@
 import { put } from "@vercel/blob";
 import mammoth from "mammoth";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { parse } from "papaparse";
 import { PDFParse } from "pdf-parse";
 import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
+import { generateTitleFromDocument } from "@/lib/ai/chat-title";
+import { generateTitleFromFileMetadata } from "@/lib/ai/file-title";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
-import { DEFAULT_CHAT_TITLE } from "@/lib/constants";
+import { isPlaceholderChatTitle } from "@/lib/chat-title";
 import {
 	getChatById,
 	saveChat,
 	saveDocument,
 	saveDocumentChunks,
+	updateChatTitleById,
 } from "@/lib/db/queries";
 import { generateUUID } from "@/lib/utils";
 
@@ -137,6 +140,25 @@ const resolveDocumentKind = (fileType: string) => {
   return "text";
 };
 
+const resolveTitleKind = (
+  fileType: string,
+  documentKind: string
+): "text" | "sheet" | "pdf" | "image" => {
+  if (fileType.startsWith("image/")) {
+    return "image";
+  }
+
+  if (documentKind === "sheet") {
+    return "sheet";
+  }
+
+  if (documentKind === "pdf") {
+    return "pdf";
+  }
+
+  return "text";
+};
+
 export async function POST(request: Request) {
   const { userId } = await auth();
 
@@ -226,19 +248,44 @@ export async function POST(request: Request) {
         );
       }
 
+      const normalizedText = extractedText.trim();
+      const documentId = generateUUID();
+      const kind = resolveDocumentKind(file.type);
+      const summary =
+        kind === "sheet" ? summarizeSheet(normalizedText) : null;
+      const shouldStoreContent = kind === "text" || kind === "sheet";
+      const titleKind = resolveTitleKind(file.type, kind);
+      const excerpt = normalizedText
+        ? normalizedText.replace(/\s+/g, " ").slice(0, 240).trim()
+        : null;
+
       // Verify that the chat exists and belongs to the authenticated user
       // If it doesn't exist, create it (this handles file uploads on the main page before first message)
       let existingChat = await getChatById({ id: chatId });
+      let createdChat = false;
 
       if (!existingChat) {
         // Create the chat with a temporary title (will be updated when first message is sent)
+        let title = "New Chat";
+
+        try {
+          title = await generateTitleFromDocument({
+            filename,
+            kind: titleKind,
+            excerpt: summary ?? excerpt,
+          });
+        } catch (error) {
+          console.warn("Failed to generate file-based title:", error);
+        }
+
         await saveChat({
           id: chatId,
           userId,
-          title: DEFAULT_CHAT_TITLE,
+          title,
           visibility: "private",
         });
         existingChat = await getChatById({ id: chatId });
+        createdChat = true;
       }
 
       if (existingChat && existingChat.userId !== userId) {
@@ -247,15 +294,6 @@ export async function POST(request: Request) {
           { status: 403 }
         );
       }
-
-      // Reuse extracted text from earlier validation
-      const normalizedText = extractedText.trim();
-      const documentId = generateUUID();
-      const kind = resolveDocumentKind(file.type);
-      const summary =
-        kind === "sheet" ? summarizeSheet(normalizedText) : null;
-
-      const shouldStoreContent = kind === "text" || kind === "sheet";
 
       await saveDocument({
         id: documentId,
@@ -268,6 +306,17 @@ export async function POST(request: Request) {
         userId,
         chatId,
       });
+
+      if (existingChat && isPlaceholderChatTitle(existingChat.title)) {
+        after(async () => {
+          const title = await generateTitleFromDocument({
+            filename,
+            summary,
+          });
+
+          await updateChatTitleById({ chatId, title });
+        });
+      }
 
       if (normalizedText.length >= MIN_TEXT_LENGTH) {
         const chunks = chunkText(normalizedText);
@@ -300,9 +349,27 @@ export async function POST(request: Request) {
         });
       }
 
+      let chatTitle: string | null = null;
+      if (createdChat) {
+        try {
+          chatTitle = await generateTitleFromFileMetadata({
+            filename,
+            kind,
+            summary,
+            textContent: normalizedText,
+            contentType: file.type,
+          });
+
+          await updateChatTitleById({ chatId, title: chatTitle });
+        } catch (error) {
+          console.error("Failed to generate chat title from upload:", error);
+        }
+      }
+
       return NextResponse.json({
         ...normalizedData,
         documentId,
+        ...(chatTitle ? { chatTitle } : {}),
       });
     } catch (error) {
       console.error("Upload failed:", error);

@@ -4,7 +4,7 @@ import { isToday, isYesterday, subMonths, subWeeks } from "date-fns";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import useSWRInfinite from "swr/infinite";
 import {
@@ -23,27 +23,29 @@ import {
   SidebarMenu,
   useSidebar,
 } from "@/components/ui/sidebar";
-import type { Chat } from "@/lib/db/schema";
+import { isPlaceholderChatTitle } from "@/lib/chat-title";
+import type { ChatHistoryItem } from "@/lib/types";
 import { fetcher } from "@/lib/utils";
 import { LoaderIcon } from "./icons";
 import { ChatItem } from "./sidebar-history-item";
+import { useDataStream } from "./data-stream-provider";
 
 type GroupedChats = {
-  today: Chat[];
-  yesterday: Chat[];
-  lastWeek: Chat[];
-  lastMonth: Chat[];
-  older: Chat[];
+  today: ChatHistoryItem[];
+  yesterday: ChatHistoryItem[];
+  lastWeek: ChatHistoryItem[];
+  lastMonth: ChatHistoryItem[];
+  older: ChatHistoryItem[];
 };
 
 export type ChatHistory = {
-  chats: Chat[];
+  chats: ChatHistoryItem[];
   hasMore: boolean;
 };
 
 const PAGE_SIZE = 20;
 
-const groupChatsByDate = (chats: Chat[]): GroupedChats => {
+const groupChatsByDate = (chats: ChatHistoryItem[]): GroupedChats => {
   const now = new Date();
   const oneWeekAgo = subWeeks(now, 1);
   const oneMonthAgo = subMonths(now, 1);
@@ -101,6 +103,8 @@ export function SidebarHistory({ user }: { user: { id: string } | null | undefin
   const { setOpenMobile } = useSidebar();
   const pathname = usePathname();
   const id = pathname?.startsWith("/chat/") ? pathname.split("/")[2] : null;
+  const { setDataStream } = useDataStream();
+  const titleRefreshQueue = useRef(new Set<string>());
 
   const {
     data: paginatedChatHistories,
@@ -123,6 +127,74 @@ export function SidebarHistory({ user }: { user: { id: string } | null | undefin
   const hasEmptyChatHistory = paginatedChatHistories
     ? paginatedChatHistories.every((page) => page.chats.length === 0)
     : false;
+
+  useEffect(() => {
+    if (!paginatedChatHistories) {
+      return;
+    }
+
+    const chatsFromHistory = paginatedChatHistories.flatMap(
+      (paginatedChatHistory) => paginatedChatHistory.chats
+    );
+
+    const refreshCandidates = chatsFromHistory.filter(
+      (chat) =>
+        chat.hasDocument &&
+        isPlaceholderChatTitle(chat.title) &&
+        !titleRefreshQueue.current.has(chat.id)
+    );
+
+    if (refreshCandidates.length === 0) {
+      return;
+    }
+
+    refreshCandidates.forEach((chat) => {
+      titleRefreshQueue.current.add(chat.id);
+
+      const refreshTitle = (attempt: number = 1): void => {
+        const MAX_ATTEMPTS = 3;
+
+        void fetch("/api/chat/title", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ chatId: chat.id }),
+        })
+          .then(async (response) => {
+            if (!response.ok) {
+              throw new Error("Failed to refresh chat title");
+            }
+
+            const data = (await response.json()) as { title?: string };
+            if (data.title) {
+              const title = data.title;
+              setDataStream((stream) => [
+                ...stream,
+                { type: "data-chat-title", data: title },
+              ]);
+            }
+          })
+          .catch((error) => {
+            if (attempt >= MAX_ATTEMPTS) {
+              console.error(
+                `Failed to refresh chat title for chat ${chat.id} after ${attempt} attempts`,
+                error,
+              );
+              titleRefreshQueue.current.delete(chat.id);
+              return;
+            }
+
+            const backoffDelayMs = 2 ** (attempt - 1) * 500;
+            window.setTimeout(() => {
+              refreshTitle(attempt + 1);
+            }, backoffDelayMs);
+          });
+      };
+
+      refreshTitle();
+    });
+  }, [paginatedChatHistories, setDataStream]);
 
   const handleDelete = () => {
     const chatToDelete = deleteId;

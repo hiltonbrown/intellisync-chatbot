@@ -6,7 +6,7 @@ import type { getABNDetails } from "./ai/tools/get-abn-details";
 import type { getWeather } from "./ai/tools/get-weather";
 import type { requestSuggestions } from "./ai/tools/request-suggestions";
 import type { updateDocument } from "./ai/tools/update-document";
-import type { Suggestion } from "./db/schema";
+import type { Chat, Suggestion } from "./db/schema";
 
 export type DataPart = { type: "append-message"; message: string };
 
@@ -59,4 +59,8 @@ export type Attachment = {
   url: string;
   contentType: string;
   documentId?: string; // For CSV/TSV files, includes the document ID to fetch full content
+};
+
+export type ChatHistoryItem = Chat & {
+  hasDocument: boolean;
 };
