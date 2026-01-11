@@ -18,7 +18,6 @@ import {
 	updateChatTitleById,
 } from "@/lib/db/queries";
 import { generateUUID } from "@/lib/utils";
-import { generateTitleFromDocument } from "../../../actions";
 
 const MIN_TEXT_LENGTH = 10;
 
