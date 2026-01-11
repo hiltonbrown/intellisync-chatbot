@@ -168,9 +168,10 @@ export function SidebarHistory({ user }: { user: { id: string } | null | undefin
 
             const data = (await response.json()) as { title?: string };
             if (data.title) {
+              const title = data.title;
               setDataStream((stream) => [
                 ...stream,
-                { type: "data-chat-title", data: data.title },
+                { type: "data-chat-title", data: title },
               ]);
             }
           })
