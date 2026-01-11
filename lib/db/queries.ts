@@ -11,11 +11,13 @@ import {
 	inArray,
 	lt,
 	type SQL,
+	sql,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
+import type { ChatHistoryItem } from "../types";
 import { generateUUID, isValidClerkUserId } from "../utils";
 import {
 	type Chat,
@@ -199,10 +201,20 @@ export async function getChatsByUserId({
 }) {
 	try {
 		const extendedLimit = limit + 1;
+		const chatColumns = {
+			id: chat.id,
+			createdAt: chat.createdAt,
+			title: chat.title,
+			userId: chat.userId,
+			visibility: chat.visibility,
+		};
 
 		const query = (whereCondition?: SQL<any>) =>
 			db
-				.select()
+				.select({
+					...chatColumns,
+					hasDocument: sql<boolean>`exists (select 1 from ${document} where ${document.chatId} = ${chat.id})`,
+				})
 				.from(chat)
 				.where(
 					whereCondition
@@ -212,7 +224,7 @@ export async function getChatsByUserId({
 				.orderBy(desc(chat.createdAt))
 				.limit(extendedLimit);
 
-		let filteredChats: Chat[] = [];
+		let filteredChats: ChatHistoryItem[] = [];
 
 		if (startingAfter) {
 			const [selectedChat] = await db
@@ -258,6 +270,28 @@ export async function getChatsByUserId({
 		throw new ChatSDKError(
 			"bad_request:database",
 			"Failed to get chats by user id",
+		);
+	}
+}
+
+export async function getLatestDocumentByChatId({
+	chatId,
+}: {
+	chatId: string;
+}) {
+	try {
+		const [selectedDocument] = await db
+			.select()
+			.from(document)
+			.where(eq(document.chatId, chatId))
+			.orderBy(desc(document.createdAt))
+			.limit(1);
+
+		return selectedDocument ?? null;
+	} catch (_error) {
+		throw new ChatSDKError(
+			"bad_request:database",
+			"Failed to get document by chat id",
 		);
 	}
 }

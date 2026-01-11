@@ -144,6 +144,14 @@ export const updateDocumentPrompt = (
 ${currentContent}`;
 };
 
+export const fileTitlePrompt = `Generate a very short chat title (2-5 words max) based on the uploaded file.
+Rules:
+- Maximum 30 characters
+- No quotes, colons, hashtags, or markdown
+- Focus on the file's topic or intent
+- Use the filename and summary for context
+- If the filename is generic, prefer the summary`;
+
 export const titlePrompt = `Generate a very short chat title (2-5 words max) based on the user's message.
 Rules:
 - Maximum 30 characters
