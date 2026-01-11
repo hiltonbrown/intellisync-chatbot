@@ -44,6 +44,7 @@ import {
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { SuggestedActions } from "./suggested-actions";
+import { useDataStream } from "./data-stream-provider";
 import { Button } from "./ui/button";
 import type { VisibilityType } from "./visibility-selector";
 
@@ -88,6 +89,7 @@ function PureMultimodalInput({
 }) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const { width } = useWindowSize();
+	const { setDataStream } = useDataStream();
 
 	const adjustHeight = useCallback(() => {
 		if (textareaRef.current) {
@@ -218,7 +220,14 @@ function PureMultimodalInput({
 
 				if (response.ok) {
 					const data = await response.json();
-					const { url, pathname, contentType, documentId } = data;
+					const { url, pathname, contentType, documentId, chatTitle } = data;
+
+					if (chatTitle) {
+						setDataStream((currentStream) => [
+							...currentStream,
+							{ type: "data-chat-title", data: chatTitle },
+						]);
+					}
 
 					return {
 						url,
@@ -233,7 +242,7 @@ function PureMultimodalInput({
 				toast.error("Failed to upload file, please try again!");
 			}
 		},
-		[chatId],
+		[chatId, setDataStream],
 	);
 
 	const handleFileChange = useCallback(
