@@ -6,12 +6,14 @@ import { PDFParse } from "pdf-parse";
 import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
+import { generateTitleFromFileMetadata } from "@/lib/ai/file-title";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
 import {
 	getChatById,
 	saveChat,
 	saveDocument,
 	saveDocumentChunks,
+	updateChatTitleById,
 } from "@/lib/db/queries";
 import { generateUUID } from "@/lib/utils";
 import { generateTitleFromDocument } from "../../../actions";
@@ -259,6 +261,7 @@ export async function POST(request: Request) {
       // Verify that the chat exists and belongs to the authenticated user
       // If it doesn't exist, create it (this handles file uploads on the main page before first message)
       let existingChat = await getChatById({ id: chatId });
+      let createdChat = false;
 
       if (!existingChat) {
         // Create the chat with a temporary title (will be updated when first message is sent)
@@ -281,6 +284,7 @@ export async function POST(request: Request) {
           visibility: "private",
         });
         existingChat = await getChatById({ id: chatId });
+        createdChat = true;
       }
 
       if (existingChat && existingChat.userId !== userId) {
@@ -333,9 +337,27 @@ export async function POST(request: Request) {
         });
       }
 
+      let chatTitle: string | null = null;
+      if (createdChat) {
+        try {
+          chatTitle = await generateTitleFromFileMetadata({
+            filename,
+            kind,
+            summary,
+            textContent: normalizedText,
+            contentType: file.type,
+          });
+
+          await updateChatTitleById({ chatId, title: chatTitle });
+        } catch (error) {
+          console.error("Failed to generate chat title from upload:", error);
+        }
+      }
+
       return NextResponse.json({
         ...normalizedData,
         documentId,
+        ...(chatTitle ? { chatTitle } : {}),
       });
     } catch (error) {
       console.error("Upload failed:", error);
