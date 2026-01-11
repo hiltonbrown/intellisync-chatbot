@@ -4,7 +4,7 @@ import { generateText, type UIMessage } from "ai";
 import { auth } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import type { VisibilityType } from "@/components/visibility-selector";
-import { titlePrompt } from "@/lib/ai/prompts";
+import { fileTitlePrompt, titlePrompt } from "@/lib/ai/prompts";
 import { getTitleModel } from "@/lib/ai/providers";
 import {
   deleteMessagesByChatIdAfterTimestamp,
@@ -40,6 +40,36 @@ export async function generateTitleFromUserMessage({
     model: getTitleModel(),
     system: titlePrompt,
     prompt: getTextFromMessage(message),
+  });
+
+  return title;
+}
+
+export async function generateTitleFromDocument({
+  filename,
+  kind,
+  excerpt,
+}: {
+  filename: string;
+  kind: "text" | "sheet" | "pdf" | "image";
+  excerpt?: string | null;
+}) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  const promptLines = [
+    `Filename: ${filename}`,
+    `Kind: ${kind}`,
+    excerpt ? `Excerpt: ${excerpt}` : null,
+  ].filter(Boolean);
+
+  const { text: title } = await generateText({
+    model: getTitleModel(),
+    system: fileTitlePrompt,
+    prompt: promptLines.join("\n"),
   });
 
   return title;
