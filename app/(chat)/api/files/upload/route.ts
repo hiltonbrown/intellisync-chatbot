@@ -1,17 +1,20 @@
 import { put } from "@vercel/blob";
 import mammoth from "mammoth";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { parse } from "papaparse";
 import { PDFParse } from "pdf-parse";
 import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
+import { generateTitleFromDocument } from "@/lib/ai/chat-title";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
+import { isPlaceholderChatTitle } from "@/lib/chat-title";
 import {
 	getChatById,
 	saveChat,
 	saveDocument,
 	saveDocumentChunks,
+	updateChatTitleById,
 } from "@/lib/db/queries";
 import { generateUUID } from "@/lib/utils";
 
@@ -267,6 +270,17 @@ export async function POST(request: Request) {
         userId,
         chatId,
       });
+
+      if (existingChat && isPlaceholderChatTitle(existingChat.title)) {
+        after(async () => {
+          const title = await generateTitleFromDocument({
+            filename,
+            summary,
+          });
+
+          await updateChatTitleById({ chatId, title });
+        });
+      }
 
       if (normalizedText.length >= MIN_TEXT_LENGTH) {
         const chunks = chunkText(normalizedText);
