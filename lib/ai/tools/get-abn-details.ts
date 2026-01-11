@@ -43,7 +43,20 @@ async function lookupABN(abn: string): Promise<ABNResponse | null> {
 			return null;
 		}
 
-		const data = await response.json();
+		// Handle JSONP response format (callback(...))
+		const text = await response.text();
+
+		// Strip callback wrapper if present
+		// API returns: callback({ ... })
+		const jsonStr = text.replace(/^callback\((.*)\)$/, "$1");
+
+		let data: ABNResponse;
+		try {
+			data = JSON.parse(jsonStr);
+		} catch (e) {
+			console.error("Failed to parse ABN response:", e);
+			return null;
+		}
 
 		// Check for API errors or invalid ABN
 		if (data.Message || !data.Abn) {
