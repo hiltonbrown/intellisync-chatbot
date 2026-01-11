@@ -69,18 +69,13 @@ The app uses Next.js route groups for organization:
 - **`app/(chat)/`** - Main chat application
   - Root `/` and `/chat/[id]` routes
   - `layout.tsx` - Chat layout with sidebar
-  - `actions.ts` - Server actions for user-facing chat operations:
-    - `saveChatModelAsCookie()` - Persist model selection
-    - `generateTitleFromUserMessage()` - Generate title from user message
-    - `deleteTrailingMessages()` - Remove messages after a timestamp
-    - `updateChatVisibility()` - Update chat visibility settings
+  - `actions.ts` - Server actions for chat operations (title generation, etc.)
   - **Settings routes:**
     - `/settings` - Main settings dashboard with grid layout
     - `/settings/personalisation` - User customization (system prompt, AI preferences)
     - `/settings/integrations` - Third-party integrations (Xero, QuickBooks, MYOB, Zoho, Sage)
   - API routes:
     - `/api/chat/route.ts` - Main chat streaming endpoint
-    - `/api/chat/title/route.ts` - Chat title generation from documents
     - `/api/chat/[id]/stream/route.ts` - Resumable stream endpoint
     - `/api/document/route.ts` - Document CRUD operations
     - `/api/files/upload/route.ts` - File upload handling (supports PDF, DOCX)
@@ -127,22 +122,6 @@ The app uses Next.js route groups for organization:
   - `artifactsPrompt` - Instructions for artifact creation/updates
   - `regularPrompt` - Standard assistant behavior
   - `codePrompt`, `imagePrompt`, etc. - Artifact-specific prompts
-  - `titlePrompt` - User message title generation
-  - `fileTitlePrompt` - Document title generation
-
-- **`chat-title.ts`** - Chat title generation utilities
-
-  - `generateTitleFromDocument()` - Generate title from document metadata
-  - Accepts `filename`, `kind?`, `summary?`, `excerpt?` parameters
-  - Returns generated title with fallback to filename
-  - Server-only module used by file upload and title API routes
-
-- **`file-title.ts`** - File-based title generation
-
-  - `generateTitleFromFileMetadata()` - Comprehensive file title generation
-  - Handles all document types (text, code, image, sheet, pdf, docx)
-  - Includes sophisticated fallback logic with content type awareness
-  - Used for initial chat title generation from file uploads
 
 - **`tools/`** - AI SDK tool definitions
 
@@ -405,8 +384,6 @@ Tests run against local dev server (started automatically).
 ### Server Actions
 
 All server actions use `"use server"` directive and are in `actions.ts` files within route groups.
-
-**Important**: Server actions in route groups (`app/(chat)/actions.ts`, `app/(auth)/personalization-actions.ts`) should only contain user-facing operations that modify state or perform side effects. Server-only utility functions (like title generation, RAG processing, etc.) belong in `lib/` directories and should use `"server-only"` directive instead.
 
 ### Data Stream Pattern
 

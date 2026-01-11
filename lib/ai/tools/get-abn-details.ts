@@ -36,7 +36,7 @@ async function lookupABN(abn: string): Promise<ABNResponse | null> {
 
 		// Call ABN Lookup API
 		const response = await fetch(
-			`${baseUrl}/AbnDetails.aspx?abn=${cleanABN}&guid=${guid}&callback=callback`,
+			`${baseUrl}/AbnDetails.aspx?abn=${cleanABN}&guid=${guid}`,
 		);
 
 		if (!response.ok) {
@@ -60,10 +60,6 @@ async function lookupABN(abn: string): Promise<ABNResponse | null> {
 
 		// Check for API errors or invalid ABN
 		if (data.Message || !data.Abn) {
-			// Log API message for debugging
-			if (data.Message) {
-				console.log(`ABN Lookup API message for ${abn}: ${data.Message}`);
-			}
 			return null;
 		}
 
@@ -124,9 +120,8 @@ export const getABNDetails = tool({
 			: [];
 
 		// Determine GST registration status
-		const gstRegistered = abnData.Gst
-			? abnData.Gst.toLowerCase() === "true"
-			: false;
+		// API returns a date string (e.g. "2000-07-01") if registered, or null if not.
+		const gstRegistered = !!abnData.Gst;
 
 		// Format the response
 		return {
@@ -136,13 +131,12 @@ export const getABNDetails = tool({
 			entityName: abnData.EntityName,
 			entityType: abnData.EntityTypeName || abnData.EntityTypeCode,
 			gstRegistered,
-			gstFromDate: gstRegistered ? abnData.GstStatusEffectiveFrom : undefined,
+			gstFromDate: gstRegistered ? abnData.Gst : undefined,
 			businessAddress: {
 				postcode: abnData.AddressPostcode,
 				state: abnData.AddressState,
 			},
 			registeredBusinessNames: currentBusinessNames,
-			dgrStatus: abnData.DgrStatus,
 			source: "Australian Business Register (ABR)",
 			retrievedAt: new Date().toISOString(),
 		};

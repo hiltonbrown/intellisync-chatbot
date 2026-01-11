@@ -173,7 +173,6 @@ export function SidebarHistory({ user }: { user: { id: string } | null | undefin
                 ...stream,
                 { type: "data-chat-title", data: title },
               ]);
-              titleRefreshQueue.current.delete(chat.id);
             }
           })
           .catch((error) => {
