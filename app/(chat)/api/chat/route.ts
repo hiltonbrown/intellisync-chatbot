@@ -22,7 +22,7 @@ import { getABNDetails } from "@/lib/ai/tools/get-abn-details";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
-import { isProductionEnvironment } from "@/lib/constants";
+import { DEFAULT_CHAT_TITLE, isProductionEnvironment } from "@/lib/constants";
 import {
 	createStreamId,
 	deleteChatById,
@@ -139,7 +139,7 @@ export async function POST(request: Request) {
 			await saveChat({
 				id,
 				userId,
-				title: "New chat",
+				title: DEFAULT_CHAT_TITLE,
 				visibility: selectedVisibilityType,
 			});
 

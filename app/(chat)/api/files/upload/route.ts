@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { auth } from "@clerk/nextjs/server";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
+import { DEFAULT_CHAT_TITLE } from "@/lib/constants";
 import {
 	getChatById,
 	saveChat,
@@ -234,7 +235,7 @@ export async function POST(request: Request) {
         await saveChat({
           id: chatId,
           userId,
-          title: "New Chat",
+          title: DEFAULT_CHAT_TITLE,
           visibility: "private",
         });
         existingChat = await getChatById({ id: chatId });
