@@ -22,6 +22,12 @@ import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
+import {
+  getApprovalId,
+  getIsDenied,
+  ToolApprovalButtons,
+  TOOL_WIDTH_CLASS,
+} from "./tool-helpers";
 import { Weather } from "./weather";
 
 const PurePreviewMessage = ({
@@ -166,18 +172,12 @@ const PurePreviewMessage = ({
 
             if (type === "tool-getWeather") {
               const { toolCallId, state } = part;
-              const approvalId = (part as { approval?: { id: string } })
-                .approval?.id;
-              const isDenied =
-                state === "output-denied" ||
-                (state === "approval-responded" &&
-                  (part as { approval?: { approved?: boolean } }).approval
-                    ?.approved === false);
-              const widthClass = "w-[min(100%,450px)]";
+              const approvalId = getApprovalId(part);
+              const isDenied = getIsDenied(part);
 
               if (state === "output-available") {
                 return (
-                  <div className={widthClass} key={toolCallId}>
+                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
                     <Weather weatherAtLocation={part.output} />
                   </div>
                 );
@@ -185,7 +185,7 @@ const PurePreviewMessage = ({
 
               if (isDenied) {
                 return (
-                  <div className={widthClass} key={toolCallId}>
+                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
                     <Tool className="w-full" defaultOpen={true}>
                       <ToolHeader
                         state="output-denied"
@@ -203,7 +203,7 @@ const PurePreviewMessage = ({
 
               if (state === "approval-responded") {
                 return (
-                  <div className={widthClass} key={toolCallId}>
+                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
                     <Tool className="w-full" defaultOpen={true}>
                       <ToolHeader state={state} type="tool-getWeather" />
                       <ToolContent>
@@ -215,7 +215,7 @@ const PurePreviewMessage = ({
               }
 
               return (
-                <div className={widthClass} key={toolCallId}>
+                <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
                   <Tool className="w-full" defaultOpen={true}>
                     <ToolHeader state={state} type="tool-getWeather" />
                     <ToolContent>
@@ -224,33 +224,11 @@ const PurePreviewMessage = ({
                         <ToolInput input={part.input} />
                       )}
                       {state === "approval-requested" && approvalId && (
-                        <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
-                          <button
-                            className="rounded-md px-3 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
-                            onClick={() => {
-                              addToolApprovalResponse({
-                                id: approvalId,
-                                approved: false,
-                                reason: "User denied weather lookup",
-                              });
-                            }}
-                            type="button"
-                          >
-                            Deny
-                          </button>
-                          <button
-                            className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
-                            onClick={() => {
-                              addToolApprovalResponse({
-                                id: approvalId,
-                                approved: true,
-                              });
-                            }}
-                            type="button"
-                          >
-                            Allow
-                          </button>
-                        </div>
+                        <ToolApprovalButtons
+                          addToolApprovalResponse={addToolApprovalResponse}
+                          approvalId={approvalId}
+                          toolName="weather lookup"
+                        />
                       )}
                     </ToolContent>
                   </Tool>
@@ -336,6 +314,149 @@ const PurePreviewMessage = ({
                     )}
                   </ToolContent>
                 </Tool>
+              );
+            }
+
+            if (type === "tool-getABNDetails") {
+              const { toolCallId, state } = part;
+              const approvalId = getApprovalId(part);
+              const isDenied = getIsDenied(part);
+
+              if (state === "output-available") {
+                return (
+                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+                    <Tool className="w-full" defaultOpen={true}>
+                      <ToolHeader
+                        state="output-available"
+                        type="tool-getABNDetails"
+                      />
+                      <ToolContent>
+                        {"error" in part.output ? (
+                          <div className="px-4 py-3 text-red-500 text-sm">
+                            {String(part.output.error)}
+                          </div>
+                        ) : (
+                          <div className="space-y-3 px-4 py-3 text-sm">
+                            <div>
+                              <div className="font-medium text-foreground">
+                                {part.output.entityName}
+                              </div>
+                              <div className="text-muted-foreground text-xs">
+                                ABN: {part.output.abn}
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">
+                                  Status:
+                                </span>
+                                <span className="font-medium">
+                                  {part.output.status}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">
+                                  Entity Type:
+                                </span>
+                                <span className="font-medium">
+                                  {part.output.entityType}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">
+                                  GST Registered:
+                                </span>
+                                <span className="font-medium">
+                                  {part.output.gstRegistered ? "Yes" : "No"}
+                                </span>
+                              </div>
+                              {part.output.businessAddress?.state && (
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">
+                                    Location:
+                                  </span>
+                                  <span className="font-medium">
+                                    {part.output.businessAddress.state}{" "}
+                                    {part.output.businessAddress.postcode}
+                                  </span>
+                                </div>
+                              )}
+                              {part.output.registeredBusinessNames &&
+                                part.output.registeredBusinessNames.length >
+                                  0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                      Business Names:
+                                    </span>
+                                    <span className="font-medium text-right">
+                                      {part.output.registeredBusinessNames.join(
+                                        ", "
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                            </div>
+                            <div className="border-t pt-2 text-muted-foreground text-xs">
+                              Source: {part.output.source}
+                            </div>
+                          </div>
+                        )}
+                      </ToolContent>
+                    </Tool>
+                  </div>
+                );
+              }
+
+              if (isDenied) {
+                return (
+                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+                    <Tool className="w-full" defaultOpen={true}>
+                      <ToolHeader
+                        state="output-denied"
+                        type="tool-getABNDetails"
+                      />
+                      <ToolContent>
+                        <div className="px-4 py-3 text-muted-foreground text-sm">
+                          ABN lookup was denied.
+                        </div>
+                      </ToolContent>
+                    </Tool>
+                  </div>
+                );
+              }
+
+              if (state === "approval-responded") {
+                return (
+                  <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+                    <Tool className="w-full" defaultOpen={true}>
+                      <ToolHeader state={state} type="tool-getABNDetails" />
+                      <ToolContent>
+                        <ToolInput input={part.input} />
+                      </ToolContent>
+                    </Tool>
+                  </div>
+                );
+              }
+
+              return (
+                <div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+                  <Tool className="w-full" defaultOpen={true}>
+                    <ToolHeader state={state} type="tool-getABNDetails" />
+                    <ToolContent>
+                      {(state === "input-available" ||
+                        state === "approval-requested") && (
+                        <ToolInput input={part.input} />
+                      )}
+                      {state === "approval-requested" && approvalId && (
+                        <ToolApprovalButtons
+                          addToolApprovalResponse={addToolApprovalResponse}
+                          approvalId={approvalId}
+                          toolName="ABN lookup"
+                        />
+                      )}
+                    </ToolContent>
+                  </Tool>
+                </div>
               );
             }
 

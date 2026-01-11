@@ -35,11 +35,12 @@ To add a new Gemini model to the application:
 
 #### Multimodal Capabilities
 
-Gemini models excel at processing multimodal inputs:
+Gemini models in this application handle multimodal inputs in the chat interface:
 
-- **Text + Images**: Users can upload images alongside text prompts
-- **Mixed Content**: Handle conversations with both text and visual elements
-- **Artifact Generation**: Create images, code, and documents from multimodal prompts
+- **Text + Images**: Users can upload images alongside text prompts.
+- **Mixed Content**: The chat can handle conversations with both text and visual elements.
+
+**Note on Document Processing and RAG:** The application has a Retrieval-Augmented Generation (RAG) pipeline for uploaded documents (PDF, DOCX, TXT, CSV, TSV). This feature, including text extraction and embedding generation, is primarily powered by OpenAI's `text-embedding-3-small` model, not Gemini.
 
 #### Long Context Windows
 
@@ -60,12 +61,6 @@ Gemini models excel at processing multimodal inputs:
 - **Language Specification**: Explicitly mention programming languages
 - **Framework Context**: Include framework and library information
 - **Error Handling**: Request comprehensive error handling in generated code
-
-### Artifact Creation
-
-- **Clear Instructions**: Provide detailed specifications for artifacts
-- **Iterative Refinement**: Use follow-up messages to refine artifacts
-- **Type Safety**: Request TypeScript interfaces and proper typing
 
 ## Common Issues & Solutions
 
