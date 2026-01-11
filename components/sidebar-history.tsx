@@ -151,29 +151,47 @@ export function SidebarHistory({ user }: { user: { id: string } | null | undefin
     refreshCandidates.forEach((chat) => {
       titleRefreshQueue.current.add(chat.id);
 
-      void fetch("/api/chat/title", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ chatId: chat.id }),
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            throw new Error("Failed to refresh chat title");
-          }
+      const refreshTitle = (attempt: number = 1): void => {
+        const MAX_ATTEMPTS = 3;
 
-          const data = (await response.json()) as { title?: string };
-          if (data.title) {
-            setDataStream((stream) => [
-              ...stream,
-              { type: "data-chat-title", data: data.title },
-            ]);
-          }
+        void fetch("/api/chat/title", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ chatId: chat.id }),
         })
-        .catch(() => {
-          titleRefreshQueue.current.delete(chat.id);
-        });
+          .then(async (response) => {
+            if (!response.ok) {
+              throw new Error("Failed to refresh chat title");
+            }
+
+            const data = (await response.json()) as { title?: string };
+            if (data.title) {
+              setDataStream((stream) => [
+                ...stream,
+                { type: "data-chat-title", data: data.title },
+              ]);
+            }
+          })
+          .catch((error) => {
+            if (attempt >= MAX_ATTEMPTS) {
+              console.error(
+                `Failed to refresh chat title for chat ${chat.id} after ${attempt} attempts`,
+                error,
+              );
+              titleRefreshQueue.current.delete(chat.id);
+              return;
+            }
+
+            const backoffDelayMs = 2 ** (attempt - 1) * 500;
+            window.setTimeout(() => {
+              refreshTitle(attempt + 1);
+            }, backoffDelayMs);
+          });
+      };
+
+      refreshTitle();
     });
   }, [paginatedChatHistories, setDataStream]);
 
