@@ -1,11 +1,10 @@
+import { auth } from "@clerk/nextjs/server";
 import { put } from "@vercel/blob";
 import mammoth from "mammoth";
-import { NextResponse, after } from "next/server";
+import { after, NextResponse } from "next/server";
 import { parse } from "papaparse";
 import { PDFParse } from "pdf-parse";
 import { z } from "zod";
-
-import { auth } from "@clerk/nextjs/server";
 import { generateTitleFromDocument } from "@/lib/ai/chat-title";
 import { generateTitleFromFileMetadata } from "@/lib/ai/file-title";
 import { chunkText, createEmbeddings } from "@/lib/ai/rag";
@@ -30,356 +29,359 @@ const normalizeContentType = (contentType: string): string => {
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
-  file: z
-    .instanceof(Blob)
-    .refine((file) => file.size <= 10 * 1024 * 1024, {
-      message: "File size should be less than 10MB",
-    })
-    // Update the file type based on the kind of files you want to accept
-    .refine(
-      (file) =>
-        [
-          "image/jpeg",
-          "image/png",
-          "application/pdf",
-          "text/plain",
-          "text/csv",
-          "text/tab-separated-values",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ].includes(file.type),
-      {
-        message:
-          "File type should be JPEG, PNG, PDF, DOCX, TXT, CSV, or TSV",
-      }
-    ),
+	file: z
+		.instanceof(Blob)
+		.refine((file) => file.size <= 10 * 1024 * 1024, {
+			message: "File size should be less than 10MB",
+		})
+		// Update the file type based on the kind of files you want to accept
+		.refine(
+			(file) =>
+				[
+					"image/jpeg",
+					"image/png",
+					"application/pdf",
+					"text/plain",
+					"text/csv",
+					"text/tab-separated-values",
+					"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				].includes(file.type),
+			{
+				message: "File type should be JPEG, PNG, PDF, DOCX, TXT, CSV, or TSV",
+			},
+		),
 });
 
 const summarizeSheet = (content: string) => {
-  const parsed = parse<string[]>(content, {
-    skipEmptyLines: true,
-  });
-  const rows = parsed.data.filter((row) =>
-    row.some((cell) => cell.trim() !== "")
-  );
+	const parsed = parse<string[]>(content, {
+		skipEmptyLines: true,
+	});
+	const rows = parsed.data.filter((row) =>
+		row.some((cell) => cell.trim() !== ""),
+	);
 
-  if (rows.length === 0) {
-    return "Empty spreadsheet";
-  }
+	if (rows.length === 0) {
+		return "Empty spreadsheet";
+	}
 
-  const header = rows[0] ?? [];
-  const rowCount = Math.max(rows.length - 1, 0);
-  const validColumns = header.filter(
-    (cell) => typeof cell === "string" && cell.trim() !== ""
-  );
+	const header = rows[0] ?? [];
+	const rowCount = Math.max(rows.length - 1, 0);
+	const validColumns = header.filter(
+		(cell) => typeof cell === "string" && cell.trim() !== "",
+	);
 
-  if (validColumns.length === 0) {
-    return `Spreadsheet with ${rowCount} rows and no column headers.`;
-  }
+	if (validColumns.length === 0) {
+		return `Spreadsheet with ${rowCount} rows and no column headers.`;
+	}
 
-  const columnCount = validColumns.length;
-  const columns = validColumns.join(", ");
-  return `Spreadsheet with ${rowCount} rows and ${columnCount} columns. Columns: ${columns}`;
+	const columnCount = validColumns.length;
+	const columns = validColumns.join(", ");
+	return `Spreadsheet with ${rowCount} rows and ${columnCount} columns. Columns: ${columns}`;
 };
 
 const extractText = async (
-  fileBuffer: Buffer,
-  fileType: string
+	fileBuffer: Buffer,
+	fileType: string,
 ): Promise<string> => {
+	if (fileType === "text/plain") {
+		return fileBuffer.toString("utf-8");
+	}
 
-  if (fileType === "text/plain") {
-    return fileBuffer.toString("utf-8");
-  }
+	if (fileType === "text/csv" || fileType === "text/tab-separated-values") {
+		return fileBuffer.toString("utf-8");
+	}
 
-  if (fileType === "text/csv" || fileType === "text/tab-separated-values") {
-    return fileBuffer.toString("utf-8");
-  }
+	if (fileType === "application/pdf") {
+		let pdfParser: PDFParse | null = null;
+		try {
+			pdfParser = new PDFParse({ data: fileBuffer });
+			const result = await pdfParser.getText();
+			return result.text;
+		} catch (error) {
+			console.error("PDF parsing error:", error);
+			return ""; // Triggers validation error downstream
+		} finally {
+			if (pdfParser) {
+				await pdfParser.destroy(); // REQUIRED for memory cleanup
+			}
+		}
+	}
 
-  if (fileType === "application/pdf") {
-    let pdfParser: PDFParse | null = null;
-    try {
-      pdfParser = new PDFParse({ data: fileBuffer });
-      const result = await pdfParser.getText();
-      return result.text;
-    } catch (error) {
-      console.error("PDF parsing error:", error);
-      return ""; // Triggers validation error downstream
-    } finally {
-      if (pdfParser) {
-        await pdfParser.destroy(); // REQUIRED for memory cleanup
-      }
-    }
-  }
+	if (
+		fileType ===
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	) {
+		const result = await mammoth.extractRawText({ buffer: fileBuffer });
+		return result.value;
+	}
 
-  if (
-    fileType ===
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  ) {
-    const result = await mammoth.extractRawText({ buffer: fileBuffer });
-    return result.value;
-  }
-
-  return "";
+	return "";
 };
 
 const resolveDocumentKind = (fileType: string) => {
-  if (fileType === "application/pdf") {
-    return "pdf";
-  }
+	if (fileType === "application/pdf") {
+		return "pdf";
+	}
 
-  if (
-    fileType ===
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  ) {
-    return "docx";
-  }
+	if (
+		fileType ===
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	) {
+		return "docx";
+	}
 
-  if (fileType === "text/csv" || fileType === "text/tab-separated-values") {
-    return "sheet";
-  }
+	if (fileType === "text/csv" || fileType === "text/tab-separated-values") {
+		return "sheet";
+	}
 
-  return "text";
+	return "text";
 };
 
 const resolveTitleKind = (
-  fileType: string,
-  documentKind: string
-): "text" | "sheet" | "pdf" | "image" => {
-  if (fileType.startsWith("image/")) {
-    return "image";
-  }
+	fileType: string,
+	documentKind: string,
+): "text" | "sheet" | "pdf" | "docx" | "image" => {
+	if (fileType.startsWith("image/")) {
+		return "image";
+	}
 
-  if (documentKind === "sheet") {
-    return "sheet";
-  }
+	if (documentKind === "sheet") {
+		return "sheet";
+	}
 
-  if (documentKind === "pdf") {
-    return "pdf";
-  }
+	if (documentKind === "pdf") {
+		return "pdf";
+	}
 
-  return "text";
+	if (documentKind === "docx") {
+		return "docx";
+	}
+
+	return "text";
 };
 
 export async function POST(request: Request) {
-  const { userId } = await auth();
+	const { userId } = await auth();
 
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+	if (!userId) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
 
-  if (request.body === null) {
-    return new Response("Request body is empty", { status: 400 });
-  }
+	if (request.body === null) {
+		return new Response("Request body is empty", { status: 400 });
+	}
 
-  try {
-    const formData = await request.formData();
-    const file = formData.get("file") as Blob;
-    const chatId = formData.get("chatId")?.toString() ?? "";
+	try {
+		const formData = await request.formData();
+		const file = formData.get("file") as Blob;
+		const chatId = formData.get("chatId")?.toString() ?? "";
 
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-    }
+		if (!file) {
+			return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+		}
 
-    const validatedFile = FileSchema.safeParse({ file });
+		const validatedFile = FileSchema.safeParse({ file });
 
-    if (!validatedFile.success) {
-      const errorMessage = validatedFile.error.issues
-        .map((error) => error.message)
-        .join(", ");
+		if (!validatedFile.success) {
+			const errorMessage = validatedFile.error.issues
+				.map((error) => error.message)
+				.join(", ");
 
-      return NextResponse.json({ error: errorMessage }, { status: 400 });
-    }
+			return NextResponse.json({ error: errorMessage }, { status: 400 });
+		}
 
-    // Get filename from formData since Blob doesn't have name property
-    const filename = (formData.get("file") as File).name;
-    const isImageUpload = file.type.startsWith("image/");
+		// Get filename from formData since Blob doesn't have name property
+		const filename = (formData.get("file") as File).name;
+		const isImageUpload = file.type.startsWith("image/");
 
-    // CRITICAL: Read blob once and convert to Buffer (single source of truth)
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
+		// CRITICAL: Read blob once and convert to Buffer (single source of truth)
+		const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-    // Extract and validate text for non-image uploads
-    let extractedText = "";
-    const isPDF = file.type === "application/pdf";
+		// Extract and validate text for non-image uploads
+		let extractedText = "";
+		const isPDF = file.type === "application/pdf";
 
-    if (!isImageUpload && !isPDF) {
-      // Skip text extraction for PDFs due to worker issues in Next.js
-      // PDFs will still be uploaded and accessible via blob URL
-      extractedText = await extractText(fileBuffer, file.type);
-      const normalizedText = extractedText.replace(/\s+/g, " ").trim();
+		if (!isImageUpload && !isPDF) {
+			// Skip text extraction for PDFs due to worker issues in Next.js
+			// PDFs will still be uploaded and accessible via blob URL
+			extractedText = await extractText(fileBuffer, file.type);
+			const normalizedText = extractedText.replace(/\s+/g, " ").trim();
 
-      if (normalizedText.length < MIN_TEXT_LENGTH) {
-        return NextResponse.json(
-          {
-            error:
-              `The uploaded document does not contain enough text content. Please upload a file with at least ${MIN_TEXT_LENGTH} characters.`,
-          },
-          { status: 400 }
-        );
-      }
-    } else if (isPDF) {
-      // For PDFs, attempt text extraction but don't fail if it errors
-      try {
-        extractedText = await extractText(fileBuffer, file.type);
-      } catch (error) {
-        console.warn("PDF text extraction failed, uploading without text content:", error);
-        extractedText = ""; // Upload PDF without text content
-      }
-    }
+			if (normalizedText.length < MIN_TEXT_LENGTH) {
+				return NextResponse.json(
+					{
+						error: `The uploaded document does not contain enough text content. Please upload a file with at least ${MIN_TEXT_LENGTH} characters.`,
+					},
+					{ status: 400 },
+				);
+			}
+		} else if (isPDF) {
+			// For PDFs, attempt text extraction but don't fail if it errors
+			try {
+				extractedText = await extractText(fileBuffer, file.type);
+			} catch (error) {
+				console.warn(
+					"PDF text extraction failed, uploading without text content:",
+					error,
+				);
+				extractedText = ""; // Upload PDF without text content
+			}
+		}
 
-    try {
-      const data = await put(`${filename}`, fileBuffer, {
-        access: "public",
-        addRandomSuffix: true, // Generate unique filename to prevent overwrites
-      });
+		try {
+			const data = await put(`${filename}`, fileBuffer, {
+				access: "public",
+				addRandomSuffix: true, // Generate unique filename to prevent overwrites
+			});
 
-      // Normalize contentType to match chat API schema (remove charset, etc.)
-      const normalizedData = {
-        ...data,
-        contentType: normalizeContentType(data.contentType),
-      };
+			// Normalize contentType to match chat API schema (remove charset, etc.)
+			const normalizedData = {
+				...data,
+				contentType: normalizeContentType(data.contentType),
+			};
 
-      if (file.type.startsWith("image/")) {
-        return NextResponse.json(normalizedData);
-      }
+			if (file.type.startsWith("image/")) {
+				return NextResponse.json(normalizedData);
+			}
 
-      if (!chatId) {
-        return NextResponse.json(
-          { error: "chatId is required for document uploads" },
-          { status: 400 }
-        );
-      }
+			if (!chatId) {
+				return NextResponse.json(
+					{ error: "chatId is required for document uploads" },
+					{ status: 400 },
+				);
+			}
 
-      const normalizedText = extractedText.trim();
-      const documentId = generateUUID();
-      const kind = resolveDocumentKind(file.type);
-      const summary =
-        kind === "sheet" ? summarizeSheet(normalizedText) : null;
-      const shouldStoreContent = kind === "text" || kind === "sheet";
-      const titleKind = resolveTitleKind(file.type, kind);
-      const excerpt = normalizedText
-        ? normalizedText.replace(/\s+/g, " ").slice(0, 240).trim()
-        : null;
+			const normalizedText = extractedText.trim();
+			const documentId = generateUUID();
+			const kind = resolveDocumentKind(file.type);
+			const summary = kind === "sheet" ? summarizeSheet(normalizedText) : null;
+			const shouldStoreContent = kind === "text" || kind === "sheet";
+			const titleKind = resolveTitleKind(file.type, kind);
+			const excerpt = normalizedText
+				? normalizedText.replace(/\s+/g, " ").slice(0, 240).trim()
+				: null;
 
-      // Verify that the chat exists and belongs to the authenticated user
-      // If it doesn't exist, create it (this handles file uploads on the main page before first message)
-      let existingChat = await getChatById({ id: chatId });
-      let createdChat = false;
+			// Verify that the chat exists and belongs to the authenticated user
+			// If it doesn't exist, create it (this handles file uploads on the main page before first message)
+			let existingChat = await getChatById({ id: chatId });
+			let createdChat = false;
 
-      if (!existingChat) {
-        // Create the chat with a temporary title (will be updated when first message is sent)
-        let title = "New Chat";
+			if (!existingChat) {
+				// Create the chat with a temporary title (will be updated when first message is sent)
+				let title = "New Chat";
 
-        try {
-          title = await generateTitleFromDocument({
-            filename,
-            kind: titleKind,
-            excerpt: summary ?? excerpt,
-          });
-        } catch (error) {
-          console.warn("Failed to generate file-based title:", error);
-        }
+				try {
+					title = await generateTitleFromDocument({
+						filename,
+						kind: titleKind,
+						excerpt: summary ?? excerpt,
+					});
+				} catch (error) {
+					console.warn("Failed to generate file-based title:", error);
+				}
 
-        await saveChat({
-          id: chatId,
-          userId,
-          title,
-          visibility: "private",
-        });
-        existingChat = await getChatById({ id: chatId });
-        createdChat = true;
-      }
+				await saveChat({
+					id: chatId,
+					userId,
+					title,
+					visibility: "private",
+				});
+				existingChat = await getChatById({ id: chatId });
+				createdChat = true;
+			}
 
-      if (existingChat && existingChat.userId !== userId) {
-        return NextResponse.json(
-          { error: "Unauthorized: Chat does not belong to user" },
-          { status: 403 }
-        );
-      }
+			if (existingChat && existingChat.userId !== userId) {
+				return NextResponse.json(
+					{ error: "Unauthorized: Chat does not belong to user" },
+					{ status: 403 },
+				);
+			}
 
-      await saveDocument({
-        id: documentId,
-        title: filename,
-        kind,
-        content: shouldStoreContent ? normalizedText : "",
-        textContent: normalizedText,
-        summary,
-        blobUrl: data.url,
-        userId,
-        chatId,
-      });
+			await saveDocument({
+				id: documentId,
+				title: filename,
+				kind,
+				content: shouldStoreContent ? normalizedText : "",
+				textContent: normalizedText,
+				summary,
+				blobUrl: data.url,
+				userId,
+				chatId,
+			});
 
-      if (existingChat && isPlaceholderChatTitle(existingChat.title)) {
-        after(async () => {
-          const title = await generateTitleFromDocument({
-            filename,
-            summary,
-          });
+			if (existingChat && isPlaceholderChatTitle(existingChat.title)) {
+				after(async () => {
+					const title = await generateTitleFromDocument({
+						filename,
+						summary,
+					});
 
-          await updateChatTitleById({ chatId, title });
-        });
-      }
+					await updateChatTitleById({ chatId, title });
+				});
+			}
 
-      if (normalizedText.length >= MIN_TEXT_LENGTH) {
-        const chunks = chunkText(normalizedText);
-        const embeddings = await createEmbeddings(chunks);
+			if (normalizedText.length >= MIN_TEXT_LENGTH) {
+				const chunks = chunkText(normalizedText);
+				const embeddings = await createEmbeddings(chunks);
 
-        if (embeddings.length !== chunks.length) {
-          console.error("Embeddings length mismatch", {
-            chunksLength: chunks.length,
-            embeddingsLength: embeddings.length,
-            documentId,
-          });
-          return NextResponse.json(
-            { error: "Failed to generate embeddings for all chunks" },
-            { status: 500 }
-          );
-        }
+				if (embeddings.length !== chunks.length) {
+					console.error("Embeddings length mismatch", {
+						chunksLength: chunks.length,
+						embeddingsLength: embeddings.length,
+						documentId,
+					});
+					return NextResponse.json(
+						{ error: "Failed to generate embeddings for all chunks" },
+						{ status: 500 },
+					);
+				}
 
-        const createdAt = new Date();
+				const createdAt = new Date();
 
-        await saveDocumentChunks({
-          chunks: chunks.map((content, index) => ({
-            artifactId: documentId,
-            userId,
-            chatId,
-            chunkIndex: index,
-            content,
-            embedding: embeddings[index] ?? [],
-            createdAt,
-          })),
-        });
-      }
+				await saveDocumentChunks({
+					chunks: chunks.map((content, index) => ({
+						artifactId: documentId,
+						userId,
+						chatId,
+						chunkIndex: index,
+						content,
+						embedding: embeddings[index] ?? [],
+						createdAt,
+					})),
+				});
+			}
 
-      let chatTitle: string | null = null;
-      if (createdChat) {
-        try {
-          chatTitle = await generateTitleFromFileMetadata({
-            filename,
-            kind,
-            summary,
-            textContent: normalizedText,
-            contentType: file.type,
-          });
+			let chatTitle: string | null = null;
+			if (createdChat) {
+				try {
+					chatTitle = await generateTitleFromFileMetadata({
+						filename,
+						kind,
+						summary,
+						textContent: normalizedText,
+						contentType: file.type,
+					});
 
-          await updateChatTitleById({ chatId, title: chatTitle });
-        } catch (error) {
-          console.error("Failed to generate chat title from upload:", error);
-        }
-      }
+					await updateChatTitleById({ chatId, title: chatTitle });
+				} catch (error) {
+					console.warn("Failed to generate chat title from upload:", error);
+				}
+			}
 
-      return NextResponse.json({
-        ...normalizedData,
-        documentId,
-        ...(chatTitle ? { chatTitle } : {}),
-      });
-    } catch (error) {
-      console.error("Upload failed:", error);
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
-    }
-  } catch (error) {
-    console.error("Failed to process request:", error);
-    return NextResponse.json(
-      { error: "Failed to process request" },
-      { status: 500 }
-    );
-  }
+			return NextResponse.json({
+				...normalizedData,
+				documentId,
+				...(chatTitle ? { chatTitle } : {}),
+			});
+		} catch (error) {
+			console.error("Upload failed:", error);
+			return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+		}
+	} catch (error) {
+		console.error("Failed to process request:", error);
+		return NextResponse.json(
+			{ error: "Failed to process request" },
+			{ status: 500 },
+		);
+	}
 }

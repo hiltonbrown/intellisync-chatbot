@@ -11,7 +11,7 @@ export async function generateTitleFromDocument({
 	excerpt,
 }: {
 	filename: string;
-	kind?: string | null;
+	kind?: "text" | "sheet" | "pdf" | "docx" | "image" | null;
 	summary?: string | null;
 	excerpt?: string | null;
 }) {

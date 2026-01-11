@@ -36,7 +36,7 @@ async function lookupABN(abn: string): Promise<ABNResponse | null> {
 
 		// Call ABN Lookup API
 		const response = await fetch(
-			`${baseUrl}/AbnDetails.aspx?abn=${cleanABN}&guid=${guid}`,
+			`${baseUrl}/AbnDetails.aspx?abn=${cleanABN}&guid=${guid}&callback=callback`,
 		);
 
 		if (!response.ok) {
@@ -60,6 +60,10 @@ async function lookupABN(abn: string): Promise<ABNResponse | null> {
 
 		// Check for API errors or invalid ABN
 		if (data.Message || !data.Abn) {
+			// Log API message for debugging
+			if (data.Message) {
+				console.log(`ABN Lookup API message for ${abn}: ${data.Message}`);
+			}
 			return null;
 		}
 
