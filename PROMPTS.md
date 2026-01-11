@@ -5,15 +5,18 @@ This document describes the system prompts used within the application, detailin
 ## Table of Contents
 
 1. [Main System Prompt](#main-system-prompt)
-2. [Artifact Prompts](#artifact-prompts)
+2. [Artifact Tools](#artifact-tools)
+   - [createDocument](#createdocument)
+   - [updateDocument](#updatedocument)
+3. [Artifact Prompts](#artifact-prompts)
    - [Text Artifacts](#text-artifacts)
    - [Code Artifacts](#code-artifacts)
    - [Sheet Artifacts](#sheet-artifacts)
-   - [Update Document](#update-document)
-3. [Tool-Specific Prompts](#tool-specific-prompts)
+   - [Update Document](#update-document-1)
+4. [Tool-Specific Prompts](#tool-specific-prompts)
    - [Request Suggestions](#request-suggestions)
    - [Other Tools](#other-tools)
-4. [Utility Prompts](#utility-prompts)
+5. [Utility Prompts](#utility-prompts)
    - [Chat Title Generation](#chat-title-generation)
    - [File Title Generation](#file-title-generation)
 
@@ -123,6 +126,29 @@ Do not update document right after creating it. Wait for user feedback or reques
 
 ---
 
+## Artifact Tools
+
+These tools invoke the artifact system.
+
+### createDocument
+**Location:** `lib/ai/tools/create-document.ts`
+**Description:** "Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind."
+
+**Input Schema:**
+- `title` (string): Title of the document.
+- `kind` (enum): "text", "code", "sheet".
+- `description` (string, optional): "A detailed description of what should be in the document".
+
+### updateDocument
+**Location:** `lib/ai/tools/update-document.ts`
+**Description:** "Update a document with the given description."
+
+**Input Schema:**
+- `id` (string): "The ID of the document to update".
+- `description` (string): "The description of changes that need to be made".
+
+---
+
 ## Artifact Prompts
 
 These prompts are used when generating content for specific artifact types via the `createDocument` tool.
@@ -131,6 +157,12 @@ These prompts are used when generating content for specific artifact types via t
 **Location:** `artifacts/text/server.ts`
 **Purpose:** Generating text documents (articles, essays, etc.).
 **Logic:** Passed directly to the model via `streamText`.
+
+**System Instructions (from `artifactsPrompt`):**
+> Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks.
+> **When to use `createDocument`:**
+> - For substantial content (>10 lines)
+> - For content users will likely save/reuse (emails, essays, etc.)
 
 **System Prompt:**
 ```text
@@ -142,6 +174,11 @@ Write about the given topic. Markdown is supported. Use headings wherever approp
 **Variable:** `codePrompt`
 **Used In:** `artifacts/code/server.ts`
 **Purpose:** Generating executable Python code snippets.
+
+**System Instructions (from `artifactsPrompt`):**
+> When asked to write code, always use artifacts. When writing code, specify the language in the backticks, e.g. \`\`\`python\`code here\`\`\`. The default language is Python. Other languages are not yet supported, so let the user know if they request a different language.
+> **When to use `createDocument`:**
+> - For when content contains a single code snippet
 
 **System Prompt:**
 ```text
@@ -176,6 +213,21 @@ print(f"Factorial of 5 is: {factorial(5)}")
 **Used In:** `artifacts/sheet/server.ts`
 **Purpose:** Generating CSV data for spreadsheets.
 
+**System Instructions (from `artifactsPrompt`):**
+> **Working with Spreadsheets:**
+> - The spreadsheet content is provided to you as CSV text.
+> - You CAN and SHOULD perform calculations, aggregations, and analysis on this data to answer user questions.
+> - You do not need a special tool to read the data; it is directly in your context.
+>
+> **Handling Uploaded CSV/TSV Files:**
+> - When a user uploads a CSV or TSV file (identifiable by mediaType "text/csv" or "text/tab-separated-values" in the file attachments), you MUST immediately create a sheet artifact to display the data.
+> - Use the createDocument tool with:
+>   * kind="sheet"
+>   * title = the filename of the uploaded CSV/TSV file
+>   * description = the EXACT CSV content from the <uploaded_file><content> tags
+> - CRITICAL: Copy the CSV content EXACTLY as provided - do NOT modify, reformat, analyze, or change the data in any way.
+> - This should happen automatically in your first response after the file is uploaded, even if the user doesn't explicitly ask for it.
+
 **System Prompt:**
 ```text
 You are a spreadsheet creation assistant. Create a spreadsheet in csv format based on the given prompt. The spreadsheet should contain meaningful column headers and data.
@@ -187,6 +239,17 @@ You are a spreadsheet creation assistant. Create a spreadsheet in csv format bas
 **Used In:** `artifacts/*/server.ts` (all artifact handlers)
 **Purpose:** Providing context for updating an existing document.
 **Logic:** Dynamically inserts the media type (document, code snippet, spreadsheet) and the current content.
+
+**System Instructions (from `artifactsPrompt`):**
+> **Using `updateDocument`:**
+> - Default to full document rewrites for major changes
+> - Use targeted updates only for specific, isolated changes
+> - Follow user instructions for which parts to modify
+>
+> **When NOT to use `updateDocument`:**
+> - Immediately after creating a document
+>
+> Do not update document right after creating it. Wait for user feedback or request to update it.
 
 **Template:**
 ```text
