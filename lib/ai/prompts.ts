@@ -151,3 +151,10 @@ Rules:
 - Just the topic/intent, not a full sentence
 - If the message is a greeting like "hi" or "hello", respond with just "New conversation"
 - Be concise: "Weather in NYC" not "User asking about the weather in New York City"`;
+
+export const fileTitlePrompt = `Generate a 2-5 word title describing the uploaded file.
+Rules:
+- Maximum 30 characters
+- No quotes, colons, hashtags, or markdown
+- Focus on the file's content or subject, not the user
+- Use the metadata and excerpt provided`;

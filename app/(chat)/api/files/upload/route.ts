@@ -14,6 +14,7 @@ import {
 	saveDocumentChunks,
 } from "@/lib/db/queries";
 import { generateUUID } from "@/lib/utils";
+import { generateTitleFromDocument } from "../../../actions";
 
 const MIN_TEXT_LENGTH = 10;
 
@@ -136,6 +137,25 @@ const resolveDocumentKind = (fileType: string) => {
   return "text";
 };
 
+const resolveTitleKind = (
+  fileType: string,
+  documentKind: string
+): "text" | "sheet" | "pdf" | "image" => {
+  if (fileType.startsWith("image/")) {
+    return "image";
+  }
+
+  if (documentKind === "sheet") {
+    return "sheet";
+  }
+
+  if (documentKind === "pdf") {
+    return "pdf";
+  }
+
+  return "text";
+};
+
 export async function POST(request: Request) {
   const { userId } = await auth();
 
@@ -225,16 +245,39 @@ export async function POST(request: Request) {
         );
       }
 
+      const normalizedText = extractedText.trim();
+      const documentId = generateUUID();
+      const kind = resolveDocumentKind(file.type);
+      const summary =
+        kind === "sheet" ? summarizeSheet(normalizedText) : null;
+      const shouldStoreContent = kind === "text" || kind === "sheet";
+      const titleKind = resolveTitleKind(file.type, kind);
+      const excerpt = normalizedText
+        ? normalizedText.replace(/\s+/g, " ").slice(0, 240).trim()
+        : null;
+
       // Verify that the chat exists and belongs to the authenticated user
       // If it doesn't exist, create it (this handles file uploads on the main page before first message)
       let existingChat = await getChatById({ id: chatId });
 
       if (!existingChat) {
         // Create the chat with a temporary title (will be updated when first message is sent)
+        let title = "New Chat";
+
+        try {
+          title = await generateTitleFromDocument({
+            filename,
+            kind: titleKind,
+            excerpt: summary ?? excerpt,
+          });
+        } catch (error) {
+          console.warn("Failed to generate file-based title:", error);
+        }
+
         await saveChat({
           id: chatId,
           userId,
-          title: "New Chat",
+          title,
           visibility: "private",
         });
         existingChat = await getChatById({ id: chatId });
@@ -246,15 +289,6 @@ export async function POST(request: Request) {
           { status: 403 }
         );
       }
-
-      // Reuse extracted text from earlier validation
-      const normalizedText = extractedText.trim();
-      const documentId = generateUUID();
-      const kind = resolveDocumentKind(file.type);
-      const summary =
-        kind === "sheet" ? summarizeSheet(normalizedText) : null;
-
-      const shouldStoreContent = kind === "text" || kind === "sheet";
 
       await saveDocument({
         id: documentId,
