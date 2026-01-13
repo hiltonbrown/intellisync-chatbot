@@ -11,7 +11,7 @@ import type { Chat, Suggestion } from "./db/schema";
 export type DataPart = { type: "append-message"; message: string };
 
 export const messageMetadataSchema = z.object({
-  createdAt: z.string(),
+	createdAt: z.string(),
 });
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
@@ -21,46 +21,46 @@ type abnDetailsTool = InferUITool<typeof getABNDetails>;
 type createDocumentTool = InferUITool<ReturnType<typeof createDocument>>;
 type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
-  ReturnType<typeof requestSuggestions>
+	ReturnType<typeof requestSuggestions>
 >;
 
 export type ChatTools = {
-  getWeather: weatherTool;
-  createDocument: createDocumentTool;
-  updateDocument: updateDocumentTool;
-  requestSuggestions: requestSuggestionsTool;
-  getABNDetails?: abnDetailsTool;
+	getWeather: weatherTool;
+	createDocument: createDocumentTool;
+	updateDocument: updateDocumentTool;
+	requestSuggestions: requestSuggestionsTool;
+	getABNDetails?: abnDetailsTool;
 };
 
 export type CustomUIDataTypes = {
-  textDelta: string;
-  imageDelta: string;
-  sheetDelta: string;
-  codeDelta: string;
-  suggestion: Suggestion;
-  appendMessage: string;
-  id: string;
-  title: string;
-  kind: ArtifactKind;
-  chatId: string;
-  clear: null;
-  finish: null;
-  "chat-title": string;
+	textDelta: string;
+	imageDelta: string;
+	sheetDelta: string;
+	codeDelta: string;
+	suggestion: Suggestion;
+	appendMessage: string;
+	id: string;
+	title: string;
+	kind: ArtifactKind;
+	chatId: string;
+	clear: null;
+	finish: null;
+	"chat-title": string;
 };
 
 export type ChatMessage = UIMessage<
-  MessageMetadata,
-  CustomUIDataTypes,
-  ChatTools
+	MessageMetadata,
+	CustomUIDataTypes,
+	ChatTools
 >;
 
 export type Attachment = {
-  name: string;
-  url: string;
-  contentType: string;
-  documentId?: string; // For CSV/TSV files, includes the document ID to fetch full content
+	name: string;
+	url: string;
+	contentType: string;
+	documentId?: string; // For CSV/TSV files, includes the document ID to fetch full content
 };
 
 export type ChatHistoryItem = Chat & {
-  hasDocument: boolean;
+	hasDocument: boolean;
 };

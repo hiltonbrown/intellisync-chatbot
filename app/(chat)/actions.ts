@@ -1,89 +1,89 @@
 "use server";
 
-import { generateText, type UIMessage } from "ai";
 import { auth } from "@clerk/nextjs/server";
+import { generateText, type UIMessage } from "ai";
 import { cookies } from "next/headers";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { titlePrompt } from "@/lib/ai/prompts";
 import { getTitleModel } from "@/lib/ai/providers";
 import {
-  deleteMessagesByChatIdAfterTimestamp,
-  getChatById,
-  getMessageById,
-  updateChatVisibilityById,
+	deleteMessagesByChatIdAfterTimestamp,
+	getChatById,
+	getMessageById,
+	updateChatVisibilityById,
 } from "@/lib/db/queries";
 import { getTextFromMessage } from "@/lib/utils";
 
 export async function saveChatModelAsCookie(model: string) {
-  const { userId } = await auth();
+	const { userId } = await auth();
 
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
+	if (!userId) {
+		throw new Error("Unauthorized");
+	}
 
-  const cookieStore = await cookies();
-  cookieStore.set("chat-model", model);
+	const cookieStore = await cookies();
+	cookieStore.set("chat-model", model);
 }
 
 export async function generateTitleFromUserMessage({
-  message,
+	message,
 }: {
-  message: UIMessage;
+	message: UIMessage;
 }) {
-  const { userId } = await auth();
+	const { userId } = await auth();
 
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
+	if (!userId) {
+		throw new Error("Unauthorized");
+	}
 
-  const { text: title } = await generateText({
-    model: getTitleModel(),
-    system: titlePrompt,
-    prompt: getTextFromMessage(message),
-  });
+	const { text: title } = await generateText({
+		model: getTitleModel(),
+		system: titlePrompt,
+		prompt: getTextFromMessage(message),
+	});
 
-  return title;
+	return title;
 }
 
 export async function deleteTrailingMessages({ id }: { id: string }) {
-  const { userId } = await auth();
+	const { userId } = await auth();
 
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
+	if (!userId) {
+		throw new Error("Unauthorized");
+	}
 
-  const [message] = await getMessageById({ id });
+	const [message] = await getMessageById({ id });
 
-  const chat = message ? await getChatById({ id: message.chatId }) : null;
+	const chat = message ? await getChatById({ id: message.chatId }) : null;
 
-  if (!chat || chat.userId !== userId) {
-    throw new Error("Forbidden");
-  }
+	if (!chat || chat.userId !== userId) {
+		throw new Error("Forbidden");
+	}
 
-  await deleteMessagesByChatIdAfterTimestamp({
-    chatId: message.chatId,
-    timestamp: message.createdAt,
-  });
+	await deleteMessagesByChatIdAfterTimestamp({
+		chatId: message.chatId,
+		timestamp: message.createdAt,
+	});
 }
 
 export async function updateChatVisibility({
-  chatId,
-  visibility,
+	chatId,
+	visibility,
 }: {
-  chatId: string;
-  visibility: VisibilityType;
+	chatId: string;
+	visibility: VisibilityType;
 }) {
-  const { userId } = await auth();
+	const { userId } = await auth();
 
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
+	if (!userId) {
+		throw new Error("Unauthorized");
+	}
 
-  const chat = await getChatById({ id: chatId });
+	const chat = await getChatById({ id: chatId });
 
-  if (!chat || chat.userId !== userId) {
-    throw new Error("Forbidden");
-  }
+	if (!chat || chat.userId !== userId) {
+		throw new Error("Forbidden");
+	}
 
-  await updateChatVisibilityById({ chatId, visibility });
+	await updateChatVisibilityById({ chatId, visibility });
 }
