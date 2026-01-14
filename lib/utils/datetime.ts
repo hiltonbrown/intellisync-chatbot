@@ -67,7 +67,10 @@ export interface DateTimeContext {
  * Maps timezone identifiers to their abbreviations.
  * Note: Australia/Brisbane doesn't observe DST, so AEST year-round.
  */
-const TIMEZONE_ABBREVIATIONS: Record<string, { standard: string; dst: string }> = {
+const TIMEZONE_ABBREVIATIONS: Record<
+	string,
+	{ standard: string; dst: string }
+> = {
 	"Australia/Brisbane": { standard: "AEST", dst: "AEST" }, // No DST
 	"Australia/Sydney": { standard: "AEST", dst: "AEDT" },
 	"Australia/Melbourne": { standard: "AEST", dst: "AEDT" },
@@ -82,7 +85,11 @@ const TIMEZONE_ABBREVIATIONS: Record<string, { standard: string; dst: string }> 
  */
 function isDST(date: Date, timezone: string): boolean {
 	// Brisbane, Darwin, and Perth don't observe DST
-	if (["Australia/Brisbane", "Australia/Darwin", "Australia/Perth"].includes(timezone)) {
+	if (
+		["Australia/Brisbane", "Australia/Darwin", "Australia/Perth"].includes(
+			timezone,
+		)
+	) {
 		return false;
 	}
 
@@ -91,16 +98,16 @@ function isDST(date: Date, timezone: string): boolean {
 	const jan = new Date(date.getFullYear(), 0, 1);
 	const jul = new Date(date.getFullYear(), 6, 1);
 
-	const janOffset = new Date(
-		jan.toLocaleString("en-US", { timeZone: timezone }),
-	).getTime() - jan.getTime();
-	const julOffset = new Date(
-		jul.toLocaleString("en-US", { timeZone: timezone }),
-	).getTime() - jul.getTime();
+	const janOffset =
+		new Date(jan.toLocaleString("en-US", { timeZone: timezone })).getTime() -
+		jan.getTime();
+	const julOffset =
+		new Date(jul.toLocaleString("en-US", { timeZone: timezone })).getTime() -
+		jul.getTime();
 
-	const currentOffset = new Date(
-		date.toLocaleString("en-US", { timeZone: timezone }),
-	).getTime() - date.getTime();
+	const currentOffset =
+		new Date(date.toLocaleString("en-US", { timeZone: timezone })).getTime() -
+		date.getTime();
 
 	// If current offset matches the larger offset (summer), DST is active
 	return currentOffset === Math.max(janOffset, julOffset);
@@ -190,8 +197,18 @@ function getDayOfWeek(date: Date, timezone: string): string {
  */
 function getMonthName(month: number): string {
 	const months = [
-		"January", "February", "March", "April", "May", "June",
-		"July", "August", "September", "October", "November", "December",
+		"January",
+		"February",
+		"March",
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December",
 	];
 	return months[month];
 }
@@ -211,7 +228,7 @@ function getFinancialYearContext(
 		day: "numeric",
 		timeZone: timezone,
 	});
-	const [day, month, year] = localDateStr.split("/").map(Number);
+	const [_day, month, year] = localDateStr.split("/").map(Number);
 
 	// Australian FY: July 1 - June 30
 	// If current month is July-December, FY started this calendar year
@@ -254,7 +271,16 @@ function getFYQuarterRange(
 	year: number,
 	quarter: number,
 ): { start: string; end: string; name: string } {
-	const quarters: Record<number, { startMonth: number; startDay: number; endMonth: number; endDay: number; name: string }> = {
+	const quarters: Record<
+		number,
+		{
+			startMonth: number;
+			startDay: number;
+			endMonth: number;
+			endDay: number;
+			name: string;
+		}
+	> = {
 		1: { startMonth: 7, startDay: 1, endMonth: 9, endDay: 30, name: "Q1" },
 		2: { startMonth: 10, startDay: 1, endMonth: 12, endDay: 31, name: "Q2" },
 		3: { startMonth: 1, startDay: 1, endMonth: 3, endDay: 31, name: "Q3" },
@@ -331,8 +357,16 @@ function getRelativeContext(
 	};
 
 	return {
-		lastMonth: { start: lastMonthStart, end: lastMonthEnd, name: lastMonthName },
-		thisMonth: { start: thisMonthStart, end: thisMonthEnd, name: thisMonthName },
+		lastMonth: {
+			start: lastMonthStart,
+			end: lastMonthEnd,
+			name: lastMonthName,
+		},
+		thisMonth: {
+			start: thisMonthStart,
+			end: thisMonthEnd,
+			name: thisMonthName,
+		},
 		lastQuarter,
 		thisQuarter,
 		lastFinancialYear: lastFY,
@@ -412,6 +446,8 @@ export function formatDateTimeForPrompt(context: DateTimeContext): string {
  * @param timezone - IANA timezone identifier (defaults to "Australia/Brisbane")
  * @returns Formatted string ready for system prompt injection
  */
-export function getDateTimePrompt(timezone: string = "Australia/Brisbane"): string {
+export function getDateTimePrompt(
+	timezone: string = "Australia/Brisbane",
+): string {
 	return formatDateTimeForPrompt(getDateTimeContext(timezone));
 }
