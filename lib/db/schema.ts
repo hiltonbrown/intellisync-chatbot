@@ -27,7 +27,7 @@ export const userSettings = pgTable("UserSettings", {
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
 	companyName: varchar("companyName", { length: 256 }),
-	timezone: varchar("timezone", { length: 64 }).default("Australia/Sydney"),
+	timezone: varchar("timezone", { length: 64 }).default("Australia/Brisbane"),
 	baseCurrency: varchar("baseCurrency", { length: 3 }).default("AUD"),
 	dateFormat: varchar("dateFormat", { length: 20 }).default("DD/MM/YYYY"),
 	createdAt: timestamp("createdAt").notNull().defaultNow(),

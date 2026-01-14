@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS "UserSettings" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   "userId" text NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
   "companyName" varchar(256),
-  "timezone" varchar(64) DEFAULT 'Australia/Sydney',
+  "timezone" varchar(64) DEFAULT 'Australia/Brisbane',
   "baseCurrency" varchar(3) DEFAULT 'AUD',
   "dateFormat" varchar(20) DEFAULT 'DD/MM/YYYY',
   "createdAt" timestamp NOT NULL DEFAULT now(),

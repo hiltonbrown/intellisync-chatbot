@@ -34,7 +34,7 @@ export function BusinessSettingsForm({
 		initialSettings?.companyName || "",
 	);
 	const [timezone, setTimezone] = useState(
-		initialSettings?.timezone || "Australia/Sydney",
+		initialSettings?.timezone || "Australia/Brisbane",
 	);
 	const [baseCurrency, setBaseCurrency] = useState(
 		initialSettings?.baseCurrency || "AUD",

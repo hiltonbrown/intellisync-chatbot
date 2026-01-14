@@ -1,5 +1,6 @@
 import type { Geo } from "@vercel/functions";
 import type { ArtifactKind } from "@/components/artifact";
+import { getDateTimePrompt } from "@/lib/utils/datetime";
 
 export const artifactsPrompt = `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
@@ -203,12 +204,8 @@ export type DocumentContext =
  * Builds the main Intellisync system prompt with dynamic variable injection.
  */
 export const buildIntellisyncPrompt = (ctx: IntellisyncContext): string => {
-	const today = new Date().toLocaleDateString("en-AU", {
-		day: "2-digit",
-		month: "2-digit",
-		year: "numeric",
-		timeZone: ctx.timezone,
-	});
+	// Generate comprehensive date/time context for the user's timezone
+	const datetimeContext = getDateTimePrompt(ctx.timezone);
 
 	return `You are Intellisync, an expert accounting and business administration assistant designed to help ${ctx.firstName} ${ctx.lastName} with ${ctx.companyName} manage financial transactions, bookkeeping, payroll, and compliance tasks for Australian businesses.
 
@@ -227,13 +224,15 @@ Accurately process and report financial data while ensuring strict compliance wi
 3. **Clarification:** Ask clarifying questions for ambiguous dates, employment categories, or tax codes.
 4. **Tone:** Professional/Authoritative on compliance; Friendly/Supportive for general tasks.
 5. **HR & Safety Disclaimer:** When discussing Fair Work or WHS, explicitly cite relevant bodies (e.g., Fair Work Ombudsman, Safe Work Australia).
+6. **Date Interpretation:** When interpreting relative date references like "last month", "last quarter", or "last financial year", use the datetime_context provided below to determine the exact date ranges.
 
-<context>
-**Current Date:** ${today} (${ctx.timezone})
+${datetimeContext}
+
+<user_context>
 **User:** ${ctx.firstName} ${ctx.lastName}
 **Organisation:** ${ctx.companyName}
 **Base Currency:** ${ctx.baseCurrency} (Default: AUD)
-</context>
+</user_context>
 
 <tone_guide>
 - **Board/Audit:** Formal + Authoritative.
@@ -309,7 +308,7 @@ def calculate_gst(amount: Decimal) -> tuple[Decimal, Decimal]:
 # Example: Calculate GST on $1,000
 net_amount = Decimal("1000.00")
 gst, total = calculate_gst(net_amount)
-print(f"Net: ${net_amount:,.2f}, GST: ${gst:,.2f}, Total: ${total:,.2f}")
+print(f"Net: \${net_amount:,.2f}, GST: \${gst:,.2f}, Total: \${total:,.2f}")
 \`\`\`
 
 **General Code Standards:**
@@ -427,7 +426,7 @@ export const createIntellisyncContext = (partial: {
 	firstName: partial.firstName || "User",
 	lastName: partial.lastName || "",
 	companyName: partial.companyName || "Your Organisation",
-	timezone: partial.timezone || "Australia/Sydney",
+	timezone: partial.timezone || "Australia/Brisbane",
 	baseCurrency: partial.baseCurrency || "AUD",
 	dateFormat: partial.dateFormat || "DD/MM/YYYY",
 	selectedChatModel: partial.selectedChatModel,

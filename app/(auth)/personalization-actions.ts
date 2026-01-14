@@ -69,11 +69,11 @@ export async function getUserSettings(): Promise<UserSettings | null> {
 	return getUserSettingsByUserId({ userId });
 }
 
-// Common Australian timezone options
+// Common Australian timezone options (Brisbane is default)
 export const AUSTRALIAN_TIMEZONES = [
+	{ value: "Australia/Brisbane", label: "Brisbane (AEST)" },
 	{ value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
 	{ value: "Australia/Melbourne", label: "Melbourne (AEST/AEDT)" },
-	{ value: "Australia/Brisbane", label: "Brisbane (AEST)" },
 	{ value: "Australia/Perth", label: "Perth (AWST)" },
 	{ value: "Australia/Adelaide", label: "Adelaide (ACST/ACDT)" },
 	{ value: "Australia/Darwin", label: "Darwin (ACST)" },
