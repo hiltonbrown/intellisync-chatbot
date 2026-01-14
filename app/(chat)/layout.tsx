@@ -4,6 +4,7 @@ import Script from "next/script";
 import { Suspense } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DataStreamProvider } from "@/components/data-stream-provider";
+import { NameCollectionModal } from "@/components/name-collection-modal";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -14,6 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 				strategy="beforeInteractive"
 			/>
 			<DataStreamProvider>
+				<NameCollectionModal />
 				<Suspense fallback={<div className="flex h-dvh" />}>
 					<SidebarWrapper>{children}</SidebarWrapper>
 				</Suspense>
