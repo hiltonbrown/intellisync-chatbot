@@ -1,98 +1,128 @@
 import { streamObject } from "ai";
 import { z } from "zod";
-import { sheetPrompt, updateDocumentPrompt } from "@/lib/ai/prompts";
+import { intellisyncSheetPrompt, updateDocumentPrompt } from "@/lib/ai/prompts";
 import { getArtifactModel } from "@/lib/ai/providers";
 import { createDocumentHandler } from "@/lib/artifacts/server";
+import { validateAndSanitizeCSV } from "@/lib/utils/csv-validation";
 
 export const sheetDocumentHandler = createDocumentHandler<"sheet">({
-  kind: "sheet",
-  onCreateDocument: async ({ title, description, dataStream }) => {
-    let draftContent = "";
+	kind: "sheet",
+	onCreateDocument: async ({ title, description, dataStream }) => {
+		let draftContent = "";
 
-    // If description contains CSV data (from uploaded file), use it directly
-    // Otherwise, generate new CSV based on title
-    if (description && (description.includes(",") || description.includes("\n"))) {
-      // This appears to be actual CSV content from an upload
-      // Use it directly without AI generation
-      draftContent = description;
+		// If description contains CSV data (from uploaded file), use it directly
+		// Otherwise, generate new CSV based on title
+		if (
+			description &&
+			(description.includes(",") || description.includes("\n"))
+		) {
+			// This appears to be actual CSV content from an upload
+			// Validate and sanitize the CSV content
+			const validation = validateAndSanitizeCSV(description);
+			draftContent = validation.sanitizedCSV || description;
 
-      dataStream.write({
-        type: "data-sheetDelta",
-        data: draftContent,
-        transient: true,
-      });
+			if (validation.warnings.length > 0) {
+				console.warn("CSV validation warnings:", validation.warnings);
+			}
 
-      return draftContent;
-    }
+			dataStream.write({
+				type: "data-sheetDelta",
+				data: draftContent,
+				transient: true,
+			});
 
-    // Generate new CSV content using AI
-    const { fullStream } = streamObject({
-      model: getArtifactModel(),
-      system: sheetPrompt,
-      prompt: description || title,
-      schema: z.object({
-        csv: z.string().describe("CSV data"),
-      }),
-    });
+			return draftContent;
+		}
 
-    for await (const delta of fullStream) {
-      const { type } = delta;
+		// Generate new CSV content using AI
+		const { fullStream } = streamObject({
+			model: getArtifactModel(),
+			system: intellisyncSheetPrompt,
+			prompt: description || title,
+			schema: z.object({
+				csv: z
+					.string()
+					.describe(
+						"CSV data with proper newlines and Australian date/currency formatting",
+					),
+			}),
+		});
 
-      if (type === "object") {
-        const { object } = delta;
-        const { csv } = object;
+		for await (const delta of fullStream) {
+			const { type } = delta;
 
-        if (csv) {
-          dataStream.write({
-            type: "data-sheetDelta",
-            data: csv,
-            transient: true,
-          });
+			if (type === "object") {
+				const { object } = delta;
+				const { csv } = object;
 
-          draftContent = csv;
-        }
-      }
-    }
+				if (csv) {
+					dataStream.write({
+						type: "data-sheetDelta",
+						data: csv,
+						transient: true,
+					});
 
-    dataStream.write({
-      type: "data-sheetDelta",
-      data: draftContent,
-      transient: true,
-    });
+					draftContent = csv;
+				}
+			}
+		}
 
-    return draftContent;
-  },
-  onUpdateDocument: async ({ document, description, dataStream }) => {
-    let draftContent = "";
+		// Validate and sanitize the final CSV output
+		const validation = validateAndSanitizeCSV(draftContent);
+		if (validation.warnings.length > 0) {
+			console.warn("Generated CSV validation warnings:", validation.warnings);
+		}
+		const sanitizedContent = validation.sanitizedCSV || draftContent;
 
-    const { fullStream } = streamObject({
-      model: getArtifactModel(),
-      system: updateDocumentPrompt(document.content, "sheet"),
-      prompt: description,
-      schema: z.object({
-        csv: z.string(),
-      }),
-    });
+		dataStream.write({
+			type: "data-sheetDelta",
+			data: sanitizedContent,
+			transient: true,
+		});
 
-    for await (const delta of fullStream) {
-      const { type } = delta;
+		return sanitizedContent;
+	},
+	onUpdateDocument: async ({ document, description, dataStream }) => {
+		let draftContent = "";
 
-      if (type === "object") {
-        const { object } = delta;
-        const { csv } = object;
+		const { fullStream } = streamObject({
+			model: getArtifactModel(),
+			system: updateDocumentPrompt(document.content, "sheet"),
+			prompt: description,
+			schema: z.object({
+				csv: z
+					.string()
+					.describe(
+						"CSV data with proper newlines and Australian date/currency formatting",
+					),
+			}),
+		});
 
-        if (csv) {
-          dataStream.write({
-            type: "data-sheetDelta",
-            data: csv,
-            transient: true,
-          });
+		for await (const delta of fullStream) {
+			const { type } = delta;
 
-          draftContent = csv;
-        }
-      }
-    }
+			if (type === "object") {
+				const { object } = delta;
+				const { csv } = object;
 
-    return draftContent;
-  },
+				if (csv) {
+					dataStream.write({
+						type: "data-sheetDelta",
+						data: csv,
+						transient: true,
+					});
+
+					draftContent = csv;
+				}
+			}
+		}
+
+		// Validate and sanitize the final CSV output
+		const validation = validateAndSanitizeCSV(draftContent);
+		if (validation.warnings.length > 0) {
+			console.warn("Updated CSV validation warnings:", validation.warnings);
+		}
+
+		return validation.sanitizedCSV || draftContent;
+	},
 });

@@ -31,7 +31,9 @@ import {
 	stream,
 	suggestion,
 	type User,
+	type UserSettings,
 	user,
+	userSettings,
 	vote,
 } from "./schema";
 
@@ -807,6 +809,110 @@ export async function getSystemPromptByUserId({ id }: { id: string }) {
 		throw new ChatSDKError(
 			"bad_request:database",
 			"Failed to get system prompt by user id",
+		);
+	}
+}
+
+// UserSettings CRUD functions
+
+export async function getUserSettingsByUserId({
+	userId,
+}: {
+	userId: string;
+}): Promise<UserSettings | null> {
+	try {
+		const [settings] = await db
+			.select()
+			.from(userSettings)
+			.where(eq(userSettings.userId, userId));
+		return settings || null;
+	} catch (_error) {
+		throw new ChatSDKError(
+			"bad_request:database",
+			"Failed to get user settings",
+		);
+	}
+}
+
+export async function createOrUpdateUserSettings({
+	userId,
+	companyName,
+	timezone,
+	baseCurrency,
+	dateFormat,
+}: {
+	userId: string;
+	companyName?: string | null;
+	timezone?: string | null;
+	baseCurrency?: string | null;
+	dateFormat?: string | null;
+}): Promise<UserSettings> {
+	try {
+		const [result] = await db
+			.insert(userSettings)
+			.values({
+				userId,
+				companyName,
+				timezone: timezone ?? "Australia/Sydney",
+				baseCurrency: baseCurrency ?? "AUD",
+				dateFormat: dateFormat ?? "DD/MM/YYYY",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.onConflictDoUpdate({
+				target: userSettings.userId,
+				set: {
+					companyName,
+					timezone: timezone ?? undefined,
+					baseCurrency: baseCurrency ?? undefined,
+					dateFormat: dateFormat ?? undefined,
+					updatedAt: new Date(),
+				},
+			})
+			.returning();
+		return result;
+	} catch (_error) {
+		throw new ChatSDKError(
+			"bad_request:database",
+			"Failed to save user settings",
+		);
+	}
+}
+
+export async function updateUserSettings({
+	userId,
+	companyName,
+	timezone,
+	baseCurrency,
+	dateFormat,
+}: {
+	userId: string;
+	companyName?: string | null;
+	timezone?: string | null;
+	baseCurrency?: string | null;
+	dateFormat?: string | null;
+}): Promise<UserSettings | null> {
+	try {
+		const updateData: Partial<UserSettings> = {
+			updatedAt: new Date(),
+		};
+
+		if (companyName !== undefined) updateData.companyName = companyName;
+		if (timezone !== undefined) updateData.timezone = timezone;
+		if (baseCurrency !== undefined) updateData.baseCurrency = baseCurrency;
+		if (dateFormat !== undefined) updateData.dateFormat = dateFormat;
+
+		const [result] = await db
+			.update(userSettings)
+			.set(updateData)
+			.where(eq(userSettings.userId, userId))
+			.returning();
+
+		return result || null;
+	} catch (_error) {
+		throw new ChatSDKError(
+			"bad_request:database",
+			"Failed to update user settings",
 		);
 	}
 }

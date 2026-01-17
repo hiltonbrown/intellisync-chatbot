@@ -59,7 +59,11 @@ export async function generateTitleFromFileMetadata({
 	const excerpt = normalizedText.slice(0, MAX_EXCERPT_LENGTH);
 
 	if (!normalizedSummary && !excerpt) {
-		return resolveFallbackTitle({ filename: trimmedFilename, kind, contentType });
+		return resolveFallbackTitle({
+			filename: trimmedFilename,
+			kind,
+			contentType,
+		});
 	}
 
 	const prompt = [
@@ -78,7 +82,11 @@ export async function generateTitleFromFileMetadata({
 	const cleanedTitle = text.replace(/["']/g, "").trim();
 
 	if (!cleanedTitle) {
-		return resolveFallbackTitle({ filename: trimmedFilename, kind, contentType });
+		return resolveFallbackTitle({
+			filename: trimmedFilename,
+			kind,
+			contentType,
+		});
 	}
 
 	return cleanedTitle;

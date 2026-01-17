@@ -34,6 +34,7 @@ import {
 } from "@/lib/ai/models";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useDataStream } from "./data-stream-provider";
 import {
 	PromptInput,
 	PromptInputSubmit,
@@ -44,7 +45,6 @@ import {
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { SuggestedActions } from "./suggested-actions";
-import { useDataStream } from "./data-stream-provider";
 import { Button } from "./ui/button";
 import type { VisibilityType } from "./visibility-selector";
 
@@ -153,7 +153,13 @@ function PureMultimodalInput({
 
 		// Build parts array: file attachments + optional text
 		const parts: Array<
-			| { type: "file"; url: string; name: string; mediaType: string; documentId?: string }
+			| {
+					type: "file";
+					url: string;
+					name: string;
+					mediaType: string;
+					documentId?: string;
+			  }
 			| { type: "text"; text: string }
 		> = [
 			...attachments.map((attachment) => ({
