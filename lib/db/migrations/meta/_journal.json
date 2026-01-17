@@ -92,6 +92,13 @@
 			"when": 1767530100000,
 			"tag": "0012_fix_user_id_types",
 			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "7",
+			"when": 1768407900000,
+			"tag": "0013_add_user_settings",
+			"breakpoints": true
 		}
 	]
 }

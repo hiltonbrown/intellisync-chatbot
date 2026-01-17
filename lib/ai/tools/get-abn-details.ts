@@ -114,9 +114,8 @@ export const getABNDetails = tool({
 			: [];
 
 		// Determine GST registration status
-		const gstRegistered = abnData.Gst
-			? abnData.Gst.toLowerCase() === "true"
-			: false;
+		// The ABR API returns the effective date in the 'Gst' field if registered
+		const gstRegistered = !!abnData.Gst;
 
 		// Format the response
 		return {
@@ -126,7 +125,9 @@ export const getABNDetails = tool({
 			entityName: abnData.EntityName,
 			entityType: abnData.EntityTypeName || abnData.EntityTypeCode,
 			gstRegistered,
-			gstFromDate: gstRegistered ? abnData.GstStatusEffectiveFrom : undefined,
+			gstFromDate: gstRegistered
+				? abnData.GstStatusEffectiveFrom || abnData.Gst
+				: undefined,
 			businessAddress: {
 				postcode: abnData.AddressPostcode,
 				state: abnData.AddressState,

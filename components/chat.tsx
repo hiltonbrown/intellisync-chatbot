@@ -112,11 +112,16 @@ export function Chat({
 			prepareSendMessagesRequest(request) {
 				const lastMessage = request.messages.at(-1);
 
+				// Don't send request if there are no messages or last message is missing
+				if (!lastMessage || request.messages.length === 0) {
+					throw new Error("Cannot send request with no messages");
+				}
+
 				// Check if this is a tool approval continuation:
 				// - Last message is NOT a user message (meaning no new user input)
 				// - OR any message has tool parts that were responded to (approved or denied)
 				const isToolApprovalContinuation =
-					lastMessage?.role !== "user" ||
+					lastMessage.role !== "user" ||
 					request.messages.some((msg) =>
 						msg.parts?.some((part) => {
 							const state = (part as { state?: string }).state;

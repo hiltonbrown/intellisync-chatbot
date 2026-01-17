@@ -173,6 +173,35 @@ export async function POST(request: Request) {
 			? (messages as ChatMessage[])
 			: [...convertToUIMessages(messagesFromDb), message as ChatMessage];
 
+		// Validate that we have messages to process
+		if (!uiMessages || uiMessages.length === 0 || !uiMessages[0]) {
+			return new ChatSDKError("bad_request:api").toResponse();
+		}
+
+		// Validate that messages have content (parts with actual data)
+		const hasValidContent = uiMessages.some((msg) => {
+			if (!msg.parts || msg.parts.length === 0) return false;
+			return msg.parts.some((part: any) => {
+				if (part.type === "text") {
+					return part.text && part.text.trim().length > 0;
+				}
+				if (part.type === "file") {
+					return part.url && part.url.length > 0;
+				}
+				return true; // Other part types are assumed valid
+			});
+		});
+
+		if (!hasValidContent) {
+			console.warn("No valid message content found in request", {
+				messageCount: uiMessages.length,
+				firstMessageParts: uiMessages[0]?.parts?.length ?? 0,
+				isToolApproval: isToolApprovalFlow,
+				chatId: id,
+			});
+			return new ChatSDKError("bad_request:api").toResponse();
+		}
+
 		const { longitude, latitude, city, country } = geolocation(request);
 
 		const requestHints: RequestHints = {
@@ -457,6 +486,19 @@ ${file!.content}
 			)
 		) {
 			return new ChatSDKError("bad_request:activate_gateway").toResponse();
+		}
+
+		// Check for empty prompt error (AI Gateway specific)
+		if (
+			error instanceof Error &&
+			(error.message?.includes("must include at least one parts field") ||
+				error.message?.includes("The model is overloaded"))
+		) {
+			console.error("Empty prompt or overloaded model error:", {
+				message: error.message,
+				vercelId,
+			});
+			return new ChatSDKError("bad_request:api").toResponse();
 		}
 
 		console.error("Unhandled error in chat API:", error, { vercelId });
