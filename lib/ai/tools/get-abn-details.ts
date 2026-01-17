@@ -36,24 +36,30 @@ async function lookupABN(abn: string): Promise<ABNResponse | null> {
 
 		// Call ABN Lookup API
 		const response = await fetch(
-			`${baseUrl}/AbnDetails.aspx?abn=${cleanABN}&guid=${guid}&callback=callback`,
+			`${baseUrl}/AbnDetails.aspx?abn=${cleanABN}&guid=${guid}`,
 		);
 
 		if (!response.ok) {
 			return null;
 		}
 
-		// Handle JSONP response
+		// Handle JSONP response format (callback(...))
 		const text = await response.text();
-		const jsonp = text.replace(/^callback\(|\)$/g, "");
-		const data = JSON.parse(jsonp);
+
+		// Strip callback wrapper if present
+		// API returns: callback({ ... })
+		const jsonStr = text.replace(/^callback\((.*)\)$/, "$1");
+
+		let data: ABNResponse;
+		try {
+			data = JSON.parse(jsonStr);
+		} catch (e) {
+			console.error("Failed to parse ABN response:", e);
+			return null;
+		}
 
 		// Check for API errors or invalid ABN
 		if (data.Message || !data.Abn) {
-			// Log API message for debugging
-			if (data.Message) {
-				console.log(`ABN Lookup API message for ${abn}: ${data.Message}`);
-			}
 			return null;
 		}
 
@@ -133,7 +139,6 @@ export const getABNDetails = tool({
 				state: abnData.AddressState,
 			},
 			registeredBusinessNames: currentBusinessNames,
-			dgrStatus: abnData.DgrStatus,
 			source: "Australian Business Register (ABR)",
 			retrievedAt: new Date().toISOString(),
 		};

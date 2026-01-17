@@ -11,11 +11,11 @@ import { DocumentPreview } from "./document-preview";
 import { MessageContent } from "./elements/message";
 import { Response } from "./elements/response";
 import {
-	Tool,
-	ToolContent,
-	ToolHeader,
-	ToolInput,
-	ToolOutput,
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
 } from "./elements/tool";
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
@@ -23,33 +23,33 @@ import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import {
-	getApprovalId,
-	getIsDenied,
-	TOOL_WIDTH_CLASS,
-	ToolApprovalButtons,
+  getApprovalId,
+  getIsDenied,
+  ToolApprovalButtons,
+  TOOL_WIDTH_CLASS,
 } from "./tool-helpers";
 import { Weather } from "./weather";
 
 const PurePreviewMessage = ({
-	addToolApprovalResponse,
-	chatId,
-	message,
-	vote,
-	isLoading,
-	setMessages,
-	regenerate,
-	isReadonly,
-	requiresScrollPadding: _requiresScrollPadding,
+  addToolApprovalResponse,
+  chatId,
+  message,
+  vote,
+  isLoading,
+  setMessages,
+  regenerate,
+  isReadonly,
+  requiresScrollPadding: _requiresScrollPadding,
 }: {
-	addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
-	chatId: string;
-	message: ChatMessage;
-	vote: Vote | undefined;
-	isLoading: boolean;
-	setMessages: UseChatHelpers<ChatMessage>["setMessages"];
-	regenerate: UseChatHelpers<ChatMessage>["regenerate"];
-	isReadonly: boolean;
-	requiresScrollPadding: boolean;
+  addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
+  chatId: string;
+  message: ChatMessage;
+  vote: Vote | undefined;
+  isLoading: boolean;
+  setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+  regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+  isReadonly: boolean;
+  requiresScrollPadding: boolean;
 }) => {
 	const [mode, setMode] = useState<"view" | "edit">("view");
 
@@ -639,46 +639,46 @@ const PurePreviewMessage = ({
 };
 
 export const PreviewMessage = memo(
-	PurePreviewMessage,
-	(prevProps, nextProps) => {
-		if (
-			prevProps.isLoading === nextProps.isLoading &&
-			prevProps.message.id === nextProps.message.id &&
-			prevProps.requiresScrollPadding === nextProps.requiresScrollPadding &&
-			equal(prevProps.message.parts, nextProps.message.parts) &&
-			equal(prevProps.vote, nextProps.vote)
-		) {
-			return true;
-		}
-		return false;
-	},
+  PurePreviewMessage,
+  (prevProps, nextProps) => {
+    if (
+      prevProps.isLoading === nextProps.isLoading &&
+      prevProps.message.id === nextProps.message.id &&
+      prevProps.requiresScrollPadding === nextProps.requiresScrollPadding &&
+      equal(prevProps.message.parts, nextProps.message.parts) &&
+      equal(prevProps.vote, nextProps.vote)
+    ) {
+      return true;
+    }
+    return false;
+  }
 );
 
 export const ThinkingMessage = () => {
-	return (
-		<div
-			className="group/message fade-in w-full animate-in duration-300"
-			data-role="assistant"
-			data-testid="message-assistant-loading"
-		>
-			<div className="flex items-start justify-start gap-3">
-				<div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-					<div className="animate-pulse">
-						<SparklesIcon size={14} />
-					</div>
-				</div>
+  return (
+    <div
+      className="group/message fade-in w-full animate-in duration-300"
+      data-role="assistant"
+      data-testid="message-assistant-loading"
+    >
+      <div className="flex items-start justify-start gap-3">
+        <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
+          <div className="animate-pulse">
+            <SparklesIcon size={14} />
+          </div>
+        </div>
 
-				<div className="flex w-full flex-col gap-2 md:gap-4">
-					<div className="flex items-center gap-1 p-0 text-muted-foreground text-sm">
-						<span className="animate-pulse">Thinking</span>
-						<span className="inline-flex">
-							<span className="animate-bounce [animation-delay:0ms]">.</span>
-							<span className="animate-bounce [animation-delay:150ms]">.</span>
-							<span className="animate-bounce [animation-delay:300ms]">.</span>
-						</span>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
+        <div className="flex w-full flex-col gap-2 md:gap-4">
+          <div className="flex items-center gap-1 p-0 text-muted-foreground text-sm">
+            <span className="animate-pulse">Thinking</span>
+            <span className="inline-flex">
+              <span className="animate-bounce [animation-delay:0ms]">.</span>
+              <span className="animate-bounce [animation-delay:150ms]">.</span>
+              <span className="animate-bounce [animation-delay:300ms]">.</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
