@@ -5,6 +5,7 @@ import type { createDocument } from "./ai/tools/create-document";
 import type { getABNDetails } from "./ai/tools/get-abn-details";
 import type { getWeather } from "./ai/tools/get-weather";
 import type { requestSuggestions } from "./ai/tools/request-suggestions";
+import type { searchABNByName } from "./ai/tools/search-abn-by-name";
 import type { updateDocument } from "./ai/tools/update-document";
 import type { Chat, Suggestion } from "./db/schema";
 
@@ -18,6 +19,7 @@ export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
 type weatherTool = InferUITool<typeof getWeather>;
 type abnDetailsTool = InferUITool<typeof getABNDetails>;
+type abnSearchTool = InferUITool<typeof searchABNByName>;
 type createDocumentTool = InferUITool<ReturnType<typeof createDocument>>;
 type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
@@ -30,6 +32,7 @@ export type ChatTools = {
 	updateDocument: updateDocumentTool;
 	requestSuggestions: requestSuggestionsTool;
 	getABNDetails?: abnDetailsTool;
+	searchABNByName?: abnSearchTool;
 };
 
 export type CustomUIDataTypes = {

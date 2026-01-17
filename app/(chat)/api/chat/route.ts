@@ -25,6 +25,7 @@ import { createDocument } from "@/lib/ai/tools/create-document";
 import { getABNDetails } from "@/lib/ai/tools/get-abn-details";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
+import { searchABNByName } from "@/lib/ai/tools/search-abn-by-name";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { DEFAULT_CHAT_TITLE, isProductionEnvironment } from "@/lib/constants";
 import {
@@ -370,7 +371,7 @@ ${file!.content}
 						"updateDocument",
 						"requestSuggestions",
 						...(process.env.ABN_LOOKUP_ENABLED === "true"
-							? ["getABNDetails" as const]
+							? ["getABNDetails" as const, "searchABNByName" as const]
 							: []),
 					],
 					experimental_transform: smoothStream({ chunking: "word" }),
@@ -390,7 +391,7 @@ ${file!.content}
 							dataStream,
 						}),
 						...(process.env.ABN_LOOKUP_ENABLED === "true"
-							? { getABNDetails }
+							? { getABNDetails, searchABNByName }
 							: {}),
 					},
 					experimental_telemetry: {

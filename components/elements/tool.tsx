@@ -70,6 +70,7 @@ const getToolName = (type: ToolUIPart["type"]): string => {
 	const names: Record<string, string> = {
 		"tool-getWeather": "Get Weather",
 		"tool-getABNDetails": "ABN Lookup",
+		"tool-searchABNByName": "ABN Name Search",
 		"tool-createDocument": "Create Document",
 		"tool-updateDocument": "Update Document",
 		"tool-requestSuggestions": "Request Suggestions",
