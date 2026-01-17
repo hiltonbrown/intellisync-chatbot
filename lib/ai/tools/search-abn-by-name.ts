@@ -44,8 +44,20 @@ async function searchABNByNameAPI(
 
 		// Handle JSONP response
 		const text = await response.text();
-		const jsonp = text.replace(/^callback\(|\)$/g, "");
-		const data = JSON.parse(jsonp);
+
+		// Robustly parse JSONP: remove callback(...) wrapper and whitespace
+		// Matches: callback({ ... }) or callback({ ... }) with optional newlines
+		const match = text.match(/^\s*callback\s*\(([\s\S]*)\)\s*$/);
+
+		if (!match) {
+			console.error(
+				"Invalid JSONP response from ABN Lookup:",
+				text.substring(0, 200),
+			);
+			return null;
+		}
+
+		const data = JSON.parse(match[1]);
 
 		return data;
 	} catch (error) {
@@ -116,14 +128,15 @@ export const searchABNByName = tool({
 		}
 
 		// Sort by score (highest first) and format results
-		const sortedResults = searchResult.Names.sort(
-			(a, b) => (b.Score ?? 0) - (a.Score ?? 0),
-		);
+		const sortedResults = searchResult.Names.filter(
+			(result) => result.Name && result.Abn,
+		) // Ensure valid results
+			.sort((a, b) => (b.Score ?? 0) - (a.Score ?? 0));
 
 		const formattedResults = sortedResults.map((result) => ({
-			abn: result.Abn,
-			name: result.Name,
-			nameType: result.NameType,
+			abn: result.Abn!,
+			name: result.Name!,
+			nameType: result.NameType || "Unknown",
 			status: result.AbnStatus || "Unknown",
 			isCurrent: result.IsCurrent ?? true,
 			state: result.State,
