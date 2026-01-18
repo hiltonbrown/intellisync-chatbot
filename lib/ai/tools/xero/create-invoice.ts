@@ -1,9 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { tool } from "ai";
 import { z } from "zod";
+import { getActiveTenantBinding } from "@/lib/db/queries";
 import { TokenService } from "@/lib/integrations/token-service";
 import { createInvoice } from "@/lib/integrations/xero/operations";
-import { getActiveTenantBinding } from "@/lib/db/queries";
 
 export const createXeroInvoice = tool({
 	description:
@@ -20,16 +20,21 @@ export const createXeroInvoice = tool({
 					quantity: z.number().describe("Quantity"),
 					unitAmount: z.number().describe("Unit price"),
 					accountCode: z.string().optional().describe("Account code"),
-					taxType: z.string().optional().describe("Tax type (e.g., OUTPUT2, INPUT2)"),
+					taxType: z
+						.string()
+						.optional()
+						.describe("Tax type (e.g., OUTPUT2, INPUT2)"),
 				}),
 			)
 			.describe("Invoice line items"),
 		date: z
 			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
 			.optional()
 			.describe("Invoice date in YYYY-MM-DD format (default: today)"),
 		dueDate: z
 			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
 			.optional()
 			.describe("Due date in YYYY-MM-DD format"),
 		reference: z.string().optional().describe("Reference or PO number"),
