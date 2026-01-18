@@ -129,6 +129,16 @@ The app uses Next.js route groups for organization:
   - `update-document.ts` - Update existing artifacts
   - `request-suggestions.ts` - Request document suggestions
   - `get-weather.ts` - Weather lookup tool
+  - `search-abn-by-name.ts` - Search Australian Business Register by company name
+  - `get-abn-details.ts` - Get detailed ABN information
+  - **Xero Integration Tools** (requires Xero connection via `/settings/integrations`):
+    - `list-xero-organisation.ts` - Check Xero connection status and get org details
+    - `list-xero-profit-and-loss.ts` - Retrieve P&L reports with date filtering
+    - `list-xero-balance-sheet.ts` - Retrieve balance sheet reports
+    - `list-xero-invoices.ts` - List/search invoices with filtering and pagination
+    - `list-xero-contacts.ts` - List customers and suppliers with search
+    - `list-xero-accounts.ts` - Get chart of accounts for categorization
+    - `create-xero-invoice.ts` - Create sales invoices or purchase bills (requires approval)
 
 - **`entitlements.ts`** - User-based rate limits and feature access
 

@@ -1,5 +1,4 @@
 import { redis } from "@/lib/redis/client";
-import { v4 as uuidv4 } from "uuid";
 
 export const QUEUE_KEY = "xero-sync-queue";
 
