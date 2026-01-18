@@ -56,7 +56,8 @@ export const getXeroAccounts = tool({
 			const filters: { where?: string } = {};
 
 			if (input.accountType) {
-				filters.where = `Type=="${input.accountType}"`;
+				const safeAccountType = input.accountType.replace(/"/g, '\\"');
+				filters.where = `Type=="${safeAccountType}"`;
 			}
 
 			// 5. Call Xero API
