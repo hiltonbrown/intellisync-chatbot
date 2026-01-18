@@ -61,6 +61,16 @@ export class TokenService {
 			}
 		}
 
+		// Update lastUsedAt for monitoring and audit purposes (Xero best practice)
+		await db
+			.update(integrationGrants)
+			.set({ lastUsedAt: new Date() })
+			.where(eq(integrationGrants.id, grant.id))
+			.catch((error) => {
+				// Non-critical: log but don't fail the request
+				console.warn(`Failed to update lastUsedAt for grant ${grant.id}:`, error);
+			});
+
 		return xeroAdapter.getApiClient(
 			decryptToken(grant.accessTokenEnc),
 			binding.externalTenantId,
@@ -128,6 +138,7 @@ export class TokenService {
 						refreshTokenEnc: encryptToken(tokenSet.refresh_token),
 						expiresAt: newExpiresAt,
 						updatedAt: new Date(),
+						lastUsedAt: new Date(), // Track token refresh for monitoring (Xero best practice)
 						status: "active", // Ensure it's active
 					})
 					.where(eq(integrationGrants.id, grantId))

@@ -26,6 +26,8 @@ import {
 	type Document,
 	document,
 	documentChunk,
+	type IntegrationTenantBinding,
+	integrationTenantBindings,
 	message,
 	type Suggestion,
 	stream,
@@ -886,5 +888,67 @@ export async function upsertUserSettings({
 			"bad_request:database",
 			"Failed to save user settings.",
 		);
+	}
+}
+
+// --- Integration Queries ---
+
+export async function getActiveTenantBinding({
+	clerkOrgId,
+	provider,
+}: {
+	clerkOrgId: string;
+	provider: string;
+}): Promise<IntegrationTenantBinding | undefined> {
+	try {
+		return await db.query.integrationTenantBindings.findFirst({
+			where: and(
+				eq(integrationTenantBindings.clerkOrgId, clerkOrgId),
+				eq(integrationTenantBindings.provider, provider),
+				eq(integrationTenantBindings.status, "active"),
+			),
+		});
+	} catch (error) {
+		console.error(
+			"Failed to get active tenant binding for organization and provider:",
+			{ clerkOrgId, provider, error },
+		);
+		return undefined;
+	}
+}
+
+export async function checkIntegrationStatus({
+	clerkOrgId,
+	provider,
+}: {
+	clerkOrgId: string;
+	provider: string;
+}): Promise<{
+	connected: boolean;
+	tenantName?: string;
+	needsReauth: boolean;
+	tenantId?: string;
+}> {
+	try {
+		const binding = await db.query.integrationTenantBindings.findFirst({
+			where: and(
+				eq(integrationTenantBindings.clerkOrgId, clerkOrgId),
+				eq(integrationTenantBindings.provider, provider),
+			),
+		});
+
+		if (!binding) {
+			return { connected: false, needsReauth: false };
+		}
+
+		return {
+			connected: binding.status === "active",
+			tenantName: binding.externalTenantName || undefined,
+			needsReauth: binding.status === "needs_reauth",
+			tenantId: binding.externalTenantId,
+		};
+	} catch (error) {
+		console.error("Failed to check integration status:", error);
+		return { connected: false, needsReauth: false };
 	}
 }
