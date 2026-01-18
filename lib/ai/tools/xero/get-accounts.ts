@@ -56,7 +56,9 @@ export const getXeroAccounts = tool({
 			const filters: { where?: string } = {};
 
 			if (input.accountType) {
-				const safeAccountType = input.accountType.replace(/"/g, '\\"');
+				const safeAccountType = input.accountType
+					.replace(/\\/g, "\\\\")
+					.replace(/"/g, '\\"');
 				filters.where = `Type=="${safeAccountType}"`;
 			}
 
