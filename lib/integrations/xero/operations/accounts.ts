@@ -1,12 +1,53 @@
 import type { XeroApiClient } from "../adapter";
-import type {
-	XeroAccount,
-	XeroListOptions,
-	XeroApiResponse,
-} from "../types";
+import type { XeroAccount, XeroApiResponse, XeroListOptions } from "../types";
 
 export interface AccountFilters extends XeroListOptions {
 	accountIDs?: string[];
+}
+
+/**
+ * Escapes a string value for use in OData query expressions.
+ * This prevents OData injection by escaping special characters.
+ *
+ * @param value - The string value to escape
+ * @returns The escaped string safe for use in OData queries
+ */
+function escapeODataString(value: string): string {
+	// Escape backslashes first (must be done before other escapes)
+	let escaped = value.replace(/\\/g, "\\\\");
+	// Escape double quotes (used for string delimiters in Xero OData queries)
+	escaped = escaped.replace(/"/g, '\\"');
+	// Escape single quotes
+	escaped = escaped.replace(/'/g, "\\'");
+	return escaped;
+}
+
+/**
+ * Validates that an account code contains only safe characters.
+ * Xero account codes typically contain alphanumeric characters, hyphens, and underscores.
+ *
+ * @param code - The account code to validate
+ * @throws Error if the code contains invalid characters
+ */
+function validateAccountCode(code: string): void {
+	if (!code || code.trim().length === 0) {
+		throw new Error("Account code cannot be empty");
+	}
+
+	// Xero account codes should only contain alphanumeric characters, hyphens, underscores, and dots
+	// This prevents injection attempts with OData operators or special characters
+	const validCodePattern = /^[a-zA-Z0-9\-_.]+$/;
+
+	if (!validCodePattern.test(code)) {
+		throw new Error(
+			"Invalid account code format. Account codes must contain only alphanumeric characters, hyphens, underscores, and dots.",
+		);
+	}
+
+	// Additional length validation (Xero supports up to 10 characters for account codes)
+	if (code.length > 10) {
+		throw new Error("Account code must be 10 characters or less");
+	}
 }
 
 /**
@@ -70,8 +111,12 @@ export async function getAccountByCode(
 	client: XeroApiClient,
 	code: string,
 ): Promise<XeroAccount | null> {
+	// Validate and sanitize the account code to prevent OData injection
+	validateAccountCode(code);
+	const sanitizedCode = escapeODataString(code);
+
 	const accounts = await getAccounts(client, {
-		where: `Code=="${code}"`,
+		where: `Code=="${sanitizedCode}"`,
 	});
 
 	return accounts[0] || null;
