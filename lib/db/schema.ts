@@ -25,6 +25,7 @@ export const userSettings = pgTable("UserSettings", {
 	id: uuid("id").primaryKey().notNull().defaultRandom(),
 	userId: text("userId")
 		.notNull()
+		.unique()
 		.references(() => user.id, { onDelete: "cascade" }),
 	companyName: varchar("companyName", { length: 256 }),
 	timezone: varchar("timezone", { length: 64 }).default("Australia/Brisbane"),

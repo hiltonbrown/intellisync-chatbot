@@ -9,6 +9,7 @@ import {
 	updateUserSystemPrompt,
 } from "@/lib/db/queries";
 import type { UserSettings } from "@/lib/db/schema";
+import { userSettingsInputSchema } from "./personalization-validation";
 
 export async function saveSystemPrompt(systemPrompt: string | null) {
 	const { userId } = await auth();
@@ -50,9 +51,15 @@ export async function saveUserSettings(
 		throw new Error("Unauthorized");
 	}
 
+	// Validate input
+	const validationResult = userSettingsInputSchema.safeParse(settings);
+	if (!validationResult.success) {
+		throw new Error(`Invalid settings: ${validationResult.error.message}`);
+	}
+
 	const result = await createOrUpdateUserSettings({
 		userId,
-		...settings,
+		...validationResult.data,
 	});
 
 	revalidatePath("/");

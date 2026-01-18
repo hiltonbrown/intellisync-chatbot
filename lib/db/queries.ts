@@ -853,7 +853,7 @@ export async function createOrUpdateUserSettings({
 			.values({
 				userId,
 				companyName,
-				timezone: timezone ?? "Australia/Sydney",
+				timezone: timezone ?? "Australia/Brisbane",
 				baseCurrency: baseCurrency ?? "AUD",
 				dateFormat: dateFormat ?? "DD/MM/YYYY",
 				createdAt: new Date(),
@@ -862,10 +862,10 @@ export async function createOrUpdateUserSettings({
 			.onConflictDoUpdate({
 				target: userSettings.userId,
 				set: {
-					companyName,
-					timezone: timezone ?? undefined,
-					baseCurrency: baseCurrency ?? undefined,
-					dateFormat: dateFormat ?? undefined,
+					...(companyName !== undefined && { companyName }),
+					...(timezone !== undefined && { timezone }),
+					...(baseCurrency !== undefined && { baseCurrency }),
+					...(dateFormat !== undefined && { dateFormat }),
 					updatedAt: new Date(),
 				},
 			})

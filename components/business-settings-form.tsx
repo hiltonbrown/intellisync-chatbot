@@ -31,6 +31,7 @@ export function BusinessSettingsForm({
 }: BusinessSettingsFormProps) {
 	const [isPending, startTransition] = useTransition();
 	const [saved, setSaved] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const [companyName, setCompanyName] = useState(
 		initialSettings?.companyName || "",
@@ -48,6 +49,7 @@ export function BusinessSettingsForm({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		setSaved(false);
+		setError(null);
 
 		const settings: UserSettingsInput = {
 			companyName: companyName || null,
@@ -57,9 +59,13 @@ export function BusinessSettingsForm({
 		};
 
 		startTransition(async () => {
-			await saveUserSettings(settings);
-			setSaved(true);
-			setTimeout(() => setSaved(false), 3000);
+			try {
+				await saveUserSettings(settings);
+				setSaved(true);
+				setTimeout(() => setSaved(false), 3000);
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Failed to save settings");
+			}
 		});
 	};
 
@@ -142,6 +148,11 @@ export function BusinessSettingsForm({
 				{saved && (
 					<span className="text-sm text-green-600 dark:text-green-400">
 						Settings saved successfully
+					</span>
+				)}
+				{error && (
+					<span className="text-sm text-red-600 dark:text-red-400">
+						{error}
 					</span>
 				)}
 			</div>
