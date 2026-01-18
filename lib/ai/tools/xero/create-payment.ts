@@ -16,6 +16,7 @@ export const createXeroPayment = tool({
 		amount: z.number().describe("Payment amount"),
 		date: z
 			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
 			.optional()
 			.describe("Payment date in YYYY-MM-DD format (default: today)"),
 		reference: z.string().optional().describe("Payment reference"),
