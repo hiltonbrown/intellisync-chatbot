@@ -11,9 +11,14 @@ export const getXeroProfitLoss = tool({
 	inputSchema: z.object({
 		fromDate: z
 			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
 			.optional()
 			.describe("Start date in YYYY-MM-DD format"),
-		toDate: z.string().optional().describe("End date in YYYY-MM-DD format"),
+		toDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/)
+			.optional()
+			.describe("End date in YYYY-MM-DD format"),
 		periods: z
 			.number()
 			.optional()
