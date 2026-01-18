@@ -120,7 +120,7 @@ export async function POST(req: Request) {
                         resourceId: event.resourceId
                     });
                 } else {
-                    console.warn(`Webhook received for unknown tenant ${tenantId}`, {
+                    console.warn("Webhook received for unknown tenant", tenantId, {
                         tenantId,
                         eventId: externalEventId,
                     });
