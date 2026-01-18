@@ -909,7 +909,10 @@ export async function getActiveTenantBinding({
 			),
 		});
 	} catch (error) {
-		console.error("Failed to get active tenant binding:", error);
+		console.error(
+			"Failed to get active tenant binding for organization and provider:",
+			{ clerkOrgId, provider, error },
+		);
 		return undefined;
 	}
 }
