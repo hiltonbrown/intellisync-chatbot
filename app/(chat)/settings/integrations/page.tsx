@@ -1,66 +1,265 @@
-import { ChevronLeft } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2, Plus, RefreshCcw, Unplug, ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { SettingsHeader } from "@/components/settings-header";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { SettingsHeader } from "@/components/settings-header";
+
+interface IntegrationBinding {
+    id: string;
+    externalTenantName: string;
+    externalTenantId: string;
+    status: string;
+    updatedAt: string;
+}
+
+interface IntegrationGrant {
+    id: string;
+    status: string;
+    authorisedByClerkUserId: string;
+    expiresAt: string;
+}
+
+interface StatusResponse {
+    bindings: IntegrationBinding[];
+    grants: IntegrationGrant[];
+}
+
+interface XeroTenant {
+    id: string;
+    tenantId: string;
+    tenantName: string;
+    tenantType: string;
+}
 
 export default function IntegrationsPage() {
-	return (
-		<>
-			<SettingsHeader />
-			<div className="flex flex-col gap-8 p-4 md:p-8 max-w-4xl mx-auto w-full">
-				<div className="flex items-center gap-4">
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [data, setData] = useState<StatusResponse>({ bindings: [], grants: [] });
+
+    // Modal State
+    const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
+    const [availableTenants, setAvailableTenants] = useState<XeroTenant[]>([]);
+    const [selectingGrantId, setSelectingGrantId] = useState<string | null>(null);
+    const [isSelecting, setIsSelecting] = useState(false);
+
+    // Initial Load
+    useEffect(() => {
+        loadStatus();
+
+        // Check for action param from callback
+        const action = searchParams.get("action");
+        const grantId = searchParams.get("grantId");
+        if (action === "select_tenant" && grantId) {
+            openSelectionModal(grantId);
+            // Clean URL
+            router.replace("/settings/integrations");
+        }
+    }, [searchParams]);
+
+    async function loadStatus() {
+        try {
+            const res = await fetch("/api/integrations/status");
+            if (res.ok) {
+                const json = await res.json();
+                setData(json);
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to load integrations");
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    async function openSelectionModal(grantId: string) {
+        setSelectingGrantId(grantId);
+        setIsSelectModalOpen(true);
+        setAvailableTenants([]);
+
+        try {
+            const res = await fetch(`/api/integrations/xero/tenants/list?grantId=${grantId}`);
+            if (res.ok) {
+                const tenants = await res.json();
+                setAvailableTenants(tenants);
+            } else {
+                toast.error("Failed to list tenants from Xero");
+            }
+        } catch (e) {
+            toast.error("Error fetching tenants");
+        }
+    }
+
+    async function handleSelectTenant(tenantId: string) {
+        if (!selectingGrantId) return;
+        setIsSelecting(true);
+        try {
+            const res = await fetch("/api/integrations/xero/tenants/select", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ grantId: selectingGrantId, tenantId })
+            });
+
+            if (res.ok) {
+                toast.success("Organization connected successfully");
+                setIsSelectModalOpen(false);
+                loadStatus();
+            } else {
+                const txt = await res.text();
+                toast.error(`Connection failed: ${txt}`);
+            }
+        } catch (e) {
+            toast.error("Failed to connect tenant");
+        } finally {
+            setIsSelecting(false);
+        }
+    }
+
+    async function handleDisconnect(bindingId: string) {
+        if (!confirm("Are you sure you want to disconnect this organization?")) return;
+
+        try {
+             const res = await fetch("/api/integrations/xero/disconnect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tenantBindingId: bindingId })
+            });
+
+            if (res.ok) {
+                toast.success("Disconnected successfully");
+                loadStatus();
+            } else {
+                toast.error("Disconnect failed");
+            }
+        } catch (e) {
+            toast.error("Error disconnecting");
+        }
+    }
+
+    function startConnection() {
+        window.location.href = "/api/integrations/xero/start";
+    }
+
+    if (isLoading) {
+        return <div className="p-8 flex justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>;
+    }
+
+    return (
+        <>
+            <SettingsHeader />
+            <div className="flex flex-col gap-8 p-4 md:p-8 max-w-4xl mx-auto w-full">
+                <div className="flex items-center gap-4">
 					<Link href="/settings">
 						<Button variant="ghost" size="icon">
 							<ChevronLeft className="h-5 w-5" />
 						</Button>
 					</Link>
-					<h1 className="text-3xl font-bold">Integrations</h1>
-				</div>
+                    <div>
+                        <h1 className="text-3xl font-bold">Integrations</h1>
+                        <p className="text-muted-foreground">Manage your connections to external services.</p>
+                    </div>
+                </div>
 
-				<div className="flex flex-col gap-6">
-					<div className="border rounded-lg p-6">
-						<h2 className="text-xl font-semibold mb-4">Accounting Software</h2>
-						<p className="text-muted-foreground mb-4">
-							Connect your accounting tools to enable seamless data
-							synchronization and automation.
-						</p>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                             {/* Simple Xero Icon placeholder or text */}
+                             <span className="font-bold text-blue-500">Xero</span>
+                        </CardTitle>
+                        <CardDescription>Connect your Xero organization to sync invoices and contacts.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* Active Connections */}
+                        <div>
+                            <h3 className="text-sm font-medium mb-4">Connected Organizations</h3>
+                            {data.bindings.length === 0 ? (
+                                <div className="text-sm text-muted-foreground italic">No organizations connected.</div>
+                            ) : (
+                                <div className="grid gap-4">
+                                    {data.bindings.map(binding => (
+                                        <div key={binding.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                                            <div>
+                                                <div className="font-semibold">{binding.externalTenantName}</div>
+                                                <div className="text-xs text-muted-foreground">ID: {binding.externalTenantId}</div>
+                                                <div className="mt-1">
+                                                    <Badge variant={binding.status === 'active' ? 'default' : 'destructive'}>
+                                                        {binding.status}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {binding.status === 'needs_reauth' && (
+                                                    <Button size="sm" variant="outline" onClick={startConnection}>
+                                                        <RefreshCcw className="w-4 h-4 mr-2" />
+                                                        Reconnect
+                                                    </Button>
+                                                )}
+                                                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDisconnect(binding.id)}>
+                                                    <Unplug className="w-4 h-4 mr-2" />
+                                                    Disconnect
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
-						<div className="grid gap-4 md:grid-cols-2 mt-6">
-							<div className="border rounded-lg p-4">
-								<h3 className="font-semibold mb-2">Xero</h3>
-								<p className="text-sm text-muted-foreground mb-3">
-									Cloud-based accounting software
-								</p>
-								<div className="text-sm text-muted-foreground">Coming soon</div>
-							</div>
+                        <div className="pt-4 border-t">
+                            <Button onClick={startConnection}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Connect New Organization
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
 
-							<div className="border rounded-lg p-4">
-								<h3 className="font-semibold mb-2">QuickBooks</h3>
-								<p className="text-sm text-muted-foreground mb-3">
-									Accounting software for small businesses
-								</p>
-								<div className="text-sm text-muted-foreground">Coming soon</div>
-							</div>
+                {/* Tenant Selection Modal */}
+                <Dialog open={isSelectModalOpen} onOpenChange={setIsSelectModalOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Select Organization</DialogTitle>
+                            <DialogDescription>
+                                Select which Xero organization you want to connect to this workspace.
+                            </DialogDescription>
+                        </DialogHeader>
 
-							<div className="border rounded-lg p-4">
-								<h3 className="font-semibold mb-2">MYOB</h3>
-								<p className="text-sm text-muted-foreground mb-3">
-									Business management platform
-								</p>
-								<div className="text-sm text-muted-foreground">Coming soon</div>
-							</div>
-
-							<div className="border rounded-lg p-4">
-								<h3 className="font-semibold mb-2">Zoho Books</h3>
-								<p className="text-sm text-muted-foreground mb-3">
-									Online accounting software
-								</p>
-								<div className="text-sm text-muted-foreground">Coming soon</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</>
-	);
+                        <div className="space-y-4 py-4">
+                            {availableTenants.length === 0 ? (
+                                 <div className="flex justify-center p-4">
+                                     <Loader2 className="animate-spin h-6 w-6 text-muted-foreground" />
+                                 </div>
+                            ) : (
+                                <div className="grid gap-2">
+                                    {availableTenants.map(tenant => (
+                                        <Button
+                                            key={tenant.id}
+                                            variant="outline"
+                                            className="justify-between h-auto py-3 px-4"
+                                            onClick={() => handleSelectTenant(tenant.tenantId)}
+                                            disabled={isSelecting}
+                                        >
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-semibold">{tenant.tenantName}</span>
+                                                <span className="text-xs text-muted-foreground">Type: {tenant.tenantType}</span>
+                                            </div>
+                                            {isSelecting && <Loader2 className="h-4 w-4 animate-spin" />}
+                                        </Button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </>
+    );
 }

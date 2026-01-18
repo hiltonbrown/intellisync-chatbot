@@ -11,6 +11,7 @@ import {
 	uuid,
 	varchar,
 	vector,
+	unique,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("User", {
@@ -211,3 +212,74 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+// --- Integration Schema ---
+
+export const integrationGrants = pgTable("integration_grants", {
+	id: uuid("id").primaryKey().notNull().defaultRandom(),
+	authorisedByClerkUserId: text("authorised_by_clerk_user_id").notNull(),
+	clerkOrgId: text("clerk_org_id").notNull(),
+	provider: varchar("provider", { length: 50 }).notNull().default("xero"),
+	accessTokenEnc: text("access_token_enc").notNull(),
+	refreshTokenEnc: text("refresh_token_enc").notNull(),
+	expiresAt: timestamp("expires_at").notNull(),
+	status: varchar("status", {
+		enum: ["active", "superseded", "revoked", "refresh_failed"],
+	})
+		.notNull()
+		.default("active"),
+	createdAt: timestamp("created_at").notNull().defaultNow(),
+	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	lastUsedAt: timestamp("last_used_at"),
+});
+
+export type IntegrationGrant = InferSelectModel<typeof integrationGrants>;
+
+export const integrationTenantBindings = pgTable(
+	"integration_tenant_bindings",
+	{
+		id: uuid("id").primaryKey().notNull().defaultRandom(),
+		clerkOrgId: text("clerk_org_id").notNull(),
+		provider: varchar("provider", { length: 50 }).notNull().default("xero"),
+		externalTenantId: text("external_tenant_id").notNull(),
+		externalTenantName: text("external_tenant_name"),
+		activeGrantId: uuid("active_grant_id")
+			.notNull()
+			.references(() => integrationGrants.id),
+		status: varchar("status", {
+			enum: ["active", "suspended", "revoked", "needs_reauth"],
+		})
+			.notNull()
+			.default("active"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => ({
+		unq: unique().on(table.provider, table.externalTenantId),
+	}),
+);
+
+export type IntegrationTenantBinding = InferSelectModel<
+	typeof integrationTenantBindings
+>;
+
+export const integrationWebhookEvents = pgTable("integration_webhook_events", {
+	id: uuid("id").primaryKey().notNull().defaultRandom(),
+	provider: varchar("provider", { length: 50 }).notNull().default("xero"),
+	externalEventId: text("external_event_id").notNull().unique(), // for dedupe
+	payload: json("payload").notNull(),
+	processedAt: timestamp("processed_at"),
+	createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const integrationSyncState = pgTable("integration_sync_state", {
+	id: uuid("id").primaryKey().notNull().defaultRandom(),
+	tenantBindingId: uuid("tenant_binding_id")
+		.notNull()
+		.references(() => integrationTenantBindings.id)
+		.unique(),
+	dataType: varchar("data_type", { length: 50 }).notNull(), // e.g. "invoices", "contacts"
+	cursor: text("cursor"),
+	lastSyncAt: timestamp("last_sync_at"),
+	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
