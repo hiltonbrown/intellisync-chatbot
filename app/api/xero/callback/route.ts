@@ -4,7 +4,7 @@ import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { db } from "@/lib/db";
 import { integrationGrants } from "@/lib/db/schema";
 import { encryptToken } from "@/lib/utils/encryption";
-import { addMinutes } from "date-fns";
+import { addSeconds } from "date-fns";
 
 const xeroAdapter = new XeroAdapter();
 
@@ -46,9 +46,9 @@ export async function GET(req: Request) {
 
     // Org mismatch check is good practice too
     if (orgId && orgId !== decodedState.clerk_org_id) {
-         // User switched orgs in the meantime?
-         // We should probably bind it to the org in the state, but this mismatch is suspicious.
-         console.warn("Org ID mismatch in callback", { current: orgId, state: decodedState.clerk_org_id });
+         // User switched orgs in the meantime - this is a security issue
+         console.error("Org ID mismatch in callback", { current: orgId, state: decodedState.clerk_org_id });
+         return new Response("Forbidden: Organization mismatch", { status: 403 });
     }
 
 
@@ -57,6 +57,8 @@ export async function GET(req: Request) {
 		const tokenSet = await xeroAdapter.exchangeCode(code);
 
 		// Store Grant
+		// Xero returns expires_in in seconds (usually 1800s = 30 minutes)
+		const expiresInSeconds = tokenSet.expires_in || 1800;
 		const [grant] = await db
 			.insert(integrationGrants)
 			.values({
@@ -65,7 +67,7 @@ export async function GET(req: Request) {
 				provider: "xero",
 				accessTokenEnc: encryptToken(tokenSet.access_token),
 				refreshTokenEnc: encryptToken(tokenSet.refresh_token),
-				expiresAt: addMinutes(new Date(), 30), // Default 30 mins
+				expiresAt: addSeconds(new Date(), expiresInSeconds),
 				status: "active",
 			})
 			.returning();
