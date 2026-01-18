@@ -15,7 +15,8 @@ export async function GET(req: Request) {
 	const error = searchParams.get("error");
 
 	if (error) {
-		return new Response(`Xero Auth Error: ${error}`, { status: 400 });
+		console.error("Xero OAuth callback reported error:", error);
+		return new Response("Xero Auth Error", { status: 400 });
 	}
 
 	if (!code || !state) {
