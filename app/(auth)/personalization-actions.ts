@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import {
-	createOrUpdateUserSettings,
+	upsertUserSettings,
 	getUserById,
 	getUserSettingsByUserId,
 	updateUserSystemPrompt,
@@ -57,7 +57,7 @@ export async function saveUserSettings(
 		throw new Error(`Invalid settings: ${validationResult.error.message}`);
 	}
 
-	const result = await createOrUpdateUserSettings({
+	const result = await upsertUserSettings({
 		userId,
 		...validationResult.data,
 	});
