@@ -28,7 +28,6 @@ To add a new Gemini model to the application:
      },
    ];
    ```
-The `lib/ai/models.ts` file has been verified and contains the `google/gemini-3-pro-preview` model as described. The `tailwindcss` version in `package.json` is also consistent with the documented usage of Tailwind CSS v4.1.
 
 2. **Environment Variables**: Models are accessed through Vercel AI Gateway, so ensure `AI_GATEWAY_API_KEY` is configured (or deploy on Vercel for automatic OIDC authentication)
 

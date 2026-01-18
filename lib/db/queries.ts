@@ -31,7 +31,9 @@ import {
 	stream,
 	suggestion,
 	type User,
+	type UserSettings,
 	user,
+	userSettings,
 	vote,
 } from "./schema";
 
@@ -807,6 +809,82 @@ export async function getSystemPromptByUserId({ id }: { id: string }) {
 		throw new ChatSDKError(
 			"bad_request:database",
 			"Failed to get system prompt by user id",
+		);
+	}
+}
+
+// UserSettings CRUD functions
+
+export async function getUserSettingsByUserId({
+	userId,
+}: {
+	userId: string;
+}): Promise<UserSettings | null> {
+	try {
+		const [settings] = await db
+			.select()
+			.from(userSettings)
+			.where(eq(userSettings.userId, userId));
+		return settings || null;
+	} catch (_error) {
+		throw new ChatSDKError(
+			"bad_request:database",
+			"Failed to get user settings",
+		);
+	}
+}
+
+export async function upsertUserSettings({
+	userId,
+	companyName,
+	timezone,
+	baseCurrency,
+	dateFormat,
+}: {
+	userId: string;
+	companyName?: string | null;
+	timezone?: string | null;
+	baseCurrency?: string | null;
+	dateFormat?: string | null;
+}): Promise<UserSettings> {
+	try {
+		// Prepare the update set, only including fields that are explicitly provided.
+		const updateSet: Partial<
+			Pick<
+				UserSettings,
+				"companyName" | "timezone" | "baseCurrency" | "dateFormat" | "updatedAt"
+			>
+		> = {
+			updatedAt: new Date(),
+		};
+		if (companyName !== undefined) updateSet.companyName = companyName;
+		if (timezone !== undefined) updateSet.timezone = timezone;
+		if (baseCurrency !== undefined) updateSet.baseCurrency = baseCurrency;
+		if (dateFormat !== undefined) updateSet.dateFormat = dateFormat;
+
+		const [result] = await db
+			.insert(userSettings)
+			.values({
+				userId,
+				companyName: companyName,
+				timezone: timezone ?? "Australia/Brisbane", // Corrected default timezone
+				baseCurrency: baseCurrency ?? "AUD",
+				dateFormat: dateFormat ?? "DD/MM/YYYY",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.onConflictDoUpdate({
+				target: userSettings.userId,
+				set: updateSet,
+			})
+			.returning();
+
+		return result;
+	} catch (error) {
+		console.error("Failed to upsert user settings:", error);
+		throw new ChatSDKError(
+			"bad_request:database",
+			"Failed to save user settings.",
 		);
 	}
 }

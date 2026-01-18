@@ -5,63 +5,63 @@ import { getDocumentById } from "@/lib/db/queries";
 import type { ChatMessage } from "@/lib/types";
 
 type UpdateDocumentProps = {
-  userId: string;
-  chatId: string;
-  dataStream: UIMessageStreamWriter<ChatMessage>;
+	userId: string;
+	chatId: string;
+	dataStream: UIMessageStreamWriter<ChatMessage>;
 };
 
 export const updateDocument = ({
-  userId,
-  chatId,
-  dataStream,
+	userId,
+	chatId,
+	dataStream,
 }: UpdateDocumentProps) =>
-  tool({
-    description: "Update a document with the given description.",
-    inputSchema: z.object({
-      id: z.string().describe("The ID of the document to update"),
-      description: z
-        .string()
-        .describe("The description of changes that need to be made"),
-    }),
-    execute: async ({ id, description }) => {
-      const document = await getDocumentById({ id });
+	tool({
+		description: "Update a document with the given description.",
+		inputSchema: z.object({
+			id: z.string().describe("The ID of the document to update"),
+			description: z
+				.string()
+				.describe("The description of changes that need to be made"),
+		}),
+		execute: async ({ id, description }) => {
+			const document = await getDocumentById({ id });
 
-      if (!document) {
-        return {
-          error: "Document not found",
-        };
-      }
+			if (!document) {
+				return {
+					error: "Document not found",
+				};
+			}
 
-      dataStream.write({
-        type: "data-clear",
-        data: null,
-        transient: true,
-      });
+			dataStream.write({
+				type: "data-clear",
+				data: null,
+				transient: true,
+			});
 
-      const documentHandler = documentHandlersByArtifactKind.find(
-        (documentHandlerByArtifactKind) =>
-          documentHandlerByArtifactKind.kind === document.kind
-      );
+			const documentHandler = documentHandlersByArtifactKind.find(
+				(documentHandlerByArtifactKind) =>
+					documentHandlerByArtifactKind.kind === document.kind,
+			);
 
-      if (!documentHandler) {
-        throw new Error(`No document handler found for kind: ${document.kind}`);
-      }
+			if (!documentHandler) {
+				throw new Error(`No document handler found for kind: ${document.kind}`);
+			}
 
-      const content = await documentHandler.onUpdateDocument({
-        document,
-        description,
-        dataStream,
-        userId,
-        chatId,
-      });
+			const content = await documentHandler.onUpdateDocument({
+				document,
+				description,
+				dataStream,
+				userId,
+				chatId,
+			});
 
-      dataStream.write({ type: "data-finish", data: null, transient: true });
+			dataStream.write({ type: "data-finish", data: null, transient: true });
 
-      return {
-        id,
-        title: document.title,
-        kind: document.kind,
-        content,
-      };
-    },
-  });
+			return {
+				id,
+				title: document.title,
+				kind: document.kind,
+				content,
+			};
+		},
+	});

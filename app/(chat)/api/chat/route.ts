@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { geolocation } from "@vercel/functions";
 import {
 	convertToModelMessages,
@@ -14,13 +14,18 @@ import {
 	type ResumableStreamContext,
 } from "resumable-stream";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
-import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
+import {
+	createIntellisyncContext,
+	intellisyncSystemPrompt,
+	type RequestHints,
+} from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { buildRagContext } from "@/lib/ai/rag";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getABNDetails } from "@/lib/ai/tools/get-abn-details";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
+import { searchABNByName } from "@/lib/ai/tools/search-abn-by-name";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { DEFAULT_CHAT_TITLE, isProductionEnvironment } from "@/lib/constants";
 import {
@@ -31,6 +36,7 @@ import {
 	getMessageCountByUserId,
 	getMessagesByChatId,
 	getUserById,
+	getUserSettingsByUserId,
 	saveChat,
 	saveMessages,
 	updateChatTitleById,
@@ -125,6 +131,22 @@ export async function POST(request: Request) {
 		let titlePromise: Promise<string> | null = null;
 
 		const dbUser = await getUserById({ id: userId });
+		const userSettings = await getUserSettingsByUserId({ userId });
+
+		// Get organization name from Clerk if available
+		const { orgId } = await auth();
+		let companyName = userSettings?.companyName || "Your Organisation";
+		if (orgId) {
+			try {
+				const client = await clerkClient();
+				const org = await client.organizations.getOrganization({
+					organizationId: orgId,
+				});
+				companyName = org.name;
+			} catch (error) {
+				console.warn("Failed to fetch organization name:", error);
+			}
+		}
 
 		if (chat) {
 			if (chat.userId !== userId) {
@@ -152,6 +174,35 @@ export async function POST(request: Request) {
 			? (messages as ChatMessage[])
 			: [...convertToUIMessages(messagesFromDb), message as ChatMessage];
 
+		// Validate that we have messages to process
+		if (!uiMessages || uiMessages.length === 0 || !uiMessages[0]) {
+			return new ChatSDKError("bad_request:api").toResponse();
+		}
+
+		// Validate that messages have content (parts with actual data)
+		const hasValidContent = uiMessages.some((msg) => {
+			if (!msg.parts || msg.parts.length === 0) return false;
+			return msg.parts.some((part: any) => {
+				if (part.type === "text") {
+					return part.text && part.text.trim().length > 0;
+				}
+				if (part.type === "file") {
+					return part.url && part.url.length > 0;
+				}
+				return true; // Other part types are assumed valid
+			});
+		});
+
+		if (!hasValidContent) {
+			console.warn("No valid message content found in request", {
+				messageCount: uiMessages.length,
+				firstMessageParts: uiMessages[0]?.parts?.length ?? 0,
+				isToolApproval: isToolApprovalFlow,
+				chatId: id,
+			});
+			return new ChatSDKError("bad_request:api").toResponse();
+		}
+
 		const { longitude, latitude, city, country } = geolocation(request);
 
 		const requestHints: RequestHints = {
@@ -170,11 +221,20 @@ export async function POST(request: Request) {
 			query: ragQuery,
 		});
 
-		const baseSystemPrompt = systemPrompt({
+		// Build Intellisync context with user data and settings
+		const intellisyncContext = createIntellisyncContext({
+			firstName: user.firstName,
+			lastName: user.lastName,
+			companyName,
+			timezone: userSettings?.timezone,
+			baseCurrency: userSettings?.baseCurrency,
+			dateFormat: userSettings?.dateFormat,
 			selectedChatModel,
 			requestHints,
 			customPrompt: dbUser?.systemPrompt,
 		});
+
+		const baseSystemPrompt = intellisyncSystemPrompt(intellisyncContext);
 
 		let currentDocumentContext = "";
 		if (currentDocumentId) {
@@ -310,7 +370,9 @@ ${file!.content}
 						"createDocument",
 						"updateDocument",
 						"requestSuggestions",
-						...(process.env.ABN_LOOKUP_ENABLED === "true" ? ["getABNDetails" as const] : []),
+						...(process.env.ABN_LOOKUP_ENABLED === "true"
+							? ["getABNDetails" as const, "searchABNByName" as const]
+							: []),
 					],
 					experimental_transform: smoothStream({ chunking: "word" }),
 					providerOptions: isReasoningModel
@@ -328,7 +390,9 @@ ${file!.content}
 							userId,
 							dataStream,
 						}),
-						...(process.env.ABN_LOOKUP_ENABLED === "true" ? { getABNDetails } : {}),
+						...(process.env.ABN_LOOKUP_ENABLED === "true"
+							? { getABNDetails, searchABNByName }
+							: {}),
 					},
 					experimental_telemetry: {
 						isEnabled: isProductionEnvironment,
@@ -423,6 +487,19 @@ ${file!.content}
 			)
 		) {
 			return new ChatSDKError("bad_request:activate_gateway").toResponse();
+		}
+
+		// Check for empty prompt error (AI Gateway specific)
+		if (
+			error instanceof Error &&
+			(error.message?.includes("must include at least one parts field") ||
+				error.message?.includes("The model is overloaded"))
+		) {
+			console.error("Empty prompt or overloaded model error:", {
+				message: error.message,
+				vercelId,
+			});
+			return new ChatSDKError("bad_request:api").toResponse();
 		}
 
 		console.error("Unhandled error in chat API:", error, { vercelId });

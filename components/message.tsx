@@ -472,6 +472,155 @@ const PurePreviewMessage = ({
 							);
 						}
 
+						if (type === "tool-searchABNByName") {
+							const { toolCallId, state } = part;
+							const approvalId = getApprovalId(part);
+							const isDenied = getIsDenied(part);
+
+							if (state === "output-available") {
+								const output = part.output as
+									| { error: string }
+									| {
+											results: Array<{
+												abn: string;
+												name: string;
+												nameType: string;
+												status: string;
+												state: string;
+												postcode: string;
+												matchScore: number;
+											}>;
+											totalFound: number;
+											searchTerm: string;
+											source: string;
+											message?: string;
+											hint?: string;
+									  };
+
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Tool className="w-full" defaultOpen={true}>
+											<ToolHeader
+												state="output-available"
+												type="tool-searchABNByName"
+											/>
+											<ToolContent>
+												{"error" in output ? (
+													<div className="px-4 py-3 text-red-500 text-sm">
+														{String(output.error)}
+													</div>
+												) : output.results.length === 0 ? (
+													<div className="px-4 py-3 text-muted-foreground text-sm">
+														{output.message ||
+															`No results found for "${output.searchTerm}"`}
+													</div>
+												) : (
+													<div className="space-y-2 px-4 py-3 text-sm">
+														<div className="text-muted-foreground text-xs">
+															Found {output.totalFound} result(s) for "
+															{output.searchTerm}"
+														</div>
+														<div className="space-y-2">
+															{output.results
+																.slice(0, 5)
+																.map((result, index) => (
+																	<div
+																		key={`${result.abn}-${index}`}
+																		className="rounded border p-2 text-sm"
+																	>
+																		<div className="font-medium text-foreground">
+																			{result.name}
+																		</div>
+																		<div className="text-muted-foreground text-xs">
+																			ABN: {result.abn} • {result.nameType} •{" "}
+																			{result.state} {result.postcode}
+																		</div>
+																		<div className="flex items-center gap-2 text-xs">
+																			<span
+																				className={
+																					result.status === "Active"
+																						? "text-green-600"
+																						: "text-yellow-600"
+																				}
+																			>
+																				{result.status}
+																			</span>
+																			<span className="text-muted-foreground">
+																				Match: {result.matchScore}%
+																			</span>
+																		</div>
+																	</div>
+																))}
+														</div>
+														{output.hint && (
+															<div className="border-t pt-2 text-muted-foreground text-xs">
+																{output.hint}
+															</div>
+														)}
+														<div className="border-t pt-2 text-muted-foreground text-xs">
+															Source: {output.source}
+														</div>
+													</div>
+												)}
+											</ToolContent>
+										</Tool>
+									</div>
+								);
+							}
+
+							if (isDenied) {
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Tool className="w-full" defaultOpen={true}>
+											<ToolHeader
+												state="output-denied"
+												type="tool-searchABNByName"
+											/>
+											<ToolContent>
+												<div className="px-4 py-3 text-muted-foreground text-sm">
+													ABN search was denied.
+												</div>
+											</ToolContent>
+										</Tool>
+									</div>
+								);
+							}
+
+							if (state === "approval-responded") {
+								return (
+									<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+										<Tool className="w-full" defaultOpen={true}>
+											<ToolHeader state={state} type="tool-searchABNByName" />
+											<ToolContent>
+												<ToolInput input={part.input} />
+											</ToolContent>
+										</Tool>
+									</div>
+								);
+							}
+
+							return (
+								<div className={TOOL_WIDTH_CLASS} key={toolCallId}>
+									<Tool className="w-full" defaultOpen={true}>
+										<ToolHeader state={state} type="tool-searchABNByName" />
+										<ToolContent>
+											{(state === "input-available" ||
+												state === "approval-requested") && (
+												<ToolInput input={part.input} />
+											)}
+											{state === "approval-requested" && approvalId && (
+												<ToolApprovalButtons
+													addToolApprovalResponse={addToolApprovalResponse}
+													approvalId={approvalId}
+													toolName="ABN name search"
+												/>
+											)}
+										</ToolContent>
+									</Tool>
+								</div>
+							);
+						}
+
 						return null;
 					})}
 
