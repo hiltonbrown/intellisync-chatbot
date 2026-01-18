@@ -1,3 +1,5 @@
+import "server-only";
+
 import { db } from "@/lib/db";
 import { integrationGrants } from "@/lib/db/schema";
 import { TokenService } from "@/lib/integrations/token-service";
@@ -6,9 +8,11 @@ import { addMinutes } from "date-fns";
 
 export const dynamic = 'force-dynamic';
 
+const KEEP_ALIVE_THRESHOLD_MINUTES = 10;
+
 export async function GET(req: Request) {
     // 1. Find active grants expiring in the next 10 minutes
-    const threshold = addMinutes(new Date(), 10);
+    const threshold = addMinutes(new Date(), KEEP_ALIVE_THRESHOLD_MINUTES);
 
     const grants = await db
         .select()
@@ -27,13 +31,15 @@ export async function GET(req: Request) {
         failed: 0
     };
 
-    // 2. Refresh each one
-    for (const grant of grants) {
-        try {
-            await TokenService.refreshGrantSingleFlight(grant.id);
+    // 2. Refresh each one in parallel (allSettled)
+    const refreshPromises = grants.map(grant => TokenService.refreshGrantSingleFlight(grant.id));
+    const outcomes = await Promise.allSettled(refreshPromises);
+
+    for (const outcome of outcomes) {
+        if (outcome.status === 'fulfilled') {
             results.success++;
-        } catch (e) {
-            console.error(`Keep-Alive: Failed to refresh grant ${grant.id}`, e);
+        } else {
+            console.error(`Keep-Alive: Failed to refresh grant`, outcome.reason);
             results.failed++;
         }
     }

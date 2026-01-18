@@ -4,7 +4,7 @@ import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { db } from "@/lib/db";
 import { integrationGrants } from "@/lib/db/schema";
 import { encryptToken } from "@/lib/utils/encryption";
-import { addMinutes } from "date-fns";
+import { addSeconds } from "date-fns";
 
 const xeroAdapter = new XeroAdapter();
 
@@ -15,8 +15,7 @@ export async function GET(req: Request) {
 	const error = searchParams.get("error");
 
 	if (error) {
-		console.error("Xero OAuth callback reported error:", error);
-		return new Response("Xero Auth Error", { status: 400 });
+		return new Response(`Xero Auth Error: ${error}`, { status: 400 });
 	}
 
 	if (!code || !state) {
@@ -47,19 +46,20 @@ export async function GET(req: Request) {
 
     // Org mismatch check is good practice too
     if (orgId && orgId !== decodedState.clerk_org_id) {
-         // User switched orgs in the meantime?
-         // We should probably bind it to the org in the state, but this mismatch is suspicious.
-         console.warn("Org ID mismatch in callback", { current: orgId, state: decodedState.clerk_org_id });
+         // User switched orgs in the meantime - this is a security issue
+         console.error("Org ID mismatch in callback", { current: orgId, state: decodedState.clerk_org_id });
+         return new Response("Forbidden: Organization mismatch", { status: 403 });
     }
 
 
-	let grant;
 	try {
 		// Exchange Code
 		const tokenSet = await xeroAdapter.exchangeCode(code);
 
 		// Store Grant
-		[grant] = await db
+		// Xero returns expires_in in seconds (usually 1800s = 30 minutes)
+		const expiresInSeconds = tokenSet.expires_in || 1800;
+		const [grant] = await db
 			.insert(integrationGrants)
 			.values({
 				authorisedByClerkUserId: decodedState.clerk_user_id,
@@ -67,16 +67,15 @@ export async function GET(req: Request) {
 				provider: "xero",
 				accessTokenEnc: encryptToken(tokenSet.access_token),
 				refreshTokenEnc: encryptToken(tokenSet.refresh_token),
-				expiresAt: addMinutes(new Date(), 30), // Default 30 mins
+				expiresAt: addSeconds(new Date(), expiresInSeconds),
 				status: "active",
 			})
 			.returning();
+
+		// Redirect to settings page with grantId to trigger tenant selection
+		redirect(`/settings/integrations?action=select_tenant&grantId=${grant.id}`);
 	} catch (e) {
 		console.error("Xero Callback Error:", e);
 		return new Response("Failed to complete Xero connection", { status: 500 });
 	}
-
-	// Redirect to settings page with grantId to trigger tenant selection
-	// Note: redirect() must be outside try/catch as it throws NEXT_REDIRECT
-	redirect(`/settings/integrations?action=select_tenant&grantId=${grant.id}`);
 }

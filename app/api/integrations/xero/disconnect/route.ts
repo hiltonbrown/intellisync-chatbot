@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { decryptToken } from "@/lib/utils/encryption";
+import { randomBytes } from "crypto";
 
 const xeroAdapter = new XeroAdapter();
 
@@ -18,7 +19,9 @@ export async function POST(req: Request) {
     if (!userId || !orgId) {
         return new Response("Unauthorized", { status: 401 });
     }
-     if (orgRole !== "org:admin" && orgRole !== "org:owner") {
+
+    const allowedRoles = ["org:admin", "org:owner"];
+    if (!orgRole || !allowedRoles.includes(orgRole)) {
          return new Response("Forbidden", { status: 403 });
     }
 
@@ -81,12 +84,12 @@ export async function POST(req: Request) {
                  console.warn("Failed to revoke token upstream:", e);
              }
 
-             // Overwrite tokens in DB
+             // Overwrite tokens in DB with random garbage
              await db.update(integrationGrants)
                 .set({
                     status: "revoked",
-                    accessTokenEnc: "revoked",
-                    refreshTokenEnc: "revoked",
+                    accessTokenEnc: randomBytes(64).toString("hex"),
+                    refreshTokenEnc: randomBytes(64).toString("hex"),
                     updatedAt: new Date()
                 })
                 .where(eq(integrationGrants.id, grantId));
