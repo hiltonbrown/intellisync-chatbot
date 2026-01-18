@@ -27,8 +27,18 @@ import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { searchABNByName } from "@/lib/ai/tools/search-abn-by-name";
 import { updateDocument } from "@/lib/ai/tools/update-document";
+import {
+	getXeroAccounts,
+	getXeroBalanceSheet,
+	getXeroContacts,
+	getXeroInvoices,
+	getXeroProfitLoss,
+	createXeroInvoice,
+	createXeroPayment,
+} from "@/lib/ai/tools/xero";
 import { DEFAULT_CHAT_TITLE, isProductionEnvironment } from "@/lib/constants";
 import {
+	checkIntegrationStatus,
 	createStreamId,
 	deleteChatById,
 	getChatById,
@@ -315,9 +325,37 @@ ${file!.content}
 			}
 		}
 
+		// Check Xero integration status and add context if connected
+		let xeroIntegrationContext = "";
+		if (orgId) {
+			const xeroStatus = await checkIntegrationStatus({
+				clerkOrgId: orgId,
+				provider: "xero",
+			});
+
+			if (xeroStatus.connected && xeroStatus.tenantName) {
+				xeroIntegrationContext = `
+XERO INTEGRATION CONTEXT:
+You have access to ${companyName}'s Xero accounting data (${xeroStatus.tenantName}).
+
+Available Xero operations:
+- View contacts (customers/suppliers): getXeroContacts
+- View invoices and bills: getXeroInvoices
+- View chart of accounts: getXeroAccounts
+- Generate Profit & Loss report: getXeroProfitLoss
+- Generate Balance Sheet report: getXeroBalanceSheet
+- Create invoices (requires approval): createXeroInvoice
+- Record payments (requires approval): createXeroPayment
+
+When users ask about financial data, invoices, contacts, or accounting information, use these tools to provide accurate, real-time data from Xero. All write operations (create invoice, record payment) will require user approval before execution.
+`;
+			}
+		}
+
 		const systemWithContext = [
 			baseSystemPrompt,
 			documentContext ? `DOCUMENT CONTEXT:\n${documentContext}` : null,
+			xeroIntegrationContext || null,
 			currentDocumentContext,
 			uploadedFileContext,
 			"Use the conversation below to answer the user.",
@@ -373,6 +411,13 @@ ${file!.content}
 						...(process.env.ABN_LOOKUP_ENABLED === "true"
 							? ["getABNDetails" as const, "searchABNByName" as const]
 							: []),
+						"getXeroContacts",
+						"getXeroInvoices",
+						"getXeroAccounts",
+						"getXeroProfitLoss",
+						"getXeroBalanceSheet",
+						"createXeroInvoice",
+						"createXeroPayment",
 					],
 					experimental_transform: smoothStream({ chunking: "word" }),
 					providerOptions: isReasoningModel
@@ -393,6 +438,13 @@ ${file!.content}
 						...(process.env.ABN_LOOKUP_ENABLED === "true"
 							? { getABNDetails, searchABNByName }
 							: {}),
+					getXeroContacts,
+					getXeroInvoices,
+					getXeroAccounts,
+					getXeroProfitLoss,
+					getXeroBalanceSheet,
+					createXeroInvoice,
+					createXeroPayment,
 					},
 					experimental_telemetry: {
 						isEnabled: isProductionEnvironment,
