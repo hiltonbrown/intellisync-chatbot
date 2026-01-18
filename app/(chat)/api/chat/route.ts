@@ -438,13 +438,13 @@ When users ask about financial data, invoices, contacts, or accounting informati
 						...(process.env.ABN_LOOKUP_ENABLED === "true"
 							? { getABNDetails, searchABNByName }
 							: {}),
-					getXeroContacts,
-					getXeroInvoices,
-					getXeroAccounts,
-					getXeroProfitLoss,
-					getXeroBalanceSheet,
-					createXeroInvoice,
-					createXeroPayment,
+						getXeroContacts,
+						getXeroInvoices,
+						getXeroAccounts,
+						getXeroProfitLoss,
+						getXeroBalanceSheet,
+						createXeroInvoice,
+						createXeroPayment,
 					},
 					experimental_telemetry: {
 						isEnabled: isProductionEnvironment,
