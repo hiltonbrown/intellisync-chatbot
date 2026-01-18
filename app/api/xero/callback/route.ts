@@ -15,8 +15,7 @@ export async function GET(req: Request) {
 	const error = searchParams.get("error");
 
 	if (error) {
-		console.error("Xero OAuth callback reported error:", error);
-		return new Response("Xero Auth Error", { status: 400 });
+		return new Response(`Xero Auth Error: ${error}`, { status: 400 });
 	}
 
 	if (!code || !state) {
@@ -53,13 +52,12 @@ export async function GET(req: Request) {
     }
 
 
-	let grant;
 	try {
 		// Exchange Code
 		const tokenSet = await xeroAdapter.exchangeCode(code);
 
 		// Store Grant
-		[grant] = await db
+		const [grant] = await db
 			.insert(integrationGrants)
 			.values({
 				authorisedByClerkUserId: decodedState.clerk_user_id,
@@ -71,12 +69,11 @@ export async function GET(req: Request) {
 				status: "active",
 			})
 			.returning();
+
+		// Redirect to settings page with grantId to trigger tenant selection
+		redirect(`/settings/integrations?action=select_tenant&grantId=${grant.id}`);
 	} catch (e) {
 		console.error("Xero Callback Error:", e);
 		return new Response("Failed to complete Xero connection", { status: 500 });
 	}
-
-	// Redirect to settings page with grantId to trigger tenant selection
-	// Note: redirect() must be outside try/catch as it throws NEXT_REDIRECT
-	redirect(`/settings/integrations?action=select_tenant&grantId=${grant.id}`);
 }

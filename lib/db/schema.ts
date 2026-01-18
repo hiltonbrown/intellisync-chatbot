@@ -1,4 +1,3 @@
-import type { InferSelectModel } from "drizzle-orm";
 import {
 	boolean,
 	foreignKey,
@@ -12,7 +11,9 @@ import {
 	varchar,
 	vector,
 	unique,
+    index,
 } from "drizzle-orm/pg-core";
+import type { InferSelectModel } from "drizzle-orm";
 
 export const user = pgTable("User", {
 	id: text("id").primaryKey().notNull(),
@@ -231,7 +232,10 @@ export const integrationGrants = pgTable("integration_grants", {
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 	lastUsedAt: timestamp("last_used_at"),
-});
+}, (table) => ({
+    orgIdx: index("integration_grants_org_idx").on(table.clerkOrgId),
+    expiryIdx: index("integration_grants_expiry_idx").on(table.expiresAt, table.status),
+}));
 
 export type IntegrationGrant = InferSelectModel<typeof integrationGrants>;
 
@@ -256,6 +260,7 @@ export const integrationTenantBindings = pgTable(
 	},
 	(table) => ({
 		unq: unique().on(table.provider, table.externalTenantId),
+        orgIdx: index("integration_tenant_bindings_org_idx").on(table.clerkOrgId),
 	}),
 );
 

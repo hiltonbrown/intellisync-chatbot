@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 
 // The key provided is a 128-char hex string (64 bytes = 512 bits).
@@ -5,15 +7,15 @@ import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 // We will use the first 32 bytes of the hex-decoded key.
 
 function getKey(): Buffer {
-	const KEY_HEX = process.env.TOKEN_ENC_KEY_B64 || "";
+	const KEY_HEX = process.env.TOKEN_ENC_KEY_HEX || "";
 	if (!KEY_HEX) {
-		throw new Error("TOKEN_ENC_KEY_B64 is not defined");
+		throw new Error("TOKEN_ENC_KEY_HEX is not defined");
 	}
 	// Decode hex string to buffer
 	const keyBuffer = Buffer.from(KEY_HEX, "hex");
 
 	if (keyBuffer.length < 32) {
-		throw new Error("TOKEN_ENC_KEY_B64 must be at least 32 bytes (64 hex chars)");
+		throw new Error("TOKEN_ENC_KEY_HEX must be at least 32 bytes (64 hex chars)");
 	}
 
 	// Use first 32 bytes for AES-256

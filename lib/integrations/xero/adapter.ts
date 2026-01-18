@@ -1,3 +1,5 @@
+import "server-only";
+
 export interface XeroTokenSet {
 	access_token: string;
 	refresh_token: string;
@@ -14,11 +16,6 @@ export interface XeroTenant {
 	tenantName: string;
 	createdDateUtc: string;
 	updatedDateUtc: string;
-}
-
-export interface XeroApiClient {
-	fetch: (path: string, init?: RequestInit) => Promise<Response>;
-	tenantId: string;
 }
 
 export class XeroAdapter {
@@ -140,9 +137,8 @@ export class XeroAdapter {
 		});
 	}
 
-	getApiClient(accessToken: string, tenantId: string): XeroApiClient {
+	getApiClient(accessToken: string, tenantId: string) {
 		return {
-			tenantId,
 			// Basic fetch wrapper with injected headers
 			fetch: async (path: string, init?: RequestInit) => {
 				const url = `https://api.xero.com/api.xro/2.0${path}`;
@@ -156,9 +152,9 @@ export class XeroAdapter {
 					headers,
 				});
 
-				if (response.status === 401) {
-					throw new Error("Xero API 401 Unauthorized");
-				}
+                if (response.status === 401) {
+                    throw new Error("Xero API 401 Unauthorized");
+                }
 
 				return response;
 			},

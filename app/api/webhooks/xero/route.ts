@@ -1,15 +1,15 @@
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
 import { integrationWebhookEvents, integrationTenantBindings } from "@/lib/db/schema";
 import { SyncQueue } from "@/lib/integrations/sync/queue";
 import { eq } from "drizzle-orm";
 
-const XERO_WEBHOOK_KEY = process.env.XERO_WEBHOOK_KEY || "";
+const XERO_WEBHOOK_KEY = process.env.XERO_WEBHOOK_KEY;
 
 export async function POST(req: Request) {
     if (!XERO_WEBHOOK_KEY) {
-        // During dev, if not set, we might skip validation or fail.
-        console.warn("XERO_WEBHOOK_KEY not set");
+        console.error("XERO_WEBHOOK_KEY not configured - webhooks disabled");
+        return new Response("Webhook endpoint not configured", { status: 503 });
     }
 
     // 1. Verify Signature
@@ -20,18 +20,26 @@ export async function POST(req: Request) {
 
     const bodyText = await req.text();
 
-    if (XERO_WEBHOOK_KEY) {
-        const hmac = createHmac("sha256", XERO_WEBHOOK_KEY);
-        hmac.update(bodyText);
-        const computedSignature = hmac.digest("base64");
+    const hmac = createHmac("sha256", XERO_WEBHOOK_KEY);
+    hmac.update(bodyText);
+    const computedSignature = hmac.digest("base64");
 
-        if (signature !== computedSignature) {
-            return new Response("Invalid signature", { status: 401 });
-        }
+    const signatureBuffer = Buffer.from(signature);
+    const computedBuffer = Buffer.from(computedSignature);
+
+    if (signatureBuffer.length !== computedBuffer.length ||
+        !timingSafeEqual(signatureBuffer, computedBuffer)) {
+        return new Response("Invalid signature", { status: 401 });
     }
 
     // 2. Parse Payload
-    const payload = JSON.parse(bodyText);
+    let payload: any;
+    try {
+        payload = JSON.parse(bodyText);
+    } catch (e) {
+        return new Response("Invalid JSON", { status: 400 });
+    }
+
     const events = payload.events || [];
 
     console.log(`Received ${events.length} Xero events`);
