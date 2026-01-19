@@ -10,10 +10,29 @@ export async function GET(req: Request) {
         return new Response("Unauthorized", { status: 401 });
     }
 
-    // Get all active bindings for this org
-    const bindings = await db
-        .select()
+    // Get all active bindings for this org with grant details
+    const bindingsWithGrants = await db
+        .select({
+            // Binding fields
+            id: integrationTenantBindings.id,
+            externalTenantName: integrationTenantBindings.externalTenantName,
+            externalTenantId: integrationTenantBindings.externalTenantId,
+            status: integrationTenantBindings.status,
+            bindingCreatedAt: integrationTenantBindings.createdAt,
+            bindingUpdatedAt: integrationTenantBindings.updatedAt,
+            // Grant fields (joined)
+            grantId: integrationGrants.id,
+            grantStatus: integrationGrants.status,
+            grantCreatedAt: integrationGrants.createdAt,
+            grantUpdatedAt: integrationGrants.updatedAt,
+            grantExpiresAt: integrationGrants.expiresAt,
+            grantLastUsedAt: integrationGrants.lastUsedAt,
+        })
         .from(integrationTenantBindings)
+        .innerJoin(
+            integrationGrants,
+            eq(integrationTenantBindings.activeGrantId, integrationGrants.id)
+        )
         .where(
             and(
                 eq(integrationTenantBindings.clerkOrgId, orgId),
@@ -35,7 +54,7 @@ export async function GET(req: Request) {
         .where(eq(integrationGrants.clerkOrgId, orgId));
 
     return Response.json({
-        bindings,
+        bindings: bindingsWithGrants,
         grants
     });
 }

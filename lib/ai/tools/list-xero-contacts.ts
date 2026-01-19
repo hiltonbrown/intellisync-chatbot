@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { integrationTenantBindings } from "@/lib/db/schema";
-import { TokenService } from "@/lib/integrations/token-service";
+import { withTokenRefreshRetry } from "@/lib/integrations/xero/retry-helper";
+import { handleXeroToolError } from "@/lib/integrations/xero/error-handler";
 
 export const listXeroContacts = tool({
 	description:
@@ -57,98 +58,95 @@ export const listXeroContacts = tool({
 				};
 			}
 
-			// Get authenticated API client
-			const client = await TokenService.getClientForTenantBinding(binding.id);
+			// Use retry helper to handle token refresh on 401 errors
+			return await withTokenRefreshRetry(binding.id, async (client) => {
+				// Build query parameters
+				const params = new URLSearchParams();
+				params.append("page", page.toString());
 
-			// Build query parameters
-			const params = new URLSearchParams();
-			params.append("page", page.toString());
+				if (searchTerm) {
+					// Xero uses a where clause for searching
+					const searchWhere = `Name.Contains("${searchTerm}") OR EmailAddress.Contains("${searchTerm}") OR ContactNumber.Contains("${searchTerm}")`;
+					params.append("where", searchWhere);
+				}
 
-			if (searchTerm) {
-				// Xero uses a where clause for searching
-				const searchWhere = `Name.Contains("${searchTerm}") OR EmailAddress.Contains("${searchTerm}") OR ContactNumber.Contains("${searchTerm}")`;
-				params.append("where", searchWhere);
-			}
+				if (!includeArchived) {
+					const statusWhere = `ContactStatus=="ACTIVE"`;
+					const existingWhere = params.get("where");
+					params.set(
+						"where",
+						existingWhere ? `${existingWhere} AND ${statusWhere}` : statusWhere,
+					);
+				}
 
-			if (!includeArchived) {
-				const statusWhere = `ContactStatus=="ACTIVE"`;
-				const existingWhere = params.get("where");
-				params.set(
-					"where",
-					existingWhere ? `${existingWhere} AND ${statusWhere}` : statusWhere,
-				);
-			}
+				const queryString = params.toString();
+				const endpoint = `/Contacts${queryString ? `?${queryString}` : ""}`;
 
-			const queryString = params.toString();
-			const endpoint = `/Contacts${queryString ? `?${queryString}` : ""}`;
+				// Fetch contacts from Xero
+				const response = await client.fetch(endpoint);
 
-			// Fetch contacts from Xero
-			const response = await client.fetch(endpoint);
+				if (!response.ok) {
+					const errorText = await response.text();
+					return {
+						error: `Failed to fetch contacts from Xero: ${errorText}`,
+					};
+				}
 
-			if (!response.ok) {
-				const errorText = await response.text();
+				const data = await response.json();
+				const contacts = data.Contacts || [];
+
+				// Format contacts for better readability
+				const formattedContacts = contacts.map((contact: any) => ({
+					contactID: contact.ContactID,
+					name: contact.Name,
+					contactNumber: contact.ContactNumber,
+					accountNumber: contact.AccountNumber,
+					contactStatus: contact.ContactStatus,
+					firstName: contact.FirstName,
+					lastName: contact.LastName,
+					emailAddress: contact.EmailAddress,
+					isSupplier: contact.IsSupplier,
+					isCustomer: contact.IsCustomer,
+					defaultCurrency: contact.DefaultCurrency,
+					phones: contact.Phones?.map((phone: any) => ({
+						type: phone.PhoneType,
+						number: phone.PhoneNumber,
+						areaCode: phone.PhoneAreaCode,
+						countryCode: phone.PhoneCountryCode,
+					})),
+					addresses: contact.Addresses?.map((address: any) => ({
+						type: address.AddressType,
+						line1: address.AddressLine1,
+						line2: address.AddressLine2,
+						line3: address.AddressLine3,
+						line4: address.AddressLine4,
+						city: address.City,
+						region: address.Region,
+						postalCode: address.PostalCode,
+						country: address.Country,
+					})),
+					taxNumber: contact.TaxNumber,
+					accountsReceivableTaxType: contact.AccountsReceivableTaxType,
+					accountsPayableTaxType: contact.AccountsPayableTaxType,
+					contactGroups: contact.ContactGroups?.map((group: any) => group.Name),
+					hasAttachments: contact.HasAttachments,
+					updatedDateUTC: contact.UpdatedDateUTC,
+				}));
+
 				return {
-					error: `Failed to fetch contacts from Xero: ${errorText}`,
+					success: true,
+					totalContacts: formattedContacts.length,
+					page,
+					contacts: formattedContacts,
+					hasMore: formattedContacts.length === 100,
+					summary: `Retrieved ${formattedContacts.length} contact${formattedContacts.length === 1 ? "" : "s"}${searchTerm ? ` matching "${searchTerm}"` : ""}. ${formattedContacts.length === 100 ? "There may be more contacts - use page parameter to get the next page." : ""}`,
 				};
-			}
-
-			const data = await response.json();
-			const contacts = data.Contacts || [];
-
-			// Format contacts for better readability
-			const formattedContacts = contacts.map((contact: any) => ({
-				contactID: contact.ContactID,
-				name: contact.Name,
-				contactNumber: contact.ContactNumber,
-				accountNumber: contact.AccountNumber,
-				contactStatus: contact.ContactStatus,
-				firstName: contact.FirstName,
-				lastName: contact.LastName,
-				emailAddress: contact.EmailAddress,
-				isSupplier: contact.IsSupplier,
-				isCustomer: contact.IsCustomer,
-				defaultCurrency: contact.DefaultCurrency,
-				phones: contact.Phones?.map((phone: any) => ({
-					type: phone.PhoneType,
-					number: phone.PhoneNumber,
-					areaCode: phone.PhoneAreaCode,
-					countryCode: phone.PhoneCountryCode,
-				})),
-				addresses: contact.Addresses?.map((address: any) => ({
-					type: address.AddressType,
-					line1: address.AddressLine1,
-					line2: address.AddressLine2,
-					line3: address.AddressLine3,
-					line4: address.AddressLine4,
-					city: address.City,
-					region: address.Region,
-					postalCode: address.PostalCode,
-					country: address.Country,
-				})),
-				taxNumber: contact.TaxNumber,
-				accountsReceivableTaxType: contact.AccountsReceivableTaxType,
-				accountsPayableTaxType: contact.AccountsPayableTaxType,
-				contactGroups: contact.ContactGroups?.map((group: any) => group.Name),
-				hasAttachments: contact.HasAttachments,
-				updatedDateUTC: contact.UpdatedDateUTC,
-			}));
-
-			return {
-				success: true,
-				totalContacts: formattedContacts.length,
-				page,
-				contacts: formattedContacts,
-				hasMore: formattedContacts.length === 100,
-				summary: `Retrieved ${formattedContacts.length} contact${formattedContacts.length === 1 ? "" : "s"}${searchTerm ? ` matching "${searchTerm}"` : ""}. ${formattedContacts.length === 100 ? "There may be more contacts - use page parameter to get the next page." : ""}`,
-			};
+			});
 		} catch (error) {
-			console.error("Error in listXeroContacts tool:", error);
-			return {
-				error:
-					error instanceof Error
-						? error.message
-						: "An unknown error occurred while fetching contacts",
-			};
+			return handleXeroToolError(error, {
+				toolName: "listXeroContacts",
+				operation: "fetching contacts",
+			});
 		}
 	},
 });

@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { integrationTenantBindings } from "@/lib/db/schema";
-import { TokenService } from "@/lib/integrations/token-service";
+import { withTokenRefreshRetry } from "@/lib/integrations/xero/retry-helper";
+import { handleXeroToolError } from "@/lib/integrations/xero/error-handler";
 
 export const listXeroProfitAndLoss = tool({
 	description:
@@ -85,68 +86,65 @@ export const listXeroProfitAndLoss = tool({
 				};
 			}
 
-			// Get authenticated API client
-			const client = await TokenService.getClientForTenantBinding(binding.id);
+			// Use retry helper to handle token refresh on 401 errors
+			return await withTokenRefreshRetry(binding.id, async (client) => {
+				// Build query parameters
+				const params = new URLSearchParams();
+				if (fromDate) params.append("fromDate", fromDate);
+				if (toDate) params.append("toDate", toDate);
+				if (periods) params.append("periods", periods.toString());
+				if (timeframe) params.append("timeframe", timeframe);
+				if (standardLayout !== undefined)
+					params.append("standardLayout", standardLayout.toString());
+				if (paymentsOnly !== undefined)
+					params.append("paymentsOnly", paymentsOnly.toString());
 
-			// Build query parameters
-			const params = new URLSearchParams();
-			if (fromDate) params.append("fromDate", fromDate);
-			if (toDate) params.append("toDate", toDate);
-			if (periods) params.append("periods", periods.toString());
-			if (timeframe) params.append("timeframe", timeframe);
-			if (standardLayout !== undefined)
-				params.append("standardLayout", standardLayout.toString());
-			if (paymentsOnly !== undefined)
-				params.append("paymentsOnly", paymentsOnly.toString());
+				const queryString = params.toString();
+				const endpoint = `/Reports/ProfitAndLoss${queryString ? `?${queryString}` : ""}`;
 
-			const queryString = params.toString();
-			const endpoint = `/Reports/ProfitAndLoss${queryString ? `?${queryString}` : ""}`;
+				// Fetch P&L report from Xero
+				const response = await client.fetch(endpoint);
 
-			// Fetch P&L report from Xero
-			const response = await client.fetch(endpoint);
+				if (!response.ok) {
+					const errorText = await response.text();
+					return {
+						error: `Failed to fetch Profit and Loss report from Xero: ${errorText}`,
+					};
+				}
 
-			if (!response.ok) {
-				const errorText = await response.text();
+				const data = await response.json();
+				const report = data.Reports?.[0];
+
+				if (!report) {
+					return {
+						error: "No report data returned from Xero",
+					};
+				}
+
+				// Parse and format the report data
+				const formattedRows = formatProfitAndLossRows(report.Rows || []);
+
 				return {
-					error: `Failed to fetch Profit and Loss report from Xero: ${errorText}`,
+					success: true,
+					reportName: report.ReportName,
+					reportType: report.ReportType,
+					reportDate: report.ReportDate,
+					reportTitles: report.ReportTitles || [],
+					updatedDateUTC: report.UpdatedDateUTC,
+					dateRange: `${fromDate || "Start of FY"} to ${toDate || "Today"}`,
+					currency: binding.externalTenantName
+						? `Report for: ${binding.externalTenantName}`
+						: undefined,
+					data: formattedRows,
+					summary:
+						"Profit and Loss report retrieved successfully. The report shows revenue, cost of sales, expenses, and net profit/loss.",
 				};
-			}
-
-			const data = await response.json();
-			const report = data.Reports?.[0];
-
-			if (!report) {
-				return {
-					error: "No report data returned from Xero",
-				};
-			}
-
-			// Parse and format the report data
-			const formattedRows = formatProfitAndLossRows(report.Rows || []);
-
-			return {
-				success: true,
-				reportName: report.ReportName,
-				reportType: report.ReportType,
-				reportDate: report.ReportDate,
-				reportTitles: report.ReportTitles || [],
-				updatedDateUTC: report.UpdatedDateUTC,
-				dateRange: `${fromDate || "Start of FY"} to ${toDate || "Today"}`,
-				currency: binding.externalTenantName
-					? `Report for: ${binding.externalTenantName}`
-					: undefined,
-				data: formattedRows,
-				summary:
-					"Profit and Loss report retrieved successfully. The report shows revenue, cost of sales, expenses, and net profit/loss.",
-			};
+			});
 		} catch (error) {
-			console.error("Error in listXeroProfitAndLoss tool:", error);
-			return {
-				error:
-					error instanceof Error
-						? error.message
-						: "An unknown error occurred while fetching the Profit and Loss report",
-			};
+			return handleXeroToolError(error, {
+				toolName: "listXeroProfitAndLoss",
+				operation: "fetching Profit and Loss report",
+			});
 		}
 	},
 });

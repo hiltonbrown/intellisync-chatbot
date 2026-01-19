@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { integrationTenantBindings } from "@/lib/db/schema";
-import { TokenService } from "@/lib/integrations/token-service";
+import { withTokenRefreshRetry } from "@/lib/integrations/xero/retry-helper";
+import { handleXeroToolError } from "@/lib/integrations/xero/error-handler";
 
 export const listXeroOrganisation = tool({
 	description:
@@ -49,62 +50,61 @@ export const listXeroOrganisation = tool({
 				};
 			}
 
-			// Get authenticated API client
-			const client = await TokenService.getClientForTenantBinding(binding.id);
+			// Use retry helper to handle token refresh on 401 errors
+			return await withTokenRefreshRetry(binding.id, async (client) => {
+				// Fetch organisation details from Xero
+				const response = await client.fetch("/Organisation");
 
-			// Fetch organisation details from Xero
-			const response = await client.fetch("/Organisation");
+				if (!response.ok) {
+					const errorText = await response.text();
+					return {
+						error: `Failed to fetch organization details from Xero: ${errorText}`,
+						connected: true,
+						apiError: true,
+					};
+				}
 
-			if (!response.ok) {
-				const errorText = await response.text();
+				const data = await response.json();
+				const org = data.Organisations?.[0];
+
+				if (!org) {
+					return {
+						error: "No organization data returned from Xero",
+						connected: true,
+					};
+				}
+
+				// Format and return organization details
 				return {
-					error: `Failed to fetch organization details from Xero: ${errorText}`,
 					connected: true,
-					apiError: true,
+					organisationID: org.OrganisationID,
+					name: org.Name,
+					legalName: org.LegalName,
+					taxNumber: org.TaxNumber,
+					registrationNumber: org.RegistrationNumber,
+					baseCurrency: org.BaseCurrency,
+					countryCode: org.CountryCode,
+					isDemoCompany: org.IsDemoCompany,
+					organisationType: org.OrganisationType,
+					financialYearEndDay: org.FinancialYearEndDay,
+					financialYearEndMonth: org.FinancialYearEndMonth,
+					salesTaxBasis: org.SalesTaxBasis,
+					salesTaxPeriod: org.SalesTaxPeriod,
+					version: org.Version,
+					createdDateUTC: org.CreatedDateUTC,
+					shortCode: org.ShortCode,
+					tenantBindingId: binding.id,
+					externalTenantName: binding.externalTenantName,
+					message:
+						"Xero connection is active and working. You can now query invoices, contacts, reports, and other Xero data.",
 				};
-			}
-
-			const data = await response.json();
-			const org = data.Organisations?.[0];
-
-			if (!org) {
-				return {
-					error: "No organization data returned from Xero",
-					connected: true,
-				};
-			}
-
-			// Format and return organization details
-			return {
-				connected: true,
-				organisationID: org.OrganisationID,
-				name: org.Name,
-				legalName: org.LegalName,
-				taxNumber: org.TaxNumber,
-				registrationNumber: org.RegistrationNumber,
-				baseCurrency: org.BaseCurrency,
-				countryCode: org.CountryCode,
-				isDemoCompany: org.IsDemoCompany,
-				organisationType: org.OrganisationType,
-				financialYearEndDay: org.FinancialYearEndDay,
-				financialYearEndMonth: org.FinancialYearEndMonth,
-				salesTaxBasis: org.SalesTaxBasis,
-				salesTaxPeriod: org.SalesTaxPeriod,
-				version: org.Version,
-				createdDateUTC: org.CreatedDateUTC,
-				shortCode: org.ShortCode,
-				tenantBindingId: binding.id,
-				externalTenantName: binding.externalTenantName,
-				message:
-					"Xero connection is active and working. You can now query invoices, contacts, reports, and other Xero data.",
-			};
+			});
 		} catch (error) {
-			console.error("Error in listXeroOrganisation tool:", error);
 			return {
-				error:
-					error instanceof Error
-						? error.message
-						: "An unknown error occurred while fetching Xero organization details",
+				...handleXeroToolError(error, {
+					toolName: "listXeroOrganisation",
+					operation: "fetching organization details",
+				}),
 				connected: false,
 			};
 		}

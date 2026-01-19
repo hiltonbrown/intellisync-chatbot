@@ -19,8 +19,14 @@ export class TokenService {
 	/**
 	 * Gets an authenticated Xero API client for a specific tenant binding.
 	 * Automatically refreshes the token if it's expiring soon.
+	 *
+	 * @param tenantBindingId - The tenant binding ID
+	 * @param forceRefresh - Force a token refresh even if not expired
 	 */
-	static async getClientForTenantBinding(tenantBindingId: string) {
+	static async getClientForTenantBinding(
+		tenantBindingId: string,
+		forceRefresh = false,
+	) {
 		const binding = await db.query.integrationTenantBindings.findFirst({
 			where: eq(integrationTenantBindings.id, tenantBindingId),
 		});
@@ -42,22 +48,46 @@ export class TokenService {
 			throw new Error("Active grant not found");
 		}
 
-		// Check if refresh is needed
-		if (isPast(addMinutes(grant.expiresAt, -TOKEN_REFRESH_BUFFER_MINUTES))) {
-			console.log(`Token for grant ${grant.id} is expiring soon, refreshing...`);
+		// Check if refresh is needed (either forced or token expiring soon)
+		const needsRefresh =
+			forceRefresh ||
+			isPast(addMinutes(grant.expiresAt, -TOKEN_REFRESH_BUFFER_MINUTES));
+
+		if (needsRefresh) {
+			const refreshType = forceRefresh ? "force" : "auto";
+			console.log(
+				`Token for grant ${grant.id} ${refreshType} refreshing... (expires: ${grant.expiresAt.toISOString()}, status: ${grant.status})`,
+			);
 			try {
 				const refreshedGrant = await this.refreshGrantSingleFlight(grant.id);
+				console.log(
+					`Returning client with refreshed token for tenant ${binding.externalTenantId.substring(0, 8)}...`,
+				);
 				return xeroAdapter.getApiClient(
 					decryptToken(refreshedGrant.accessTokenEnc),
 					binding.externalTenantId,
 				);
 			} catch (error) {
-				console.error("Failed to refresh token on-demand:", error);
+				console.error("Failed to refresh token:", {
+					grantId: grant.id,
+					bindingId: binding.id,
+					error:
+						error instanceof Error
+							? {
+									message: error.message,
+									name: error.name,
+									code: (error as any).code,
+								}
+							: error,
+				});
 				// If refresh failed, we can't proceed
 				throw new Error("Token expired and refresh failed");
 			}
 		}
 
+		console.log(
+			`Using existing token for grant ${grant.id} (expires: ${grant.expiresAt.toISOString()})`,
+		);
 		return xeroAdapter.getApiClient(
 			decryptToken(grant.accessTokenEnc),
 			binding.externalTenantId,

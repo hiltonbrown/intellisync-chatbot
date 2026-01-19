@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Plus, RefreshCcw, Unplug, ChevronLeft } from "lucide-react";
+import { Loader2, Plus, RefreshCcw, Unplug, ChevronLeft, CheckCircle2, AlertCircle, Clock, Calendar } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,14 @@ interface IntegrationBinding {
     externalTenantName: string;
     externalTenantId: string;
     status: string;
-    updatedAt: string;
+    bindingCreatedAt: string;
+    bindingUpdatedAt: string;
+    grantId: string;
+    grantStatus: string;
+    grantCreatedAt: string;
+    grantUpdatedAt: string;
+    grantExpiresAt: string;
+    grantLastUsedAt: string | null;
 }
 
 interface IntegrationGrant {
@@ -36,6 +43,33 @@ interface XeroTenant {
     tenantId: string;
     tenantName: string;
     tenantType: string;
+}
+
+function formatDateTime(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
+function formatRelativeTime(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    if (diffDays < 30) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    return formatDateTime(dateString);
 }
 
 export default function IntegrationsPage() {
@@ -184,31 +218,111 @@ export default function IntegrationsPage() {
                                 <div className="text-sm text-muted-foreground italic">No organizations connected.</div>
                             ) : (
                                 <div className="grid gap-4">
-                                    {data.bindings.map(binding => (
-                                        <div key={binding.id} className="flex items-center justify-between p-4 border rounded-lg bg-card">
-                                            <div>
-                                                <div className="font-semibold">{binding.externalTenantName}</div>
-                                                <div className="text-xs text-muted-foreground">ID: {binding.externalTenantId}</div>
-                                                <div className="mt-1">
-                                                    <Badge variant={binding.status === 'active' ? 'default' : 'destructive'}>
-                                                        {binding.status}
-                                                    </Badge>
+                                    {data.bindings.map(binding => {
+                                        const isHealthy = binding.status === 'active' && binding.grantStatus === 'active';
+                                        const needsAttention = binding.status === 'needs_reauth' || binding.grantStatus === 'refresh_failed';
+
+                                        return (
+                                            <div key={binding.id} className="border rounded-lg bg-card">
+                                                {/* Header Row */}
+                                                <div className="flex items-start justify-between p-4 border-b">
+                                                    <div className="flex items-start gap-3">
+                                                        {/* Status Icon */}
+                                                        <div className="mt-1">
+                                                            {isHealthy ? (
+                                                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                                            ) : (
+                                                                <AlertCircle className="w-5 h-5 text-amber-600" />
+                                                            )}
+                                                        </div>
+
+                                                        {/* Organization Info */}
+                                                        <div className="flex-1">
+                                                            <div className="font-semibold text-lg">{binding.externalTenantName}</div>
+                                                            <div className="text-xs text-muted-foreground mt-1">
+                                                                Tenant ID: {binding.externalTenantId}
+                                                            </div>
+                                                            <div className="flex gap-2 mt-2">
+                                                                <Badge variant={binding.status === 'active' ? 'default' : 'destructive'}>
+                                                                    {binding.status}
+                                                                </Badge>
+                                                                {binding.grantStatus !== 'active' && (
+                                                                    <Badge variant="outline" className="text-amber-600 border-amber-600">
+                                                                        Token: {binding.grantStatus}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Action Buttons */}
+                                                    <div className="flex gap-2">
+                                                        {needsAttention && (
+                                                            <Button size="sm" variant="outline" onClick={startConnection}>
+                                                                <RefreshCcw className="w-4 h-4 mr-2" />
+                                                                Reconnect
+                                                            </Button>
+                                                        )}
+                                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDisconnect(binding.id)}>
+                                                            <Unplug className="w-4 h-4 mr-2" />
+                                                            Disconnect
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Connection Details */}
+                                                <div className="p-4 bg-muted/30">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                        {/* Original Connection */}
+                                                        <div className="flex items-start gap-2">
+                                                            <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                                            <div>
+                                                                <div className="text-muted-foreground text-xs">Connected</div>
+                                                                <div className="font-medium">{formatDateTime(binding.grantCreatedAt)}</div>
+                                                                <div className="text-xs text-muted-foreground">{formatRelativeTime(binding.grantCreatedAt)}</div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Last Token Refresh */}
+                                                        <div className="flex items-start gap-2">
+                                                            <RefreshCcw className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                                            <div>
+                                                                <div className="text-muted-foreground text-xs">Last Token Refresh</div>
+                                                                <div className="font-medium">{formatDateTime(binding.grantUpdatedAt)}</div>
+                                                                <div className="text-xs text-muted-foreground">{formatRelativeTime(binding.grantUpdatedAt)}</div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Last Used */}
+                                                        {binding.grantLastUsedAt && (
+                                                            <div className="flex items-start gap-2">
+                                                                <Clock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                                                <div>
+                                                                    <div className="text-muted-foreground text-xs">Last API Call</div>
+                                                                    <div className="font-medium">{formatDateTime(binding.grantLastUsedAt)}</div>
+                                                                    <div className="text-xs text-muted-foreground">{formatRelativeTime(binding.grantLastUsedAt)}</div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Token Expiry */}
+                                                        <div className="flex items-start gap-2">
+                                                            <Clock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                                            <div>
+                                                                <div className="text-muted-foreground text-xs">Access Token Expires</div>
+                                                                <div className="font-medium">{formatDateTime(binding.grantExpiresAt)}</div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    {new Date(binding.grantExpiresAt) > new Date()
+                                                                        ? 'Auto-refreshes when needed'
+                                                                        : 'Expired - will refresh on next use'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                {binding.status === 'needs_reauth' && (
-                                                    <Button size="sm" variant="outline" onClick={startConnection}>
-                                                        <RefreshCcw className="w-4 h-4 mr-2" />
-                                                        Reconnect
-                                                    </Button>
-                                                )}
-                                                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDisconnect(binding.id)}>
-                                                    <Unplug className="w-4 h-4 mr-2" />
-                                                    Disconnect
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

@@ -47,10 +47,15 @@ export class XeroAdapter {
 
 	getAuthUrl(state: string): string {
 		const scopes = [
-			"offline_access",
-			"accounting.transactions",
-			"accounting.settings",
-			"accounting.contacts",
+			// Core scopes
+			"offline_access", // Required for refresh tokens
+			"accounting.transactions", // Invoices, accounts, bank transactions
+			"accounting.reports.read", // P&L, Balance Sheet, financial reports
+			"accounting.settings", // Organization details, tax rates, tracking categories
+			"accounting.contacts", // Customers and suppliers
+			// Future development scopes
+			"accounting.attachments", // File attachments on invoices/transactions (receipts, PDFs)
+			"assets.read", // Fixed asset register, depreciation tracking
 		].join(" ");
 
 		const params = new URLSearchParams({
@@ -126,15 +131,48 @@ export class XeroAdapter {
 			});
 
 			if (!response.ok) {
+				const errorBody = await response.text();
+				console.error("Xero token refresh failed:", {
+					status: response.status,
+					statusText: response.statusText,
+					body: errorBody,
+					refreshTokenPrefix: refreshToken.substring(0, 10) + "...",
+				});
+
+				// Parse Xero error response if available
+				let errorDetails: Record<string, unknown> = {
+					statusCode: response.status,
+				};
+				try {
+					const errorJson = JSON.parse(errorBody);
+					errorDetails = {
+						...errorDetails,
+						error: errorJson.error,
+						error_description: errorJson.error_description,
+					};
+				} catch {
+					// Not JSON, use raw text
+					errorDetails.rawError = errorBody;
+				}
+
 				throw new TokenError(
-					"Token refresh failed",
+					`Token refresh failed: ${response.statusText}`,
 					"TOKEN_REFRESH_FAILED",
 					response.status,
-					{ statusCode: response.status },
+					errorDetails,
 				);
 			}
 
-			return response.json();
+			const tokenSet = await response.json();
+			console.log("Token refresh successful:", {
+				expires_in: tokenSet.expires_in,
+				token_type: tokenSet.token_type,
+				hasAccessToken: !!tokenSet.access_token,
+				hasRefreshToken: !!tokenSet.refresh_token,
+				accessTokenPrefix: tokenSet.access_token?.substring(0, 10) + "...",
+			});
+
+			return tokenSet;
 		} catch (error) {
 			if (error instanceof TokenError) {
 				throw error;
@@ -232,11 +270,35 @@ export class XeroAdapter {
 					});
 
 					if (response.status === 401) {
-						throw new TokenError(
-							"Xero API returned unauthorized",
-							"API_UNAUTHORIZED",
-							401,
-						);
+						const errorBody = await response.text();
+						const wwwAuth = response.headers.get("www-authenticate");
+						const isInsufficientScope = wwwAuth?.includes("insufficient_scope");
+
+						console.error("Xero API 401 Unauthorized:", {
+							path,
+							tenantId: tenantId.substring(0, 8) + "...",
+							accessTokenPrefix: accessToken.substring(0, 10) + "...",
+							responseBody: errorBody,
+							wwwAuthenticate: wwwAuth,
+							isInsufficientScope,
+							headers: Object.fromEntries(response.headers.entries()),
+						});
+
+						// Detect scope issues vs token issues
+						const errorCode = isInsufficientScope
+							? "INSUFFICIENT_SCOPE"
+							: "API_UNAUTHORIZED";
+						const errorMessage = isInsufficientScope
+							? "Xero API returned insufficient_scope - missing required permissions"
+							: "Xero API returned unauthorized";
+
+						throw new TokenError(errorMessage, errorCode, 401, {
+							path,
+							tenantId: tenantId.substring(0, 8) + "...",
+							errorBody,
+							wwwAuthenticate: wwwAuth,
+							isInsufficientScope,
+						});
 					}
 
 					if (response.status === 429) {

@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { integrationTenantBindings } from "@/lib/db/schema";
-import { TokenService } from "@/lib/integrations/token-service";
+import { withTokenRefreshRetry } from "@/lib/integrations/xero/retry-helper";
+import { handleXeroToolError } from "@/lib/integrations/xero/error-handler";
 
 export const listXeroBalanceSheet = tool({
 	description:
@@ -78,67 +79,64 @@ export const listXeroBalanceSheet = tool({
 				};
 			}
 
-			// Get authenticated API client
-			const client = await TokenService.getClientForTenantBinding(binding.id);
+			// Use retry helper to handle token refresh on 401 errors
+			return await withTokenRefreshRetry(binding.id, async (client) => {
+				// Build query parameters
+				const params = new URLSearchParams();
+				if (date) params.append("date", date);
+				if (periods) params.append("periods", periods.toString());
+				if (timeframe) params.append("timeframe", timeframe);
+				if (standardLayout !== undefined)
+					params.append("standardLayout", standardLayout.toString());
+				if (paymentsOnly !== undefined)
+					params.append("paymentsOnly", paymentsOnly.toString());
 
-			// Build query parameters
-			const params = new URLSearchParams();
-			if (date) params.append("date", date);
-			if (periods) params.append("periods", periods.toString());
-			if (timeframe) params.append("timeframe", timeframe);
-			if (standardLayout !== undefined)
-				params.append("standardLayout", standardLayout.toString());
-			if (paymentsOnly !== undefined)
-				params.append("paymentsOnly", paymentsOnly.toString());
+				const queryString = params.toString();
+				const endpoint = `/Reports/BalanceSheet${queryString ? `?${queryString}` : ""}`;
 
-			const queryString = params.toString();
-			const endpoint = `/Reports/BalanceSheet${queryString ? `?${queryString}` : ""}`;
+				// Fetch Balance Sheet report from Xero
+				const response = await client.fetch(endpoint);
 
-			// Fetch Balance Sheet report from Xero
-			const response = await client.fetch(endpoint);
+				if (!response.ok) {
+					const errorText = await response.text();
+					return {
+						error: `Failed to fetch Balance Sheet report from Xero: ${errorText}`,
+					};
+				}
 
-			if (!response.ok) {
-				const errorText = await response.text();
+				const data = await response.json();
+				const report = data.Reports?.[0];
+
+				if (!report) {
+					return {
+						error: "No report data returned from Xero",
+					};
+				}
+
+				// Parse and format the report data
+				const formattedRows = formatBalanceSheetRows(report.Rows || []);
+
 				return {
-					error: `Failed to fetch Balance Sheet report from Xero: ${errorText}`,
+					success: true,
+					reportName: report.ReportName,
+					reportType: report.ReportType,
+					reportDate: report.ReportDate,
+					reportTitles: report.ReportTitles || [],
+					updatedDateUTC: report.UpdatedDateUTC,
+					asOfDate: date || "Today",
+					currency: binding.externalTenantName
+						? `Report for: ${binding.externalTenantName}`
+						: undefined,
+					data: formattedRows,
+					summary:
+						"Balance Sheet report retrieved successfully. The report shows assets, liabilities, and equity at a specific point in time.",
 				};
-			}
-
-			const data = await response.json();
-			const report = data.Reports?.[0];
-
-			if (!report) {
-				return {
-					error: "No report data returned from Xero",
-				};
-			}
-
-			// Parse and format the report data
-			const formattedRows = formatBalanceSheetRows(report.Rows || []);
-
-			return {
-				success: true,
-				reportName: report.ReportName,
-				reportType: report.ReportType,
-				reportDate: report.ReportDate,
-				reportTitles: report.ReportTitles || [],
-				updatedDateUTC: report.UpdatedDateUTC,
-				asOfDate: date || "Today",
-				currency: binding.externalTenantName
-					? `Report for: ${binding.externalTenantName}`
-					: undefined,
-				data: formattedRows,
-				summary:
-					"Balance Sheet report retrieved successfully. The report shows assets, liabilities, and equity at a specific point in time.",
-			};
+			});
 		} catch (error) {
-			console.error("Error in listXeroBalanceSheet tool:", error);
-			return {
-				error:
-					error instanceof Error
-						? error.message
-						: "An unknown error occurred while fetching the Balance Sheet report",
-			};
+			return handleXeroToolError(error, {
+				toolName: "listXeroBalanceSheet",
+				operation: "fetching Balance Sheet report",
+			});
 		}
 	},
 });

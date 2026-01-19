@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { integrationTenantBindings } from "@/lib/db/schema";
-import { TokenService } from "@/lib/integrations/token-service";
+import { withTokenRefreshRetry } from "@/lib/integrations/xero/retry-helper";
+import { handleXeroToolError } from "@/lib/integrations/xero/error-handler";
 
 export const createXeroInvoice = tool({
 	description:
@@ -105,92 +106,89 @@ export const createXeroInvoice = tool({
 				};
 			}
 
-			// Get authenticated API client
-			const client = await TokenService.getClientForTenantBinding(binding.id);
+			// Use retry helper to handle token refresh on 401 errors
+			return await withTokenRefreshRetry(binding.id, async (client) => {
+				// Build invoice payload
+				const invoicePayload = {
+					Type: type,
+					Contact: {
+						ContactID: contactID,
+					},
+					LineItems: lineItems.map((item) => ({
+						Description: item.description,
+						Quantity: item.quantity,
+						UnitAmount: item.unitAmount,
+						AccountCode: item.accountCode,
+						...(item.taxType ? { TaxType: item.taxType } : {}),
+						...(item.itemCode ? { ItemCode: item.itemCode } : {}),
+					})),
+					...(date ? { Date: date } : {}),
+					...(dueDate ? { DueDate: dueDate } : {}),
+					...(reference ? { Reference: reference } : {}),
+					Status: status,
+				};
 
-			// Build invoice payload
-			const invoicePayload = {
-				Type: type,
-				Contact: {
-					ContactID: contactID,
-				},
-				LineItems: lineItems.map((item) => ({
-					Description: item.description,
-					Quantity: item.quantity,
-					UnitAmount: item.unitAmount,
-					AccountCode: item.accountCode,
-					...(item.taxType ? { TaxType: item.taxType } : {}),
-					...(item.itemCode ? { ItemCode: item.itemCode } : {}),
-				})),
-				...(date ? { Date: date } : {}),
-				...(dueDate ? { DueDate: dueDate } : {}),
-				...(reference ? { Reference: reference } : {}),
-				Status: status,
-			};
+				// Create invoice in Xero
+				const response = await client.fetch("/Invoices", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						Invoices: [invoicePayload],
+					}),
+				});
 
-			// Create invoice in Xero
-			const response = await client.fetch("/Invoices", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					Invoices: [invoicePayload],
-				}),
+				if (!response.ok) {
+					const errorText = await response.text();
+					return {
+						error: `Failed to create invoice in Xero: ${errorText}`,
+					};
+				}
+
+				const data = await response.json();
+				const invoice = data.Invoices?.[0];
+
+				if (!invoice) {
+					return {
+						error: "No invoice data returned from Xero",
+					};
+				}
+
+				// Check for validation errors
+				if (invoice.ValidationErrors && invoice.ValidationErrors.length > 0) {
+					const errors = invoice.ValidationErrors.map(
+						(err: any) => err.Message,
+					).join(", ");
+					return {
+						error: `Invoice validation failed: ${errors}`,
+						validationErrors: invoice.ValidationErrors,
+					};
+				}
+
+				return {
+					success: true,
+					invoiceID: invoice.InvoiceID,
+					invoiceNumber: invoice.InvoiceNumber,
+					type: invoice.Type,
+					status: invoice.Status,
+					contact: invoice.Contact?.Name,
+					date: invoice.Date,
+					dueDate: invoice.DueDate,
+					total: invoice.Total,
+					subTotal: invoice.SubTotal,
+					totalTax: invoice.TotalTax,
+					currencyCode: invoice.CurrencyCode,
+					reference: invoice.Reference,
+					xeroLink: `https://go.xero.com/AccountsReceivable/Edit.aspx?InvoiceID=${invoice.InvoiceID}`,
+					summary: `Invoice ${invoice.InvoiceNumber} created successfully in Xero with status ${invoice.Status}. Total: ${invoice.CurrencyCode} ${invoice.Total}`,
+				};
 			});
-
-			if (!response.ok) {
-				const errorText = await response.text();
-				return {
-					error: `Failed to create invoice in Xero: ${errorText}`,
-				};
-			}
-
-			const data = await response.json();
-			const invoice = data.Invoices?.[0];
-
-			if (!invoice) {
-				return {
-					error: "No invoice data returned from Xero",
-				};
-			}
-
-			// Check for validation errors
-			if (invoice.ValidationErrors && invoice.ValidationErrors.length > 0) {
-				const errors = invoice.ValidationErrors.map(
-					(err: any) => err.Message,
-				).join(", ");
-				return {
-					error: `Invoice validation failed: ${errors}`,
-					validationErrors: invoice.ValidationErrors,
-				};
-			}
-
-			return {
-				success: true,
-				invoiceID: invoice.InvoiceID,
-				invoiceNumber: invoice.InvoiceNumber,
-				type: invoice.Type,
-				status: invoice.Status,
-				contact: invoice.Contact?.Name,
-				date: invoice.Date,
-				dueDate: invoice.DueDate,
-				total: invoice.Total,
-				subTotal: invoice.SubTotal,
-				totalTax: invoice.TotalTax,
-				currencyCode: invoice.CurrencyCode,
-				reference: invoice.Reference,
-				xeroLink: `https://go.xero.com/AccountsReceivable/Edit.aspx?InvoiceID=${invoice.InvoiceID}`,
-				summary: `Invoice ${invoice.InvoiceNumber} created successfully in Xero with status ${invoice.Status}. Total: ${invoice.CurrencyCode} ${invoice.Total}`,
-			};
 		} catch (error) {
-			console.error("Error in createXeroInvoice tool:", error);
-			return {
-				error:
-					error instanceof Error
-						? error.message
-						: "An unknown error occurred while creating the invoice",
-			};
+			return handleXeroToolError(error, {
+				toolName: "createXeroInvoice",
+				operation: "creating invoice",
+			});
 		}
 	},
 });
