@@ -1,7 +1,7 @@
 import "server-only";
 
-import { TokenService } from "@/lib/integrations/token-service";
 import { TokenError } from "@/lib/integrations/errors";
+import { TokenService } from "@/lib/integrations/token-service";
 
 /**
  * Executes a Xero API operation with automatic retry on 401 unauthorized errors.
@@ -15,7 +15,9 @@ import { TokenError } from "@/lib/integrations/errors";
 export async function withTokenRefreshRetry<T>(
 	tenantBindingId: string,
 	orgId: string,
-	operation: (client: Awaited<ReturnType<typeof TokenService.getClientForTenantBinding>>) => Promise<T>,
+	operation: (
+		client: Awaited<ReturnType<typeof TokenService.getClientForTenantBinding>>,
+	) => Promise<T>,
 ): Promise<T> {
 	try {
 		// First attempt with normal token check
@@ -57,7 +59,9 @@ export async function withTokenRefreshRetry<T>(
 					orgId,
 					true,
 				);
-				console.log("[Retry Helper] Retrying operation with refreshed token...");
+				console.log(
+					"[Retry Helper] Retrying operation with refreshed token...",
+				);
 				const result = await operation(client);
 				console.log("[Retry Helper] Retry succeeded!");
 				return result;

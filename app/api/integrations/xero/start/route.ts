@@ -1,12 +1,12 @@
+import { randomBytes } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { redis } from "@/lib/redis/client";
-import { randomBytes } from "crypto";
 
 const xeroAdapter = new XeroAdapter();
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
 	const { userId, orgId, orgRole } = await auth();
 
 	if (!userId || !orgId) {

@@ -1,19 +1,19 @@
+import type { InferSelectModel } from "drizzle-orm";
 import {
 	boolean,
 	foreignKey,
+	index,
 	integer,
 	json,
 	pgTable,
 	primaryKey,
 	text,
 	timestamp,
+	unique,
 	uuid,
 	varchar,
 	vector,
-	unique,
-    index,
 } from "drizzle-orm/pg-core";
-import type { InferSelectModel } from "drizzle-orm";
 
 export const user = pgTable("User", {
 	id: text("id").primaryKey().notNull(),
@@ -216,26 +216,33 @@ export type Stream = InferSelectModel<typeof stream>;
 
 // --- Integration Schema ---
 
-export const integrationGrants = pgTable("integration_grants", {
-	id: uuid("id").primaryKey().notNull().defaultRandom(),
-	authorisedByClerkUserId: text("authorised_by_clerk_user_id").notNull(),
-	clerkOrgId: text("clerk_org_id").notNull(),
-	provider: varchar("provider", { length: 50 }).notNull().default("xero"),
-	accessTokenEnc: text("access_token_enc").notNull(),
-	refreshTokenEnc: text("refresh_token_enc").notNull(),
-	expiresAt: timestamp("expires_at").notNull(),
-	status: varchar("status", {
-		enum: ["active", "superseded", "revoked", "refresh_failed"],
-	})
-		.notNull()
-		.default("active"),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at").notNull().defaultNow(),
-	lastUsedAt: timestamp("last_used_at"),
-}, (table) => ({
-    orgIdx: index("integration_grants_org_idx").on(table.clerkOrgId),
-    expiryIdx: index("integration_grants_expiry_idx").on(table.expiresAt, table.status),
-}));
+export const integrationGrants = pgTable(
+	"integration_grants",
+	{
+		id: uuid("id").primaryKey().notNull().defaultRandom(),
+		authorisedByClerkUserId: text("authorised_by_clerk_user_id").notNull(),
+		clerkOrgId: text("clerk_org_id").notNull(),
+		provider: varchar("provider", { length: 50 }).notNull().default("xero"),
+		accessTokenEnc: text("access_token_enc").notNull(),
+		refreshTokenEnc: text("refresh_token_enc").notNull(),
+		expiresAt: timestamp("expires_at").notNull(),
+		status: varchar("status", {
+			enum: ["active", "superseded", "revoked", "refresh_failed"],
+		})
+			.notNull()
+			.default("active"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+		lastUsedAt: timestamp("last_used_at"),
+	},
+	(table) => ({
+		orgIdx: index("integration_grants_org_idx").on(table.clerkOrgId),
+		expiryIdx: index("integration_grants_expiry_idx").on(
+			table.expiresAt,
+			table.status,
+		),
+	}),
+);
 
 export type IntegrationGrant = InferSelectModel<typeof integrationGrants>;
 
@@ -260,7 +267,7 @@ export const integrationTenantBindings = pgTable(
 	},
 	(table) => ({
 		unq: unique().on(table.provider, table.externalTenantId),
-        orgIdx: index("integration_tenant_bindings_org_idx").on(table.clerkOrgId),
+		orgIdx: index("integration_tenant_bindings_org_idx").on(table.clerkOrgId),
 		grantStatusIdx: index("integration_tenant_bindings_grant_status_idx").on(
 			table.activeGrantId,
 			table.status,

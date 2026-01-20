@@ -1,11 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
+import { addSeconds } from "date-fns";
 import { redirect } from "next/navigation";
-import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { db } from "@/lib/db";
 import { integrationGrants } from "@/lib/db/schema";
-import { encryptToken } from "@/lib/utils/encryption";
+import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { redis } from "@/lib/redis/client";
-import { addSeconds } from "date-fns";
+import { encryptToken } from "@/lib/utils/encryption";
 
 const xeroAdapter = new XeroAdapter();
 
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
 	try {
 		const json = Buffer.from(state, "base64").toString("utf-8");
 		decodedState = JSON.parse(json);
-	} catch (e) {
+	} catch (_e) {
 		return new Response("Invalid state parameter", { status: 400 });
 	}
 
@@ -78,7 +78,6 @@ export async function GET(req: Request) {
 		return new Response("Invalid or expired state", { status: 403 });
 	}
 	await redis.del(`oauth:nonce:${decodedState.nonce}`);
-
 
 	let grantId: string;
 	try {

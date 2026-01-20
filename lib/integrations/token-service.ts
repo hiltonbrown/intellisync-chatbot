@@ -1,15 +1,15 @@
 import "server-only";
 
+import { addMinutes, isPast } from "date-fns";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+	type IntegrationGrant,
 	integrationGrants,
 	integrationTenantBindings,
-	type IntegrationGrant,
 } from "@/lib/db/schema";
-import { encryptToken, decryptToken } from "@/lib/utils/encryption";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
-import { and, eq } from "drizzle-orm";
-import { addMinutes, isPast } from "date-fns";
+import { decryptToken, encryptToken } from "@/lib/utils/encryption";
 
 const xeroAdapter = new XeroAdapter();
 
@@ -64,7 +64,9 @@ export class TokenService {
 				`Token for grant ${grant.id} ${refreshType} refreshing... (expires: ${grant.expiresAt.toISOString()}, status: ${grant.status})`,
 			);
 			try {
-				const refreshedGrant = await this.refreshGrantSingleFlight(grant.id);
+				const refreshedGrant = await TokenService.refreshGrantSingleFlight(
+					grant.id,
+				);
 				console.log(
 					`Returning client with refreshed token for tenant ${binding.externalTenantId.substring(0, 8)}...`,
 				);
@@ -140,7 +142,9 @@ export class TokenService {
 				// Xero returns `expires_in` in seconds (usually 1800s = 30m)
 				// We add a safety buffer of 30 seconds to be conservative
 				const expiresInSeconds = tokenSet.expires_in || 1800;
-				const newExpiresAt = new Date(Date.now() + (expiresInSeconds * 1000) - 30000);
+				const newExpiresAt = new Date(
+					Date.now() + expiresInSeconds * 1000 - 30000,
+				);
 
 				// 4. Update DB
 				const [updatedGrant] = await tx

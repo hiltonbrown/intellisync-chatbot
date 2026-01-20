@@ -1,43 +1,43 @@
+import { randomBytes } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { integrationTenantBindings, integrationGrants } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { db } from "@/lib/db";
+import { integrationGrants, integrationTenantBindings } from "@/lib/db/schema";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { decryptToken } from "@/lib/utils/encryption";
-import { randomBytes } from "crypto";
 
 const xeroAdapter = new XeroAdapter();
 
 const DisconnectSchema = z.object({
-    tenantBindingId: z.string()
+	tenantBindingId: z.string(),
 });
 
 export async function POST(req: Request) {
-    const { userId, orgId, orgRole } = await auth();
+	const { userId, orgId, orgRole } = await auth();
 
-    if (!userId || !orgId) {
-        return new Response("Unauthorized", { status: 401 });
-    }
+	if (!userId || !orgId) {
+		return new Response("Unauthorized", { status: 401 });
+	}
 
-    const allowedRoles = ["org:admin", "org:owner"];
-    if (!orgRole || !allowedRoles.includes(orgRole)) {
-         return new Response("Forbidden", { status: 403 });
-    }
+	const allowedRoles = ["org:admin", "org:owner"];
+	if (!orgRole || !allowedRoles.includes(orgRole)) {
+		return new Response("Forbidden", { status: 403 });
+	}
 
-    let body;
-    try {
-        body = await req.json();
-    } catch {
-        return new Response("Invalid JSON", { status: 400 });
-    }
+	let body: unknown;
+	try {
+		body = await req.json();
+	} catch {
+		return new Response("Invalid JSON", { status: 400 });
+	}
 
-    const result = DisconnectSchema.safeParse(body);
-    if (!result.success) {
-        return new Response("Invalid input", { status: 400 });
-    }
+	const result = DisconnectSchema.safeParse(body);
+	if (!result.success) {
+		return new Response("Invalid input", { status: 400 });
+	}
 
-    const { tenantBindingId } = result.data;
+	const { tenantBindingId } = result.data;
 
 	let revokeToken: string | null = null;
 
@@ -117,5 +117,5 @@ export async function POST(req: Request) {
 		}
 	}
 
-    return Response.json({ success: true });
+	return Response.json({ success: true });
 }
