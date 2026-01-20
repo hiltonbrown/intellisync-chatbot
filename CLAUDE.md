@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides comprehensive documentation for the Next.js AI Chatbot codebase. It serves as the main technical reference for developers working on this project.
+This file provides comprehensive documentation for the **IntelliSync** codebase. It serves as the main technical reference for developers working on this AI-powered business assistant designed specifically for Australian businesses.
 
 ## Project Overview
 
-This is a **Next.js AI Chatbot** template (Chat SDK) built with Next.js 16 App Router, AI SDK, and Vercel AI Gateway. It provides a full-featured chat interface with support for multiple AI model providers, artifacts (real-time document creation/editing), RAG (Retrieval-Augmented Generation), and collaborative features.
+**IntelliSync** is a specialized AI-powered business assistant built for Australian businesses. It's a **Next.js AI Chatbot** application (based on Chat SDK) with deep Xero accounting integration, Australian business compliance guidance, and comprehensive localization. Built with Next.js 16 App Router, AI SDK, and Vercel AI Gateway, it provides a full-featured chat interface with support for multiple AI model providers, artifacts (real-time document creation/editing), RAG (Retrieval-Augmented Generation), and collaborative organization features.
 
 **Key Technologies:**
 
@@ -64,6 +64,8 @@ The app uses Next.js route groups for organization:
   - `/login` - Clerk sign-in page
   - `/register` - Clerk sign-up page
   - `personalization-actions.ts` - Server actions for user customization (system prompt)
+  - `personalization-validation.ts` - Input validation schemas for user settings
+  - `personalization-config.ts` - Configuration constants for user preferences
   - Uses Clerk's pre-built components for authentication UI
 
 - **`app/(chat)/`** - Main chat application
@@ -74,14 +76,26 @@ The app uses Next.js route groups for organization:
     - `/settings` - Main settings dashboard with grid layout
     - `/settings/personalisation` - User customization (system prompt, AI preferences)
     - `/settings/integrations` - Third-party integrations (Xero, QuickBooks, MYOB, Zoho, Sage)
-  - API routes:
-    - `/api/chat/route.ts` - Main chat streaming endpoint
-    - `/api/chat/[id]/stream/route.ts` - Resumable stream endpoint
+  - **Chat API routes:**
+    - `/api/chat/route.ts` - Main chat streaming endpoint with tool calling, RAG context injection, user settings integration, organization context
+    - `/api/chat/[id]/stream/route.ts` - Resumable stream endpoint (requires Redis)
+    - `/api/chat/title/route.ts` - Generate chat titles from messages
     - `/api/document/route.ts` - Document CRUD operations
-    - `/api/files/upload/route.ts` - File upload handling (supports PDF, DOCX)
-    - `/api/history/route.ts` - Chat history
-    - `/api/suggestions/route.ts` - Artifact suggestions
-    - `/api/vote/route.ts` - Message voting
+    - `/api/files/upload/route.ts` - File upload handling (PDF, DOCX, CSV, TSV)
+    - `/api/history/route.ts` - Chat message history with pagination
+    - `/api/suggestions/route.ts` - AI-generated document suggestions
+    - `/api/vote/route.ts` - Message voting (upvote/downvote)
+  - **Xero Integration routes:**
+    - `/api/integrations/xero/start/route.ts` - OAuth flow initiation (requires org admin/owner)
+    - `/api/xero/callback/route.ts` - OAuth callback handler with token exchange
+    - `/api/integrations/xero/disconnect/route.ts` - Disconnect integration, revoke tokens
+    - `/api/integrations/xero/tenants/list/route.ts` - List available Xero tenants
+    - `/api/integrations/xero/tenants/select/route.ts` - Bind specific tenant to org, triggers Clerk sync
+    - `/api/integrations/status/route.ts` - Get integration status (bindings + grants)
+    - `/api/webhooks/xero/route.ts` - Xero webhook handler with signature validation
+  - **Cron routes:**
+    - `/api/cron/keep-alive/route.ts` - Service warmup endpoint
+    - `/api/cron/process-queue/route.ts` - Process Xero sync queue from Redis
 
 ### Core Modules
 
@@ -100,7 +114,7 @@ The app uses Next.js route groups for organization:
   - Current models include:
     - Anthropic: `claude-haiku-4.5`, `claude-sonnet-4.5`
     - OpenAI: `gpt-5-mini`, `gpt-5.2`
-    - Google: `gemini-2.5-flash-lite`, `gemini-3-pro-preview`
+    - Google: `gemini-2.5-flash-lite` (for other tasks), `gemini-3-pro-preview` (for complex reasoning tasks)
     - xAI: `grok-4.1-fast-non-reasoning`
     - Reasoning models: `claude-4.5-sonnet-thinking`, `grok-4.1-fast-reasoning`
   - Groups models by provider for UI presentation
@@ -119,9 +133,11 @@ The app uses Next.js route groups for organization:
 
 - **`prompts.ts`** - System prompts
 
+  - `intelliSyncPrompt` - Australian business-focused system prompt with datetime context, FY awareness, compliance guidance
   - `artifactsPrompt` - Instructions for artifact creation/updates
   - `regularPrompt` - Standard assistant behavior
-  - `codePrompt`, `imagePrompt`, etc. - Artifact-specific prompts
+  - `codePrompt`, `imagePrompt`, `sheetPrompt` - Artifact-specific prompts
+  - `systemPrompt()` function - Combines base prompt + user custom prompt + RAG context + user settings (company, timezone, currency)
 
 - **`tools/`** - AI SDK tool definitions
 
@@ -129,6 +145,16 @@ The app uses Next.js route groups for organization:
   - `update-document.ts` - Update existing artifacts
   - `request-suggestions.ts` - Request document suggestions
   - `get-weather.ts` - Weather lookup tool
+  - `search-abn-by-name.ts` - Search Australian Business Register by company name
+  - `get-abn-details.ts` - Get detailed ABN information
+  - **Xero Integration Tools** (requires Xero connection via `/settings/integrations`):
+    - `list-xero-organisation.ts` - Check Xero connection status and get org details
+    - `list-xero-profit-and-loss.ts` - Retrieve P&L reports with date filtering
+    - `list-xero-balance-sheet.ts` - Retrieve balance sheet reports
+    - `list-xero-invoices.ts` - List/search invoices with filtering and pagination
+    - `list-xero-contacts.ts` - List customers and suppliers with search
+    - `list-xero-accounts.ts` - Get chart of accounts for categorization
+    - `create-xero-invoice.ts` - Create sales invoices or purchase bills (requires approval)
 
 - **`entitlements.ts`** - User-based rate limits and feature access
 
@@ -136,7 +162,9 @@ The app uses Next.js route groups for organization:
 
 - **`schema.ts`** - Drizzle schema definitions
 
+  **Core Tables:**
   - `User` - User accounts (id, email, systemPrompt - managed by Clerk)
+  - `UserSettings` - User preferences (companyName, timezone, baseCurrency, dateFormat)
   - `Chat` - Chat sessions with visibility settings
   - `Message_v2` - Messages with parts-based structure (current)
   - `Message` - Legacy messages (deprecated)
@@ -145,6 +173,12 @@ The app uses Next.js route groups for organization:
   - `Suggestion` - Document edit suggestions
   - `Vote_v2` - Message voting
   - `Stream` - Resumable stream tracking
+
+  **Integration Tables (Xero):**
+  - `integration_grants` - OAuth tokens with encryption (accessTokenEnc, refreshTokenEnc, expiresAt, status)
+  - `integration_tenant_bindings` - Organization-to-external tenant mappings (clerkOrgId, externalTenantId, activeGrantId)
+  - `integration_webhook_events` - Webhook event log with deduplication (externalEventId, payload, processedAt)
+  - `integration_sync_state` - Incremental sync cursor tracking per tenant and data type
 
 - **`queries.ts`** - Database query functions
 
@@ -187,6 +221,9 @@ The chat uses AI SDK's streaming with custom data types:
      - Smooth streaming with word-level chunking via `smoothStream()`
      - Step limiting with `stepCountIs(5)` constraint
      - Geolocation context injection via Vercel functions
+     - **Incomplete message detection** - Detects interrupted streams, displays banner with regenerate button
+     - User settings injection (company name, timezone, currency, date format)
+     - Organization context from Clerk for multi-tenant support
 
 2. **Custom data types** (defined in `lib/types.ts`):
 
@@ -227,6 +264,93 @@ Session access:
 
 Rate limiting based on user entitlements via `entitlements.ts`.
 
+### Xero Integration Architecture
+
+**Complete OAuth and data sync infrastructure** (`lib/integrations/`):
+
+**Core Components:**
+
+1. **`xero/adapter.ts`** - OAuth authentication and API client
+   - OAuth 2.0 flow (authorization code with PKCE)
+   - Token exchange and refresh with exponential backoff retry
+   - Tenant listing and management
+   - Authenticated API client creation with headers
+   - Error handling with `AuthError`, `ConfigError` classes
+
+2. **`token-service.ts`** - Token lifecycle management
+   - **Single-flight token refresh** - Prevents race conditions with row-level locking
+   - Automatic refresh buffer (5 minutes before expiry)
+   - Token encryption/decryption at rest
+   - Grant status tracking (active|superseded|revoked|refresh_failed)
+   - Safe concurrent access with PostgreSQL row locks
+
+3. **`sync/queue.ts`** - Redis-backed job queue
+   - FIFO processing (rPush/lPop operations)
+   - Webhook event enqueueing
+   - Processed by `/api/cron/process-queue` endpoint
+
+4. **`sync/worker.ts`** - Background sync processor
+   - Incremental sync with cursor tracking
+   - Data type-specific sync handlers
+   - Error recovery and retry logic
+
+5. **`clerk-sync.ts`** - Organization name synchronization
+   - Syncs org name from Xero to Clerk on first connection
+   - Non-blocking, failures logged but don't block OAuth flow
+   - Uses Clerk Management API
+
+6. **`errors.ts`** - Comprehensive error classes
+   - `AuthError` - OAuth and token issues
+   - `ConfigError` - Missing credentials/configuration
+   - `ExternalAPIError` - Xero API errors with status codes
+   - `RateLimitError` - Rate limiting with retry-after
+   - `TokenError` - Token validation failures
+
+**Security Features:**
+
+- **Token encryption** - All access/refresh tokens encrypted at rest using AES-256-GCM
+- **Organization context validation** - Only org admins/owners can connect integrations
+- **State parameter with nonce** - CSRF protection in OAuth flow
+- **OData injection prevention** - Input sanitization in tool parameters
+- **Webhook signature validation** - Verify Xero webhook authenticity
+
+**OAuth Flow:**
+
+1. User clicks "Connect Xero" → `/api/integrations/xero/start`
+2. Generates state parameter with org context + nonce, stores in session
+3. Redirects to Xero authorization endpoint
+4. User approves → Xero callback → `/api/xero/callback`
+5. Validates state, exchanges authorization code for tokens
+6. Stores encrypted tokens in `integration_grants`
+7. User selects tenant → `/api/integrations/xero/tenants/select`
+8. Creates binding in `integration_tenant_bindings`
+9. Triggers Clerk org name sync from Xero
+10. Integration available for AI tools
+
+**Data Flow:**
+
+```
+User Message → AI Tool Call → Token Service → Xero API
+                                   ↓
+                            Auto-refresh if needed
+                                   ↓
+                         Update grant in database
+```
+
+**Webhook Processing:**
+
+```
+Xero Webhook → /api/webhooks/xero → Validate Signature
+                                           ↓
+                               Store in integration_webhook_events
+                                           ↓
+                                  Enqueue Sync Job (Redis)
+                                           ↓
+                            /api/cron/process-queue (scheduled)
+                                           ↓
+                                   Sync Worker Processes
+```
+
 ### Message Structure
 
 **Current (Message_v2):**
@@ -257,6 +381,7 @@ Rate limiting based on user entitlements via `entitlements.ts`.
 - **`components/elements/`** - Application-specific UI elements
   - `settings-header.tsx` - Settings navigation with OrganizationSwitcher
   - `chat-header.tsx` - Chat header with organization support
+  - `message.tsx` - Enhanced message component with incomplete stream detection and regenerate button
 - **`components/ui/`** - Base shadcn/ui components (Radix UI)
 - **`hooks/`** - Custom React hooks
   - `use-messages.tsx` - Message state management
@@ -279,7 +404,20 @@ Required variables (see `.env.example`):
 Optional:
 
 - `AI_GATEWAY_API_KEY` - Required for non-Vercel deployments (Vercel uses OIDC)
-- `REDIS_URL` - Enable resumable streams
+- `REDIS_URL` - Enable resumable streams and sync queue
+
+**Xero Integration** (required for Xero tools):
+
+- `XERO_CLIENT_ID` - Xero OAuth app client ID
+- `XERO_CLIENT_SECRET` - Xero OAuth app client secret
+- `XERO_REDIRECT_URI` - OAuth callback URL (e.g., `https://yourdomain.com/api/xero/callback`)
+- `XERO_WEBHOOK_KEY` - Webhook signature verification key
+- `ENCRYPTION_KEY` - AES-256 key for token encryption (generate with `openssl rand -hex 32`)
+
+**Optional Features:**
+
+- `ABN_LOOKUP_ENABLED=true` - Enable Australian Business Register lookup tools
+- `ABN_LOOKUP_GUID` - ABN Lookup API authentication GUID
 
 Local development: Create `.env.local` with these variables.
 
@@ -379,6 +517,40 @@ Tests run against local dev server (started automatically).
 3. Combine with base prompt in `systemPrompt()` function
 4. RAG context automatically included if available
 
+### Working with Xero Integration
+
+**Connecting Xero:**
+
+1. User navigates to `/settings/integrations`
+2. Clicks "Connect Xero" (requires org admin/owner role)
+3. OAuth flow redirects to Xero authorization
+4. After approval, selects tenant from list
+5. System creates grant and binding, syncs org name to Clerk
+
+**Using Xero in AI Tools:**
+
+1. Tool checks connection: `list-xero-organisation` returns status
+2. If connected, access token retrieved via `TokenService`
+3. Token auto-refreshes if within 5 minutes of expiry
+4. Single-flight lock prevents concurrent refresh race conditions
+5. Sensitive tools (e.g., `create-xero-invoice`) require explicit user approval
+
+**Token Refresh Flow:**
+
+1. Tool calls `TokenService.getValidToken(orgId)`
+2. Service checks expiry: if < 5 min, initiates refresh
+3. Row-level lock acquired on grant record (prevents concurrent refresh)
+4. Refresh token exchanged for new access token
+5. Old grant marked `superseded`, new grant marked `active`
+6. Lock released, new token returned to tool
+
+**Handling Disconnection:**
+
+1. User clicks "Disconnect" in `/settings/integrations`
+2. System marks grant as `revoked`, removes binding
+3. AI tools will fail gracefully if Xero not connected
+4. User can reconnect by re-authorizing OAuth flow
+
 ## Important Patterns
 
 ### Server Actions
@@ -424,9 +596,13 @@ Migration helper: `lib/db/helpers/01-core-to-parts.ts`
 **Settings Pages** (located at `/settings`):
 
 - **Personalisation** (`/settings/personalisation`):
-  - Custom system prompt editor (stored in database)
+  - Custom system prompt editor (stored in `user.systemPrompt`)
   - AI behavior customization
-  - User-specific preferences
+  - **Business settings** (stored in `UserSettings` table):
+    - Company name (max 256 chars) - injected into system prompt context
+    - Timezone (default: Australia/Brisbane) - used for datetime context
+    - Base currency (default: AUD) - for financial calculations
+    - Date format (default: DD/MM/YYYY) - Australian standard format
 
 - **Integrations** (`/settings/integrations`):
   - Third-party accounting tool connections
@@ -434,9 +610,42 @@ Migration helper: `lib/db/helpers/01-core-to-parts.ts`
   - Organization-level integration management
 
 **Organization Support**:
-- Clerk `OrganizationSwitcher` in headers
+- Clerk `OrganizationSwitcher` in headers (chat and settings)
 - Dark mode styling for organization switcher
 - Organization-scoped data and settings
+- Organization name sync from Xero on first connection
+
+### Australian Business Localization
+
+**IntelliSync** is specifically designed for Australian businesses with comprehensive localization:
+
+**System Prompts** (`lib/ai/prompts.ts`):
+- **IntelliSync system prompt** with Australian business context
+- Current datetime injection with Australia/Brisbane timezone
+- Financial year awareness (e.g., FY 2024-25: July 1, 2024 - June 30, 2025)
+- Australian tax and compliance guidance:
+  - GST calculations (10% standard rate)
+  - Superannuation requirements (11.5% for FY 2024-25)
+  - Fair Work Act compliance
+  - Australian Taxation Office (ATO) reporting (BAS, IAS, STP)
+  - Workplace Health & Safety (WHS) regulations
+
+**Date and Currency Formats**:
+- Default date format: DD/MM/YYYY (Australian standard)
+- Default currency: AUD (Australian Dollar)
+- Default timezone: Australia/Brisbane (AEST/AEDT)
+- User-configurable in `UserSettings` table
+
+**Business Tools**:
+- ABN (Australian Business Number) lookup integration
+- Xero accounting integration (Australian SaaS)
+- Australian business entity types (Pty Ltd, Sole Trader, Partnership, Trust)
+
+**Prompt Engineering**:
+- Context-aware financial calculations using user's fiscal year
+- Compliance reminders for Australian regulations
+- Industry-specific terminology (e.g., "super" for superannuation)
+- Australian English spelling and terminology preferences
 
 ### RAG System Details
 
@@ -478,7 +687,8 @@ Migration helper: `lib/db/helpers/01-core-to-parts.ts`
 - **Code Highlighting**: `shiki@3.20.0`
 - **Spreadsheets**: `papaparse@5.5.3`, `react-data-grid@7.0.0-beta.59`
 - **Charts**: `recharts@3.6.0`
-- **Streaming**: `resumable-stream@2.2.10`
+- **Streaming**: `resumable-stream@2.2.10`, `redis@5.10.0` (sync queue + resumable streams)
+- **Encryption**: Node.js `crypto` module (AES-256-GCM for token encryption)
 
 ### Package Manager
 
@@ -486,7 +696,7 @@ This project uses **pnpm 9.12.3** for dependency management.
 
 ### Utilities & Helpers
 
-**Core Utilities** (`lib/utils.ts`):
+**Core Utilities** (`lib/utils.ts` and `lib/utils/`):
 
 - `sanitizeUrl()` - URL validation (http/https only, prevents protocol-relative attacks)
 - `fetchWithErrorHandlers()` - Enhanced fetch with offline detection
@@ -495,6 +705,13 @@ This project uses **pnpm 9.12.3** for dependency management.
 - `getTextFromMessage()` - Extract text from message parts
 - `isValidClerkUserId()` - Validate Clerk user ID format
 - Standard shadcn/ui utilities (`cn()`, etc.)
+
+**Encryption Utilities** (`lib/utils/encryption.ts`):
+
+- `encryptToken()` - AES-256-GCM encryption for OAuth tokens (IV + auth tag + ciphertext)
+- `decryptToken()` - Decrypt OAuth tokens with integrity verification
+- Uses Node.js `crypto` module with 32-byte key from `ENCRYPTION_KEY` env var
+- Constant-time comparison for auth tag verification
 
 **Editor Utilities** (`lib/editor/`):
 
@@ -508,12 +725,14 @@ This project uses **pnpm 9.12.3** for dependency management.
 
 - `app/` - Next.js App Router routes and layouts with grouped routes (`(auth)`, `(chat)`)
 - `components/` - React components (ui/, ai-elements/, elements/)
-- `lib/` - Shared utilities (db/, ai/, auth/, editor/, artifacts/)
+- `lib/` - Shared utilities (db/, ai/, auth/, editor/, artifacts/, integrations/)
   - `lib/ai/` - AI model providers, RAG system, prompts, tools
   - `lib/db/` - Database schema, queries, migrations
   - `lib/auth/` - Authentication helpers
   - `lib/editor/` - ProseMirror configuration and utilities
   - `lib/artifacts/` - Artifact server handlers
+  - `lib/integrations/` - Third-party integrations (Xero OAuth, token service, sync queue, error classes)
+  - `lib/clerk/` - Clerk configuration (OrganizationSwitcher theme)
 - `hooks/` - Custom React hooks
 - `tests/` - Playwright E2E tests
 - `artifacts/` - Artifact type implementations (client components)

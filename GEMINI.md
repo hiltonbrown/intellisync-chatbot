@@ -6,8 +6,8 @@ This file provides guidance for working with Google Gemini models in this Next.j
 
 This project supports Google's Gemini models through the Vercel AI SDK and AI Gateway. Current supported models include:
 
-- `google/gemini-2.5-flash-lite` (default) - Ultra fast and effective at a range of tasks
-- `google/gemini-3-pro-preview` - Most capable Google model
+- `google/gemini-2.5-flash-lite` (default) - Gemini 2.5 Flash Lite for other tasks
+- `google/gemini-3-pro-preview` - Gemini 3 Pro for complex reasoning tasks
 
 ## Model Configuration
 
@@ -24,7 +24,7 @@ To add a new Gemini model to the application:
        id: "google/gemini-3-pro-preview",
        name: "Gemini 3 Pro",
        provider: "google",
-       description: "Most capable Google model",
+       description: "Gemini 3 Pro for complex reasoning tasks",
      },
    ];
    ```
@@ -44,7 +44,7 @@ Gemini models in this application handle multimodal inputs in the chat interface
 
 #### Long Context Windows
 
-- Gemini 3 Pro: Large context window for handling extensive conversations
+- Gemini 3 Pro for complex reasoning tasks: Large context window for handling extensive conversations
 - Efficient handling of large codebases and long conversations
 - Maintains coherence across extended interactions
 
@@ -122,7 +122,7 @@ Gemini models work seamlessly with the application's streaming architecture:
 
 ### Model Selection
 
-- Use `gemini-2.5-flash-lite` for fast, cost-effective responses (default)
+- Use `gemini-2.5-flash-lite` for fast, cost-effective responses for other tasks (default)
 - Reserve `gemini-3-pro-preview` for complex reasoning tasks
 - Allow users to switch models via the model selector UI
 

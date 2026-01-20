@@ -7,6 +7,7 @@ import { memo } from "react";
 import { useWindowSize } from "usehooks-ts";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { Button } from "@/components/ui/button";
+import { getOrganizationSwitcherAppearance } from "@/lib/clerk/organization-switcher-config";
 import { PlusIcon } from "./icons";
 import { useSidebar } from "./ui/sidebar";
 
@@ -37,25 +38,7 @@ function PureSettingsHeader() {
 
 			<OrganizationSwitcher
 				hidePersonal
-				appearance={{
-					elements: {
-						rootBox: "flex-shrink-0",
-						organizationSwitcherTrigger: "px-2 h-8 md:h-fit",
-						organizationSwitcherTriggerIcon:
-							resolvedTheme === "dark" ? "text-gray-200" : "",
-						organizationPreviewTextContainer:
-							resolvedTheme === "dark" ? "text-gray-200" : "",
-						organizationPreviewMainIdentifier:
-							resolvedTheme === "dark" ? "text-gray-200" : "",
-						organizationPreviewSecondaryIdentifier:
-							resolvedTheme === "dark" ? "text-gray-400" : "",
-					},
-					variables: {
-						colorText: resolvedTheme === "dark" ? "#e5e7eb" : undefined,
-						colorTextSecondary:
-							resolvedTheme === "dark" ? "#9ca3af" : undefined,
-					},
-				}}
+				appearance={getOrganizationSwitcherAppearance(resolvedTheme)}
 			/>
 		</header>
 	);

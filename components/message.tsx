@@ -1,6 +1,7 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { memo, useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -28,7 +29,60 @@ import {
 	TOOL_WIDTH_CLASS,
 	ToolApprovalButtons,
 } from "./tool-helpers";
+import { Button } from "./ui/button";
 import { Weather } from "./weather";
+
+/**
+ * Checks if an assistant message is incomplete (has parts but no renderable content).
+ * This typically happens when a stream is interrupted before the response completes.
+ */
+function isIncompleteMessage(message: ChatMessage): boolean {
+	if (message.role !== "assistant") return false;
+	if (!message.parts || message.parts.length === 0) return false;
+
+	// Check if there are any renderable parts
+	const hasRenderableContent = message.parts.some((part) => {
+		const { type } = part;
+		// Text content (non-empty)
+		if (type === "text" && part.text?.trim()) return true;
+		// Tool calls
+		if (type.startsWith("tool-")) return true;
+		// Reasoning content (non-empty)
+		if (type === "reasoning" && part.text?.trim()) return true;
+		// File attachments
+		if (type === "file") return true;
+		return false;
+	});
+
+	return !hasRenderableContent;
+}
+
+/**
+ * Banner shown when an assistant message is incomplete due to stream interruption.
+ */
+function IncompleteMessageBanner({
+	onRegenerate,
+}: {
+	onRegenerate: () => void;
+}) {
+	return (
+		<div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-800 dark:bg-amber-950/50">
+			<AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+			<span className="flex-1 text-amber-800 dark:text-amber-200">
+				This response was interrupted and could not be completed.
+			</span>
+			<Button
+				variant="outline"
+				size="sm"
+				onClick={onRegenerate}
+				className="shrink-0 gap-1.5 border-amber-300 bg-white text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900 dark:text-amber-200 dark:hover:bg-amber-800"
+			>
+				<RefreshCw className="size-3.5" />
+				Regenerate
+			</Button>
+		</div>
+	);
+}
 
 const PurePreviewMessage = ({
 	addToolApprovalResponse,
@@ -623,6 +677,11 @@ const PurePreviewMessage = ({
 
 						return null;
 					})}
+
+					{/* Show banner for incomplete messages (stream interrupted) */}
+					{!isLoading && isIncompleteMessage(message) && (
+						<IncompleteMessageBanner onRegenerate={regenerate} />
+					)}
 
 					{!isReadonly && (
 						<MessageActions
