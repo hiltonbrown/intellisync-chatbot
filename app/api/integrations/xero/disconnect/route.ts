@@ -39,62 +39,83 @@ export async function POST(req: Request) {
 
     const { tenantBindingId } = result.data;
 
-    // 1. Verify Binding belongs to Org
-    const binding = await db.query.integrationTenantBindings.findFirst({
-        where: and(
-            eq(integrationTenantBindings.id, tenantBindingId),
-            eq(integrationTenantBindings.clerkOrgId, orgId)
-        )
-    });
+	let revokeToken: string | null = null;
 
-    if (!binding) {
-        return new Response("Binding not found", { status: 404 });
-    }
+	const binding = await db.transaction(async (tx) => {
+		// 1. Verify Binding belongs to Org
+		const bindingRecord = await tx.query.integrationTenantBindings.findFirst({
+			where: and(
+				eq(integrationTenantBindings.id, tenantBindingId),
+				eq(integrationTenantBindings.clerkOrgId, orgId),
+			),
+		});
 
-    // 2. Disconnect (Mark Revoked)
-    await db.update(integrationTenantBindings)
-        .set({ status: "revoked", updatedAt: new Date() })
-        .where(eq(integrationTenantBindings.id, tenantBindingId));
+		if (!bindingRecord) {
+			return null;
+		}
 
-    // 3. Check if Grant is orphaned (no other active bindings use it)
-    // "If its grant is no longer used by any bindings: Set grant = revoked."
-    const grantId = binding.activeGrantId;
+		// 2. Disconnect (Mark Revoked)
+		await tx
+			.update(integrationTenantBindings)
+			.set({ status: "revoked", updatedAt: new Date() })
+			.where(eq(integrationTenantBindings.id, tenantBindingId));
 
-    const otherBindings = await db.query.integrationTenantBindings.findFirst({
-        where: and(
-            eq(integrationTenantBindings.activeGrantId, grantId),
-            eq(integrationTenantBindings.status, "active") // Only care about active ones
-        )
-    });
+		// 3. Check if Grant is orphaned (no other active bindings use it)
+		// "If its grant is no longer used by any bindings: Set grant = revoked."
+		const grantId = bindingRecord.activeGrantId;
 
-    if (!otherBindings) {
-        // Orphaned grant!
-        const grant = await db.query.integrationGrants.findFirst({
-            where: eq(integrationGrants.id, grantId)
-        });
+		// Lock the grant row to prevent concurrent orphan checks.
+		await tx
+			.select()
+			.from(integrationGrants)
+			.where(eq(integrationGrants.id, grantId))
+			.for("update");
 
-        if (grant && grant.status === 'active') {
-             console.log(`Revoking orphaned grant ${grantId}`);
+		const otherBindings = await tx.query.integrationTenantBindings.findFirst({
+			where: and(
+				eq(integrationTenantBindings.activeGrantId, grantId),
+				eq(integrationTenantBindings.status, "active"), // Only care about active ones
+			),
+		});
 
-             // Optionally call Xero revoke
-             try {
-                 const token = decryptToken(grant.refreshTokenEnc); // Use refresh token to revoke
-                 await xeroAdapter.revokeToken(token);
-             } catch (e) {
-                 console.warn("Failed to revoke token upstream:", e);
-             }
+		if (!otherBindings) {
+			// Orphaned grant!
+			const grant = await tx.query.integrationGrants.findFirst({
+				where: eq(integrationGrants.id, grantId),
+			});
 
-             // Overwrite tokens in DB with random garbage
-             await db.update(integrationGrants)
-                .set({
-                    status: "revoked",
-                    accessTokenEnc: randomBytes(64).toString("hex"),
-                    refreshTokenEnc: randomBytes(64).toString("hex"),
-                    updatedAt: new Date()
-                })
-                .where(eq(integrationGrants.id, grantId));
-        }
-    }
+			if (grant && grant.status === "active") {
+				console.log(`Revoking orphaned grant ${grantId}`);
+
+				revokeToken = decryptToken(grant.refreshTokenEnc);
+
+				// Overwrite tokens in DB with random garbage
+				await tx
+					.update(integrationGrants)
+					.set({
+						status: "revoked",
+						accessTokenEnc: randomBytes(64).toString("hex"),
+						refreshTokenEnc: randomBytes(64).toString("hex"),
+						updatedAt: new Date(),
+					})
+					.where(eq(integrationGrants.id, grantId));
+			}
+		}
+
+		return bindingRecord;
+	});
+
+	if (!binding) {
+		return new Response("Binding not found", { status: 404 });
+	}
+
+	if (revokeToken) {
+		try {
+			await xeroAdapter.revokeToken(revokeToken);
+		} catch (e) {
+			console.warn("Failed to revoke token upstream:", e);
+		}
+	}
 
     return Response.json({ success: true });
 }

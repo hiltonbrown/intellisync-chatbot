@@ -4,6 +4,7 @@ import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { db } from "@/lib/db";
 import { integrationGrants } from "@/lib/db/schema";
 import { encryptToken } from "@/lib/utils/encryption";
+import { redis } from "@/lib/redis/client";
 import { addSeconds } from "date-fns";
 
 const xeroAdapter = new XeroAdapter();
@@ -22,7 +23,12 @@ export async function GET(req: Request) {
 		return new Response("Missing code or state", { status: 400 });
 	}
 
-	let decodedState: { clerk_user_id: string; clerk_org_id: string };
+	let decodedState: {
+		clerk_user_id: string;
+		clerk_org_id: string;
+		nonce: string;
+		timestamp: number;
+	};
 	try {
 		const json = Buffer.from(state, "base64").toString("utf-8");
 		decodedState = JSON.parse(json);
@@ -30,26 +36,48 @@ export async function GET(req: Request) {
 		return new Response("Invalid state parameter", { status: 400 });
 	}
 
-    // Verify current user matches the one who started the flow (Security check)
-    // Note: In a callback, the cookie session should still be valid.
-    const { userId, orgId } = await auth();
+	// Verify current user matches the one who started the flow (Security check)
+	// Note: In a callback, the cookie session should still be valid.
+	const { userId, orgId } = await auth();
 
-    // We strictly require the user who initiated the flow to complete it,
-    // AND they must still be in the same org context if possible.
-    // However, the callback comes from Xero, and Clerk might rely on cookies.
-    // Use the state's user/org as the source of truth for who *authorized* it,
-    // but verify the current session to ensure it's not a CSRF attack on a different user.
+	// We strictly require the user who initiated the flow to complete it,
+	// AND they must still be in the same org context if possible.
+	// However, the callback comes from Xero, and Clerk might rely on cookies.
+	// Use the state's user/org as the source of truth for who *authorized* it,
+	// but verify the current session to ensure it's not a CSRF attack on a different user.
 
-    if (!userId || userId !== decodedState.clerk_user_id) {
-        return new Response("Unauthorized: User mismatch", { status: 403 });
-    }
+	if (!userId || userId !== decodedState.clerk_user_id) {
+		return new Response("Unauthorized: User mismatch", { status: 403 });
+	}
 
-    // Org mismatch check is good practice too
-    if (orgId && orgId !== decodedState.clerk_org_id) {
-         // User switched orgs in the meantime - this is a security issue
-         console.error("Org ID mismatch in callback", { current: orgId, state: decodedState.clerk_org_id });
-         return new Response("Forbidden: Organization mismatch", { status: 403 });
-    }
+	// Org mismatch check is good practice too
+	if (orgId && orgId !== decodedState.clerk_org_id) {
+		// User switched orgs in the meantime - this is a security issue
+		console.error("Org ID mismatch in callback", {
+			current: orgId,
+			state: decodedState.clerk_org_id,
+		});
+		return new Response("Forbidden: Organization mismatch", { status: 403 });
+	}
+
+	if (!Number.isFinite(decodedState.timestamp)) {
+		return new Response("Invalid state parameter", { status: 400 });
+	}
+
+	const now = Date.now();
+	if (decodedState.timestamp > now + 300000) {
+		return new Response("Invalid state parameter", { status: 400 });
+	}
+
+	if (now - decodedState.timestamp > 600000) {
+		return new Response("State expired", { status: 403 });
+	}
+
+	const storedUserId = await redis.get(`oauth:nonce:${decodedState.nonce}`);
+	if (!storedUserId || storedUserId !== userId) {
+		return new Response("Invalid or expired state", { status: 403 });
+	}
+	await redis.del(`oauth:nonce:${decodedState.nonce}`);
 
 
 	let grantId: string;

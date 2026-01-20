@@ -8,7 +8,7 @@ import {
 } from "@/lib/db/schema";
 import { encryptToken, decryptToken } from "@/lib/utils/encryption";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
-import { eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { addMinutes, isPast } from "date-fns";
 
 const xeroAdapter = new XeroAdapter();
@@ -21,14 +21,19 @@ export class TokenService {
 	 * Automatically refreshes the token if it's expiring soon.
 	 *
 	 * @param tenantBindingId - The tenant binding ID
+	 * @param orgId - The Clerk organization ID that owns the tenant binding
 	 * @param forceRefresh - Force a token refresh even if not expired
 	 */
 	static async getClientForTenantBinding(
 		tenantBindingId: string,
+		orgId: string,
 		forceRefresh = false,
 	) {
 		const binding = await db.query.integrationTenantBindings.findFirst({
-			where: eq(integrationTenantBindings.id, tenantBindingId),
+			where: and(
+				eq(integrationTenantBindings.id, tenantBindingId),
+				eq(integrationTenantBindings.clerkOrgId, orgId),
+			),
 		});
 
 		if (!binding) {
@@ -103,18 +108,16 @@ export class TokenService {
 	): Promise<IntegrationGrant> {
 		return await db.transaction(async (tx) => {
 			// 1. Lock the row
-            // Query the grant with FOR UPDATE
-            // Note: tx.execute returns a generic result depending on driver.
-            // We use standard Drizzle queries where possible, but for lock we use SQL.
+			await tx
+				.select()
+				.from(integrationGrants)
+				.where(eq(integrationGrants.id, grantId))
+				.for("update");
 
-            await tx.execute(
-                sql`SELECT * FROM ${integrationGrants} WHERE ${integrationGrants.id} = ${grantId} FOR UPDATE`
-            );
-
-            // Re-fetch using Drizzle to get typed object (inside the transaction, so it sees the locked state)
-            const grant = await tx.query.integrationGrants.findFirst({
-                where: eq(integrationGrants.id, grantId)
-            });
+			// Re-fetch using Drizzle to get typed object (inside the transaction, so it sees the locked state)
+			const grant = await tx.query.integrationGrants.findFirst({
+				where: eq(integrationGrants.id, grantId),
+			});
 
 			if (!grant) throw new Error("Grant not found");
 
@@ -134,9 +137,9 @@ export class TokenService {
 					throw new Error("Invalid token response from Xero");
 				}
 
-                // Xero returns `expires_in` in seconds (usually 1800s = 30m)
-                // We add a safety buffer of 30 seconds to be conservative
-                const expiresInSeconds = tokenSet.expires_in || 1800;
+				// Xero returns `expires_in` in seconds (usually 1800s = 30m)
+				// We add a safety buffer of 30 seconds to be conservative
+				const expiresInSeconds = tokenSet.expires_in || 1800;
 				const newExpiresAt = new Date(Date.now() + (expiresInSeconds * 1000) - 30000);
 
 				// 4. Update DB

@@ -8,11 +8,13 @@ import { TokenError } from "@/lib/integrations/errors";
  * If a 401 occurs, forces a token refresh and retries once.
  *
  * @param tenantBindingId - The tenant binding ID
+ * @param orgId - The Clerk organization ID that owns the tenant binding
  * @param operation - The operation to execute with the API client
  * @returns The result of the operation
  */
 export async function withTokenRefreshRetry<T>(
 	tenantBindingId: string,
+	orgId: string,
 	operation: (client: Awaited<ReturnType<typeof TokenService.getClientForTenantBinding>>) => Promise<T>,
 ): Promise<T> {
 	try {
@@ -22,6 +24,7 @@ export async function withTokenRefreshRetry<T>(
 		);
 		const client = await TokenService.getClientForTenantBinding(
 			tenantBindingId,
+			orgId,
 			false,
 		);
 		return await operation(client);
@@ -51,6 +54,7 @@ export async function withTokenRefreshRetry<T>(
 			try {
 				const client = await TokenService.getClientForTenantBinding(
 					tenantBindingId,
+					orgId,
 					true,
 				);
 				console.log("[Retry Helper] Retrying operation with refreshed token...");

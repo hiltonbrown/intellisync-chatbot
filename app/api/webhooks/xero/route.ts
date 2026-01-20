@@ -2,8 +2,9 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
 import { integrationWebhookEvents, integrationTenantBindings } from "@/lib/db/schema";
 import { SyncQueue } from "@/lib/integrations/sync/queue";
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { ConfigError, WebhookError, logError } from "@/lib/integrations/errors";
+import { z } from "zod";
 
 const XERO_WEBHOOK_KEY = process.env.XERO_WEBHOOK_KEY;
 const MAX_WEBHOOK_SIZE = 1024 * 1024; // 1MB limit
@@ -19,6 +20,18 @@ interface XeroWebhookEvent {
 interface XeroWebhookPayload {
 	events: XeroWebhookEvent[];
 }
+
+const XeroWebhookSchema = z.object({
+	events: z.array(
+		z.object({
+			eventId: z.string(),
+			tenantId: z.string(),
+			eventCategory: z.string(),
+			resourceId: z.string(),
+			eventDateUtc: z.string(),
+		}),
+	),
+});
 
 export async function POST(req: Request) {
     if (!XERO_WEBHOOK_KEY) {
@@ -81,8 +94,20 @@ export async function POST(req: Request) {
         // 4. Parse Payload
         let payload: XeroWebhookPayload;
         try {
-            payload = JSON.parse(bodyText);
+            const parsed = JSON.parse(bodyText);
+			const result = XeroWebhookSchema.safeParse(parsed);
+			if (!result.success) {
+				throw new WebhookError(
+					"Invalid webhook payload",
+					"INVALID_PAYLOAD",
+					400,
+				);
+			}
+            payload = result.data;
         } catch (e) {
+			if (e instanceof WebhookError) {
+				throw e;
+			}
             throw new WebhookError(
                 "Invalid webhook JSON payload",
                 "INVALID_JSON",
@@ -92,6 +117,20 @@ export async function POST(req: Request) {
 
         const events = payload.events || [];
         console.log(`Received ${events.length} Xero events`);
+
+		const tenantIds = [...new Set(events.map((event) => event.tenantId))];
+		const bindings =
+			tenantIds.length > 0
+				? await db
+						.select()
+						.from(integrationTenantBindings)
+						.where(
+							inArray(integrationTenantBindings.externalTenantId, tenantIds),
+						)
+				: [];
+		const bindingMap = new Map(
+			bindings.map((binding) => [binding.externalTenantId, binding]),
+		);
 
         // 5. Process events
         for (const event of events) {
@@ -106,10 +145,8 @@ export async function POST(req: Request) {
                 });
 
                 // Resolve Tenant Binding
-                const tenantId = event.tenantId;
-                const binding = await db.query.integrationTenantBindings.findFirst({
-                    where: eq(integrationTenantBindings.externalTenantId, tenantId)
-                });
+				const tenantId = event.tenantId;
+				const binding = bindingMap.get(tenantId);
 
                 if (binding) {
                     // Enqueue Sync Job

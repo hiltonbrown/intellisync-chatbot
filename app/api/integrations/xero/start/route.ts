@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
+import { redis } from "@/lib/redis/client";
 import { randomBytes } from "crypto";
 
 const xeroAdapter = new XeroAdapter();
@@ -17,14 +18,17 @@ export async function GET(req: Request) {
 		return new Response("Forbidden: Admin access required", { status: 403 });
 	}
 
-    // State encodes the context to return to
-    // Using randomBytes for secure nonce
+	// State encodes the context to return to
+	// Using randomBytes for secure nonce
+	const nonce = randomBytes(32).toString("hex");
+	await redis.setEx(`oauth:nonce:${nonce}`, 600, userId);
+
 	const state = Buffer.from(
 		JSON.stringify({
 			clerk_user_id: userId,
 			clerk_org_id: orgId,
-            nonce: randomBytes(32).toString("hex"),
-            timestamp: Date.now()
+			nonce,
+			timestamp: Date.now(),
 		}),
 	).toString("base64");
 

@@ -102,7 +102,7 @@ export const listXeroInvoices = tool({
 			}
 
 			// Use retry helper to handle token refresh on 401 errors
-			return await withTokenRefreshRetry(binding.id, async (client) => {
+			return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
 				// Build query parameters
 				const params = new URLSearchParams();
 				params.append("page", page.toString());

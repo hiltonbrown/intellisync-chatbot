@@ -51,7 +51,7 @@ export const listXeroOrganisation = tool({
 			}
 
 			// Use retry helper to handle token refresh on 401 errors
-			return await withTokenRefreshRetry(binding.id, async (client) => {
+			return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
 				// Fetch organisation details from Xero
 				const response = await client.fetch("/Organisation");
 

@@ -261,6 +261,10 @@ export const integrationTenantBindings = pgTable(
 	(table) => ({
 		unq: unique().on(table.provider, table.externalTenantId),
         orgIdx: index("integration_tenant_bindings_org_idx").on(table.clerkOrgId),
+		grantStatusIdx: index("integration_tenant_bindings_grant_status_idx").on(
+			table.activeGrantId,
+			table.status,
+		),
 	}),
 );
 

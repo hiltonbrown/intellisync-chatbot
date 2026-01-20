@@ -1,16 +1,28 @@
 import { TokenService } from "@/lib/integrations/token-service";
 import { db } from "@/lib/db";
-import { integrationSyncState } from "@/lib/db/schema";
+import { integrationSyncState, integrationTenantBindings } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export class SyncWorker {
 	static async runTenantSyncOnce(tenantBindingId: string) {
 		console.log(`Starting sync for binding ${tenantBindingId}`);
 
-		// 1. Get Client (Handling Refresh)
-		const client = await TokenService.getClientForTenantBinding(tenantBindingId);
+		// 1. Load binding to enforce org ownership for token access
+		const binding = await db.query.integrationTenantBindings.findFirst({
+			where: eq(integrationTenantBindings.id, tenantBindingId),
+		});
 
-		// 2. Load Sync State
+		if (!binding) {
+			throw new Error("Tenant binding not found");
+		}
+
+		// 2. Get Client (Handling Refresh)
+		const client = await TokenService.getClientForTenantBinding(
+			tenantBindingId,
+			binding.clerkOrgId,
+		);
+
+		// 3. Load Sync State
 		let state = await db.query.integrationSyncState.findFirst({
 			where: eq(integrationSyncState.tenantBindingId, tenantBindingId),
 		});
