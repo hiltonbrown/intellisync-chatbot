@@ -1,10 +1,10 @@
 # AGENTS.md
 
-This file provides general guidance for AI agents working with this Next.js AI Chatbot codebase.
+This file provides general guidance for AI agents working with the IntelliSync Next.js AI Chatbot codebase.
 
 ## Quick Start
 
-This is a **Next.js AI Chatbot** application built with modern web technologies including RAG (Retrieval-Augmented Generation), advanced visualization, and organization support. For detailed technical documentation, see [`CLAUDE.md`](CLAUDE.md).
+This is **IntelliSync**, a **Next.js AI Chatbot** tailored for Australian businesses with Xero integration, RAG, artifacts, and organization support. For detailed technical documentation, see [`CLAUDE.md`](CLAUDE.md).
 
 ## Key Principles for AI Agents
 
@@ -22,15 +22,18 @@ This is a **Next.js AI Chatbot** application built with modern web technologies 
 3. **Development**: `pnpm dev` starts dev server at localhost:3000
 4. **Testing**: `pnpm test` runs Playwright E2E tests
 5. **Database**: Use `pnpm db:generate` and `pnpm db:migrate` for schema changes
+6. **Database GUI**: `pnpm db:studio` opens Drizzle Studio
 
 ### Architecture Overview
 
 - **Frontend**: Next.js 16.1.1 App Router with React Server Components (Turbopack enabled)
 - **Backend**: API routes in `app/api/`, server actions in `actions.ts` files
 - **Database**: PostgreSQL with Drizzle ORM 0.45.1 and pgvector extension
-- **AI Integration**: Vercel AI SDK 6.0.14 with multiple model providers (Anthropic, OpenAI, Google, xAI)
+- **AI Integration**: Vercel AI SDK 6.0.14 via Vercel AI Gateway (Anthropic, OpenAI, Google, xAI)
 - **Authentication**: Clerk 6.36.5 with OAuth, email/password, and organization support
 - **RAG System**: OpenAI embeddings (text-embedding-3-small) with automatic chunking
+- **Integrations**: Xero OAuth + webhooks + sync queue (AU business focus)
+- **Artifacts**: Real-time documents (text/code/image/sheet) with streaming updates
 - **Visualization**: ReactFlow for graph/flow interfaces, Recharts for analytics
 
 ## Common Tasks
@@ -45,6 +48,7 @@ This is a **Next.js AI Chatbot** application built with modern web technologies 
 2. **API Routes**: Create in `app/(chat)/api/` or `app/(auth)/api/`
    - Streaming endpoints use `streamText()` from AI SDK
    - Enable smooth streaming with `smoothStream()` middleware
+   - Resumable streaming uses `/api/chat/[id]/stream/route.ts` (requires Redis)
    - Add geolocation context via Vercel functions
 
 3. **Database Changes**: Modify `lib/db/schema.ts`, run migrations
@@ -57,7 +61,7 @@ This is a **Next.js AI Chatbot** application built with modern web technologies 
    - Follow existing tool patterns in `create-document.ts`, etc.
 
 5. **Settings Pages**: Add to `app/(chat)/settings/`
-   - Current pages: personalisation, integrations
+   - Current pages: settings dashboard, personalisation, integrations
    - Use `SettingsHeader` component with OrganizationSwitcher
 
 6. **RAG Integration**:
@@ -121,6 +125,13 @@ Multi-tenant organization features:
 - Organization-scoped data and settings
 - Dark mode styling throughout
 - Hide personal workspace mode (`hidePersonal`)
+
+### Xero Integration
+
+- OAuth flow in `app/api/integrations/xero/*` with token exchange and revocation
+- Tenant binding + Clerk org sync on selection
+- Webhook handler in `app/api/webhooks/xero/route.ts`
+- AI tools: `list-xero-*` and `create-xero-invoice` in `lib/ai/tools/`
 
 ### Custom System Prompts
 

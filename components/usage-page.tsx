@@ -21,7 +21,7 @@ import { UsageChart } from "@/components/usage-chart";
 const modelUsage = [
 	// Mock data - replace with real data fetching
 	{
-		model: "Google Gemini 2.5 Flash",
+		model: "Gemini 2.5 Flash Lite",
 		inputTokens: 15420,
 		outputTokens: 8500,
 		totalTokens: 23920,
@@ -48,7 +48,7 @@ function generateMockData(days: number) {
 		const date = subDays(today, i);
 		data.push({
 			date: format(date, "MMM d"),
-			"Google Gemini": Math.floor(Math.random() * 5000) + 1000,
+			"Gemini 3 Pro": Math.floor(Math.random() * 5000) + 1000,
 			"Claude Sonnet": Math.floor(Math.random() * 3000) + 500,
 			"GPT-4o": Math.floor(Math.random() * 2000) + 200,
 		});

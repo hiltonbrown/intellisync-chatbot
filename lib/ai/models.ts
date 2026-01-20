@@ -40,13 +40,13 @@ export const chatModels: ChatModel[] = [
 		id: "google/gemini-2.5-flash-lite",
 		name: "Gemini 2.5 Flash Lite",
 		provider: "google",
-		description: "Ultra fast and effective at a range of tasks",
+		description: "Gemini 2.5 Flash Lite for other tasks",
 	},
 	{
 		id: "google/gemini-3-pro-preview",
 		name: "Gemini 3 Pro",
 		provider: "google",
-		description: "Most capable Google model",
+		description: "Gemini 3 Pro for complex reasoning tasks",
 	},
 	// xAI
 	{
