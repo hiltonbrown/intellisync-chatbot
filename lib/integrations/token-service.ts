@@ -1,6 +1,5 @@
 import "server-only";
 
-import { addMinutes, isPast } from "date-fns";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -10,10 +9,12 @@ import {
 } from "@/lib/db/schema";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { decryptToken, encryptToken } from "@/lib/utils/encryption";
+import {
+	type XeroToken,
+	needsRefresh as needsRefreshCheck,
+} from "@/lib/xero/tokenManager";
 
 const xeroAdapter = new XeroAdapter();
-
-const TOKEN_REFRESH_BUFFER_MINUTES = 5;
 
 export class TokenService {
 	/**
@@ -53,10 +54,17 @@ export class TokenService {
 			throw new Error("Active grant not found");
 		}
 
+		// Construct XeroToken object for checking
+		const tokenToCheck: XeroToken = {
+			accessToken: "", // Content doesn't matter for date check
+			refreshToken: "", // Content doesn't matter for date check
+			expiresAt: grant.expiresAt,
+			scopes: [],
+		};
+
 		// Check if refresh is needed (either forced or token expiring soon)
 		const needsRefresh =
-			forceRefresh ||
-			isPast(addMinutes(grant.expiresAt, -TOKEN_REFRESH_BUFFER_MINUTES));
+			forceRefresh || needsRefreshCheck(tokenToCheck, 300); // 5 minutes buffer
 
 		if (needsRefresh) {
 			const refreshType = forceRefresh ? "force" : "auto";
@@ -123,9 +131,17 @@ export class TokenService {
 
 			if (!grant) throw new Error("Grant not found");
 
+			// Construct XeroToken object for checking
+			const tokenToCheck: XeroToken = {
+				accessToken: "",
+				refreshToken: "",
+				expiresAt: grant.expiresAt,
+				scopes: [],
+			};
+
 			// 2. Re-check expiry inside the lock
 			// If another process just refreshed it, expiresAt will be in the future.
-			if (!isPast(addMinutes(grant.expiresAt, -TOKEN_REFRESH_BUFFER_MINUTES))) {
+			if (!needsRefreshCheck(tokenToCheck, 300)) {
 				console.log("Grant was already refreshed by another process.");
 				return grant;
 			}
