@@ -222,16 +222,19 @@ export class XeroAdapter {
 		).toString("base64");
 
 		try {
-			const response = await fetch("https://identity.xero.com/connect/revocation", {
-				method: "POST",
-				headers: {
-					Authorization: `Basic ${credentials}`,
-					"Content-Type": "application/x-www-form-urlencoded",
+			const response = await fetch(
+				"https://identity.xero.com/connect/revocation",
+				{
+					method: "POST",
+					headers: {
+						Authorization: `Basic ${credentials}`,
+						"Content-Type": "application/x-www-form-urlencoded",
+					},
+					body: new URLSearchParams({
+						token,
+					}),
 				},
-				body: new URLSearchParams({
-					token,
-				}),
-			});
+			);
 
 			if (!response.ok) {
 				throw new TokenError(
@@ -269,6 +272,18 @@ export class XeroAdapter {
 						headers,
 					});
 
+					// Track rate limits
+					try {
+						const { extractRateLimits, logRateLimits } = await import(
+							"@/lib/integrations/rate-limiter"
+						);
+						const rateLimits = extractRateLimits(response.headers);
+						logRateLimits(tenantId, rateLimits);
+					} catch (e) {
+						// Ignore rate limit tracking errors to not block main flow
+						console.error("Failed to track rate limits", e);
+					}
+
 					if (response.status === 401) {
 						const errorBody = await response.text();
 						const wwwAuth = response.headers.get("www-authenticate");
@@ -303,7 +318,9 @@ export class XeroAdapter {
 
 					if (response.status === 429) {
 						const retryAfter = response.headers.get("Retry-After");
-						const retryAfterSeconds = retryAfter ? Number.parseInt(retryAfter, 10) : undefined;
+						const retryAfterSeconds = retryAfter
+							? Number.parseInt(retryAfter, 10)
+							: undefined;
 						throw new RateLimitError(
 							"Xero API rate limit exceeded",
 							retryAfterSeconds,

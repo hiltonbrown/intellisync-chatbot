@@ -225,6 +225,7 @@ export const integrationGrants = pgTable(
 		provider: varchar("provider", { length: 50 }).notNull().default("xero"),
 		accessTokenEnc: text("access_token_enc").notNull(),
 		refreshTokenEnc: text("refresh_token_enc").notNull(),
+		refreshTokenIssuedAt: timestamp("refresh_token_issued_at"),
 		expiresAt: timestamp("expires_at").notNull(),
 		status: varchar("status", {
 			enum: ["active", "superseded", "revoked", "refresh_failed"],

@@ -158,12 +158,16 @@ export async function POST(req: Request) {
 
 				if (binding) {
 					// Enqueue Sync Job
+					// Queue processing has been disabled (cron removed).
+					// Uncomment the below if you implement a new worker mechanism.
+					/*
 					await SyncQueue.enqueue({
 						tenantBindingId: binding.id,
 						eventId: externalEventId,
 						resourceType: event.eventCategory,
 						resourceId: event.resourceId,
 					});
+					*/
 				} else {
 					console.warn("Webhook received for unknown tenant", tenantId, {
 						tenantId,
