@@ -80,8 +80,12 @@ export const listXeroBalanceSheet = tool({
 			}
 
 			// Use retry helper to handle token refresh on 401 errors
-			return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
-				// Build query parameters
+			return await withTokenRefreshRetry(
+				userId,
+				binding.id,
+				orgId,
+				async (client) => {
+					// Build query parameters
 				const params = new URLSearchParams();
 				if (date) params.append("date", date);
 				if (periods) params.append("periods", periods.toString());

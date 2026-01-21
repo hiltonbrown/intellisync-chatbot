@@ -107,8 +107,12 @@ export const createXeroInvoice = tool({
 			}
 
 			// Use retry helper to handle token refresh on 401 errors
-			return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
-				// Build invoice payload
+			return await withTokenRefreshRetry(
+				userId,
+				binding.id,
+				orgId,
+				async (client) => {
+					// Build invoice payload
 				const invoicePayload = {
 					Type: type,
 					Contact: {

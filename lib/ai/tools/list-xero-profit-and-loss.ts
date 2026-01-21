@@ -87,8 +87,12 @@ export const listXeroProfitAndLoss = tool({
 			}
 
 			// Use retry helper to handle token refresh on 401 errors
-			return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
-				// Build query parameters
+			return await withTokenRefreshRetry(
+				userId,
+				binding.id,
+				orgId,
+				async (client) => {
+					// Build query parameters
 				const params = new URLSearchParams();
 				if (fromDate) params.append("fromDate", fromDate);
 				if (toDate) params.append("toDate", toDate);
