@@ -35,7 +35,9 @@ export class XeroAdapter {
 		this.clientId = process.env.XERO_CLIENT_ID || "";
 		this.clientSecret = process.env.XERO_CLIENT_SECRET || "";
 		this.redirectUri = process.env.XERO_REDIRECT_URI || "";
+	}
 
+	private validateCredentials(): void {
 		if (!this.clientId || !this.clientSecret || !this.redirectUri) {
 			throw new ConfigError("Missing Xero credentials", {
 				hasClientId: !!this.clientId,
@@ -46,6 +48,7 @@ export class XeroAdapter {
 	}
 
 	getAuthUrl(state: string): string {
+		this.validateCredentials();
 		const scopes = [
 			// Core scopes
 			"offline_access", // Required for refresh tokens
@@ -70,6 +73,7 @@ export class XeroAdapter {
 	}
 
 	async exchangeCode(code: string): Promise<XeroTokenSet> {
+		this.validateCredentials();
 		const credentials = Buffer.from(
 			`${this.clientId}:${this.clientSecret}`,
 		).toString("base64");
@@ -113,6 +117,7 @@ export class XeroAdapter {
 	}
 
 	async refreshTokens(refreshToken: string): Promise<XeroTokenSet> {
+		this.validateCredentials();
 		const credentials = Buffer.from(
 			`${this.clientId}:${this.clientSecret}`,
 		).toString("base64");
@@ -217,6 +222,7 @@ export class XeroAdapter {
 	}
 
 	async revokeToken(token: string): Promise<void> {
+		this.validateCredentials();
 		const credentials = Buffer.from(
 			`${this.clientId}:${this.clientSecret}`,
 		).toString("base64");
