@@ -2,14 +2,14 @@
 
 import { useState, useTransition } from "react";
 import {
+	saveUserSettings,
+	type UserSettingsInput,
+} from "@/app/(auth)/personalization-actions";
+import {
 	AUSTRALIAN_TIMEZONES,
 	CURRENCY_OPTIONS,
 	DATE_FORMAT_OPTIONS,
 } from "@/app/(auth)/personalization-config";
-import {
-	saveUserSettings,
-	type UserSettingsInput,
-} from "@/app/(auth)/personalization-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +64,9 @@ export function BusinessSettingsForm({
 				setSaved(true);
 				setTimeout(() => setSaved(false), 3000);
 			} catch (err) {
-				setError(err instanceof Error ? err.message : "Failed to save settings");
+				setError(
+					err instanceof Error ? err.message : "Failed to save settings",
+				);
 			}
 		});
 	};

@@ -1,12 +1,12 @@
 import { auth } from "@clerk/nextjs/server";
 import { addSeconds } from "date-fns";
+import escapeHtml from "escape-html";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { integrationGrants } from "@/lib/db/schema";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { redis } from "@/lib/redis/client";
 import { encryptToken } from "@/lib/utils/encryption";
-import escapeHtml from "escape-html";
 
 const xeroAdapter = new XeroAdapter();
 
@@ -17,7 +17,9 @@ export async function GET(req: Request) {
 	const error = searchParams.get("error");
 
 	if (error) {
-		return new Response(`Xero Auth Error: ${escapeHtml(error)}`, { status: 400 });
+		return new Response(`Xero Auth Error: ${escapeHtml(error)}`, {
+			status: 400,
+		});
 	}
 
 	if (!code || !state) {

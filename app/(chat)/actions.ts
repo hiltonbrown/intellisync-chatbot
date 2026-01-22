@@ -46,33 +46,33 @@ export async function generateTitleFromUserMessage({
 }
 
 export async function generateTitleFromDocument({
-  filename,
-  kind,
-  excerpt,
+	filename,
+	kind,
+	excerpt,
 }: {
-  filename: string;
-  kind: "text" | "sheet" | "pdf" | "image";
-  excerpt?: string | null;
+	filename: string;
+	kind: "text" | "sheet" | "pdf" | "image";
+	excerpt?: string | null;
 }) {
-  const { userId } = await auth();
+	const { userId } = await auth();
 
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
+	if (!userId) {
+		throw new Error("Unauthorized");
+	}
 
-  const promptLines = [
-    `Filename: ${filename}`,
-    `Kind: ${kind}`,
-    excerpt ? `Excerpt: ${excerpt}` : null,
-  ].filter(Boolean);
+	const promptLines = [
+		`Filename: ${filename}`,
+		`Kind: ${kind}`,
+		excerpt ? `Excerpt: ${excerpt}` : null,
+	].filter(Boolean);
 
-  const { text: title } = await generateText({
-    model: getTitleModel(),
-    system: fileTitlePrompt,
-    prompt: promptLines.join("\n"),
-  });
+	const { text: title } = await generateText({
+		model: getTitleModel(),
+		system: fileTitlePrompt,
+		prompt: promptLines.join("\n"),
+	});
 
-  return title;
+	return title;
 }
 
 export async function deleteTrailingMessages({ id }: { id: string }) {

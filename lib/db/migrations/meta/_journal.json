@@ -1,118 +1,118 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1728598022383,
-      "tag": "0000_keen_devos",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1730207363999,
-      "tag": "0001_sparkling_blue_marvel",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1730725226313,
-      "tag": "0002_wandering_riptide",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1733403031014,
-      "tag": "0003_cloudy_glorian",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1733945232355,
-      "tag": "0004_odd_slayback",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1741934630596,
-      "tag": "0005_wooden_whistler",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1746118166211,
-      "tag": "0006_marvelous_frog_thor",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1757362773211,
-      "tag": "0007_flowery_ben_parker",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1767528000000,
-      "tag": "0008_add_system_prompt",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1767529200000,
-      "tag": "0009_add_document_chunks",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1767529500000,
-      "tag": "0010_enable_pgvector",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1767529800000,
-      "tag": "0011_convert_embedding_to_vector",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1767530100000,
-      "tag": "0012_fix_user_id_types",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1768407900000,
-      "tag": "0013_add_user_settings",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1768704547542,
-      "tag": "0014_high_agent_zero",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "7",
-      "when": 1768718955680,
-      "tag": "0015_thick_deadpool",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1728598022383,
+			"tag": "0000_keen_devos",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1730207363999,
+			"tag": "0001_sparkling_blue_marvel",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1730725226313,
+			"tag": "0002_wandering_riptide",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1733403031014,
+			"tag": "0003_cloudy_glorian",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1733945232355,
+			"tag": "0004_odd_slayback",
+			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "7",
+			"when": 1741934630596,
+			"tag": "0005_wooden_whistler",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1746118166211,
+			"tag": "0006_marvelous_frog_thor",
+			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1757362773211,
+			"tag": "0007_flowery_ben_parker",
+			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "7",
+			"when": 1767528000000,
+			"tag": "0008_add_system_prompt",
+			"breakpoints": true
+		},
+		{
+			"idx": 9,
+			"version": "7",
+			"when": 1767529200000,
+			"tag": "0009_add_document_chunks",
+			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "7",
+			"when": 1767529500000,
+			"tag": "0010_enable_pgvector",
+			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "7",
+			"when": 1767529800000,
+			"tag": "0011_convert_embedding_to_vector",
+			"breakpoints": true
+		},
+		{
+			"idx": 12,
+			"version": "7",
+			"when": 1767530100000,
+			"tag": "0012_fix_user_id_types",
+			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "7",
+			"when": 1768407900000,
+			"tag": "0013_add_user_settings",
+			"breakpoints": true
+		},
+		{
+			"idx": 14,
+			"version": "7",
+			"when": 1768704547542,
+			"tag": "0014_high_agent_zero",
+			"breakpoints": true
+		},
+		{
+			"idx": 15,
+			"version": "7",
+			"when": 1768718955680,
+			"tag": "0015_thick_deadpool",
+			"breakpoints": true
+		}
+	]
 }

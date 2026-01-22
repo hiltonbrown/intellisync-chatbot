@@ -356,7 +356,9 @@ Create a spreadsheet in CSV format based on the given prompt. The spreadsheet sh
 /**
  * Text prompt with tone selection for different document contexts.
  */
-export const intellisyncTextPrompt = (documentContext: DocumentContext = "general"): string => {
+export const intellisyncTextPrompt = (
+	documentContext: DocumentContext = "general",
+): string => {
 	const toneGuide: Record<DocumentContext, string> = {
 		audit:
 			"Use formal, authoritative language. Include appropriate disclaimers about seeking professional advice. Reference relevant ATO guidelines or Australian Accounting Standards where applicable.",

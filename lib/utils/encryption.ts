@@ -21,9 +21,10 @@ function getKeyConfig(version?: number): KeyConfig {
 
 	// For v1, use TOKEN_ENC_KEY_HEX (current key)
 	// For older versions, check TOKEN_ENC_KEY_V{N}_HEX (e.g., TOKEN_ENC_KEY_V0_HEX)
-	const envVarName = targetVersion === 1
-		? "TOKEN_ENC_KEY_HEX"
-		: `TOKEN_ENC_KEY_V${targetVersion}_HEX`;
+	const envVarName =
+		targetVersion === 1
+			? "TOKEN_ENC_KEY_HEX"
+			: `TOKEN_ENC_KEY_V${targetVersion}_HEX`;
 
 	const KEY_HEX = process.env[envVarName] || "";
 	if (!KEY_HEX) {
@@ -34,7 +35,9 @@ function getKeyConfig(version?: number): KeyConfig {
 	const keyBuffer = Buffer.from(KEY_HEX, "hex");
 
 	if (keyBuffer.length < AES_256_KEY_LENGTH) {
-		throw new Error(`${envVarName} must be at least ${AES_256_KEY_LENGTH} bytes (${AES_256_KEY_LENGTH * 2} hex chars)`);
+		throw new Error(
+			`${envVarName} must be at least ${AES_256_KEY_LENGTH} bytes (${AES_256_KEY_LENGTH * 2} hex chars)`,
+		);
 	}
 
 	// Use first 32 bytes for AES-256

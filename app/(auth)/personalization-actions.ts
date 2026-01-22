@@ -3,10 +3,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import {
-	upsertUserSettings,
 	getUserById,
 	getUserSettingsByUserId,
 	updateUserSystemPrompt,
+	upsertUserSettings,
 } from "@/lib/db/queries";
 import type { UserSettings } from "@/lib/db/schema";
 import { userSettingsInputSchema } from "./personalization-validation";

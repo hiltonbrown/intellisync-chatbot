@@ -412,7 +412,7 @@ Optional:
 - `XERO_CLIENT_SECRET` - Xero OAuth app client secret
 - `XERO_REDIRECT_URI` - OAuth callback URL (e.g., `https://yourdomain.com/api/xero/callback`)
 - `XERO_WEBHOOK_KEY` - Webhook signature verification key
-- `ENCRYPTION_KEY` - AES-256 key for token encryption (generate with `openssl rand -hex 32`)
+- `TOKEN_ENC_KEY_HEX` - AES-256 key for token encryption (generate with `openssl rand -hex 64`)
 
 **Optional Features:**
 
@@ -710,7 +710,7 @@ This project uses **pnpm 9.12.3** for dependency management.
 
 - `encryptToken()` - AES-256-GCM encryption for OAuth tokens (IV + auth tag + ciphertext)
 - `decryptToken()` - Decrypt OAuth tokens with integrity verification
-- Uses Node.js `crypto` module with 32-byte key from `ENCRYPTION_KEY` env var
+- Uses Node.js `crypto` module with 32-byte key from `TOKEN_ENC_KEY_HEX` env var
 - Constant-time comparison for auth tag verification
 
 **Editor Utilities** (`lib/editor/`):

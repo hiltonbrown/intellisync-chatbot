@@ -118,10 +118,7 @@ export class RateLimitError extends IntegrationError {
  * Configuration errors
  */
 export class ConfigError extends IntegrationError {
-	constructor(
-		message: string,
-		context?: Record<string, unknown>,
-	) {
+	constructor(message: string, context?: Record<string, unknown>) {
 		super(message, "CONFIG_ERROR", 500, false, context);
 	}
 }
@@ -189,7 +186,10 @@ export function getErrorCode(error: unknown): string {
 /**
  * Log error with appropriate level based on severity
  */
-export function logError(error: unknown, context?: Record<string, unknown>): void {
+export function logError(
+	error: unknown,
+	context?: Record<string, unknown>,
+): void {
 	if (isIntegrationError(error)) {
 		const logContext = {
 			...error.context,
