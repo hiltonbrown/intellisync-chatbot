@@ -6,6 +6,7 @@ import { integrationGrants } from "@/lib/db/schema";
 import { XeroAdapter } from "@/lib/integrations/xero/adapter";
 import { redis } from "@/lib/redis/client";
 import { encryptToken } from "@/lib/utils/encryption";
+import escapeHtml from "escape-html";
 
 const xeroAdapter = new XeroAdapter();
 
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
 	const error = searchParams.get("error");
 
 	if (error) {
-		return new Response(`Xero Auth Error: ${error}`, { status: 400 });
+		return new Response(`Xero Auth Error: ${escapeHtml(error)}`, { status: 400 });
 	}
 
 	if (!code || !state) {
