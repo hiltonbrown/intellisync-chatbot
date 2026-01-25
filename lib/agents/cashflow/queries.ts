@@ -85,26 +85,57 @@ export async function getCashflowChartData() {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    const historical = await db.select({
-        date: sql<string>`to_char(${xeroTransactions.date}, 'YYYY-MM-DD')`,
-        in: sql<number>`sum(case when ${xeroTransactions.type} = 'RECEIVE' then cast(${xeroTransactions.amount} as numeric) else 0 end)`,
-        out: sql<number>`sum(case when ${xeroTransactions.type} = 'SPEND' then cast(${xeroTransactions.amount} as numeric) else 0 end)`
+    // Fetch raw transactions to perform deduplication logic in JS
+    const rawTransactions = await db.select({
+        date: xeroTransactions.date,
+        amount: xeroTransactions.amount,
+        type: xeroTransactions.type,
+        source: xeroTransactions.source
     })
     .from(xeroTransactions)
     .where(and(
         eq(xeroTransactions.xeroTenantId, tenantId),
         gte(xeroTransactions.date, ninetyDaysAgo),
         lte(xeroTransactions.date, new Date())
-    ))
-    .groupBy(sql`to_char(${xeroTransactions.date}, 'YYYY-MM-DD')`)
-    .orderBy(sql`to_char(${xeroTransactions.date}, 'YYYY-MM-DD')`);
+    ));
+
+    // Deduplication Logic: Prioritise BANK_TRANS over PAYMENT
+    // Group by Date + Amount + Type
+    const uniqueTrans = new Map<string, typeof rawTransactions[0]>();
+
+    for (const t of rawTransactions) {
+        if (!t.date || !t.amount) continue;
+        const key = `${t.date.toISOString().split('T')[0]}_${t.amount}_${t.type}`;
+
+        const existing = uniqueTrans.get(key);
+        if (existing) {
+            // If existing is PAYMENT and new is BANK_TRANS, replace it
+            if (existing.source === 'PAYMENT' && t.source === 'BANK_TRANS') {
+                uniqueTrans.set(key, t);
+            }
+            // If existing is BANK_TRANS, keep it (ignore new PAYMENT)
+        } else {
+            uniqueTrans.set(key, t);
+        }
+    }
+
+    // Aggregate deduplicated transactions by day
+    const historicalAgg = new Map<string, { in: number, out: number }>();
+
+    uniqueTrans.forEach(t => {
+        if (!t.date) return;
+        const dateStr = t.date.toISOString().split('T')[0];
+        const entry = historicalAgg.get(dateStr) || { in: 0, out: 0 };
+
+        const amount = Number(t.amount);
+        if (t.type === 'RECEIVE') entry.in += amount;
+        else if (t.type === 'SPEND') entry.out += amount;
+
+        historicalAgg.set(dateStr, entry);
+    });
+
 
     // Projected (Next 90 days)
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 90);
-
-    // Union All approach or fetch separately and merge. Merging in JS is easier for complex logic (adjustments + bills + invoices).
-
     // Future Invoices
     const invoices = await db.select({
         date: sql<string>`to_char(${xeroInvoices.dueDate}, 'YYYY-MM-DD')`,
@@ -139,12 +170,11 @@ export async function getCashflowChartData() {
     const dataMap = new Map<string, { date: string, historicalIn: number, historicalOut: number, projectedIn: number, projectedOut: number }>();
 
     // Fill History
-    historical.forEach(h => {
-        if (!h.date) return;
-        const entry = dataMap.get(h.date) || { date: h.date, historicalIn: 0, historicalOut: 0, projectedIn: 0, projectedOut: 0 };
-        entry.historicalIn = Number(h.in);
-        entry.historicalOut = Number(h.out);
-        dataMap.set(h.date, entry);
+    historicalAgg.forEach((val, dateStr) => {
+        const entry = dataMap.get(dateStr) || { date: dateStr, historicalIn: 0, historicalOut: 0, projectedIn: 0, projectedOut: 0 };
+        entry.historicalIn = val.in;
+        entry.historicalOut = val.out;
+        dataMap.set(dateStr, entry);
     });
 
     // Fill Projected
