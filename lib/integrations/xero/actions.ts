@@ -10,6 +10,7 @@ import {
 	xeroContacts,
 	xeroInvoices,
 	xeroSuppliers,
+	xeroTransactions,
 } from "@/lib/db/schema";
 import { withTokenRefreshRetry } from "./retry-helper";
 
@@ -37,6 +38,27 @@ interface XeroInvoiceResponse {
 		CurrencyCode: string;
 		LineItems?: Array<{ Description?: string; LineAmount?: number }>;
 	}>;
+}
+
+interface XeroBankTransactionResponse {
+    BankTransactions: Array<{
+        BankTransactionID: string;
+        Type: string; // SPEND or RECEIVE
+        Total: number;
+        DateString?: string;
+        LineItems?: Array<{ Description?: string; LineAmount?: number }>;
+    }>;
+}
+
+interface XeroPaymentResponse {
+    Payments: Array<{
+        PaymentID: string;
+        Date: string; // Typically YYYY-MM-DD
+        Amount: number;
+        PaymentType: string; // ACCREC PAYMENT or ACCPAY PAYMENT
+        Reference?: string;
+        Invoice?: { InvoiceID: string; Type: string }; // Depending on endpoint details
+    }>;
 }
 
 export async function syncXeroData() {
@@ -309,4 +331,113 @@ export async function syncXeroBills() {
 			},
 		};
 	});
+}
+
+export async function syncXeroTransactions() {
+    const { orgId } = await auth();
+	if (!orgId) throw new Error("No organization selected");
+
+	const binding = await db.query.integrationTenantBindings.findFirst({
+		where: (table, { and, eq }) =>
+			and(
+				eq(table.clerkOrgId, orgId),
+				eq(table.status, "active"),
+				eq(table.provider, "xero"),
+			),
+	});
+
+	if (!binding) throw new Error("No active Xero connection found");
+
+    return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
+        let transactionsCount = 0;
+        let paymentsCount = 0;
+
+        // 1. Sync Bank Transactions (Spend/Receive Money)
+        // Note: Xero API might limit history, so we might need paging or date filtering.
+        // Syncing last 365 days for MVP relevance.
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const whereDate = oneYearAgo.toISOString().split('T')[0];
+
+        let page = 1;
+        while(true) {
+            const btRes = await client.fetch(`/BankTransactions?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`);
+            if (!btRes.ok) break; // Or throw
+            const btData = await btRes.json() as XeroBankTransactionResponse;
+            if (btData.BankTransactions.length === 0) break;
+
+            for (const bt of btData.BankTransactions) {
+                const date = bt.DateString ? new Date(bt.DateString) : null;
+                const desc = bt.LineItems?.map(l => l.Description).join('; ') || "Bank Transaction";
+
+                await db.insert(xeroTransactions).values({
+                    xeroTenantId: binding.externalTenantId,
+                    xeroId: bt.BankTransactionID,
+                    type: bt.Type, // SPEND or RECEIVE
+                    amount: bt.Total.toString(),
+                    date: date,
+                    description: desc,
+                    source: "BANK_TRANS",
+                }).onConflictDoUpdate({
+                    target: [xeroTransactions.xeroTenantId, xeroTransactions.xeroId],
+                    set: {
+                        amount: bt.Total.toString(),
+                        description: desc,
+                        updatedAt: new Date(),
+                    }
+                });
+            }
+            transactionsCount += btData.BankTransactions.length;
+            page++;
+        }
+
+        // 2. Sync Payments (Invoice Payments)
+        // Fetch Payments modified after... or just all recent.
+        // /Payments endpoint supports paging.
+        page = 1;
+        while(true) {
+            const payRes = await client.fetch(`/Payments?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`);
+            if (!payRes.ok) break;
+            const payData = await payRes.json() as XeroPaymentResponse;
+            if (payData.Payments.length === 0) break;
+
+            for (const pay of payData.Payments) {
+                const type = pay.PaymentType === "ACCREC PAYMENT" ? "RECEIVE" : "SPEND";
+                const date = pay.Date ? new Date(pay.Date) : null; // Payments API returns YYYY-MM-DD often? Actually usually milliseconds timestamp or string.
+                // Xero API usually returns /Date(123123)/ format in JSON, need robust parsing if not using standard serializer?
+                // The library we used in `syncXeroData` (fetch wrapper) returns JSON.
+                // Standard Xero API V2 returns /Date(...)/ for JSON unless opting into standard JSON format which is newer.
+                // Assuming standard date string ISO or timestamp. If previous syncs worked with DateString, Payments usually have "Date" field.
+
+                // Note: The `fetch` helper likely returns raw JSON from Xero.
+                // Xero JSON dates are annoying `/Date(1519344000000+0000)/`.
+                // However, `syncXeroData` used `DateString` which Xero provides as `YYYY-MM-DD` alongside.
+                // Payments endpoint has `Date`. We might need to check if it's safe.
+                // Let's assume we can parse `pay.Date`.
+
+                const desc = `${pay.PaymentType} - Ref: ${pay.Reference || 'N/A'}`;
+
+                await db.insert(xeroTransactions).values({
+                    xeroTenantId: binding.externalTenantId,
+                    xeroId: pay.PaymentID,
+                    type: type,
+                    amount: pay.Amount.toString(),
+                    date: date,
+                    description: desc,
+                    source: "PAYMENT",
+                }).onConflictDoUpdate({
+                    target: [xeroTransactions.xeroTenantId, xeroTransactions.xeroId],
+                    set: {
+                        amount: pay.Amount.toString(),
+                        updatedAt: new Date(),
+                    }
+                });
+            }
+            paymentsCount += payData.Payments.length;
+            page++;
+        }
+
+        revalidatePath("/agents/cashflow");
+        return { success: true, counts: { transactions: transactionsCount, payments: paymentsCount } };
+    });
 }

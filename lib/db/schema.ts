@@ -394,3 +394,45 @@ export const xeroBills = pgTable(
 );
 
 export type XeroBill = InferSelectModel<typeof xeroBills>;
+
+export const xeroTransactions = pgTable(
+	"xero_transactions",
+	{
+		id: uuid("id").primaryKey().notNull().defaultRandom(),
+		xeroTenantId: text("xero_tenant_id").notNull(),
+		xeroId: text("xero_id").notNull(), // BankTransactionID or PaymentID
+		type: varchar("type", { length: 50 }), // SPEND, RECEIVE
+		amount: numeric("amount", { precision: 19, scale: 4 }),
+		date: timestamp("date"),
+		description: text("description"),
+		source: varchar("source", { length: 50 }), // BANK_TRANS or PAYMENT
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => ({
+		unq: unique().on(table.xeroTenantId, table.xeroId),
+		tenantIdx: index("xero_transactions_tenant_idx").on(table.xeroTenantId),
+		dateIdx: index("xero_transactions_date_idx").on(table.date),
+	}),
+);
+
+export type XeroTransaction = InferSelectModel<typeof xeroTransactions>;
+
+export const cashflowAdjustments = pgTable(
+	"cashflow_adjustments",
+	{
+		id: uuid("id").primaryKey().notNull().defaultRandom(),
+		userId: text("user_id").notNull().references(() => user.id),
+		xeroTenantId: text("xero_tenant_id").notNull(),
+		date: timestamp("date").notNull(),
+		amount: numeric("amount", { precision: 19, scale: 4 }).notNull(),
+		description: text("description").notNull(),
+		type: varchar("type", { length: 50 }).notNull(), // IN, OUT
+		status: varchar("status", { length: 50 }).default("SUGGESTED"), // SUGGESTED, CONFIRMED
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+	},
+	(table) => ({
+		tenantDateIdx: index("cashflow_adjustments_tenant_date_idx").on(table.xeroTenantId, table.date),
+	}),
+);
+
+export type CashflowAdjustment = InferSelectModel<typeof cashflowAdjustments>;
