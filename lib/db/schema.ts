@@ -5,6 +5,7 @@ import {
 	index,
 	integer,
 	json,
+	numeric,
 	pgTable,
 	primaryKey,
 	text,
@@ -300,3 +301,49 @@ export const integrationSyncState = pgTable("integration_sync_state", {
 	lastSyncAt: timestamp("last_sync_at"),
 	updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+export const xeroContacts = pgTable(
+	"xero_contacts",
+	{
+		id: uuid("id").primaryKey().notNull().defaultRandom(),
+		xeroTenantId: text("xero_tenant_id").notNull(),
+		xeroContactId: text("xero_contact_id").notNull(),
+		name: text("name").notNull(),
+		email: text("email"),
+		phone: text("phone"),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => ({
+		unq: unique().on(table.xeroTenantId, table.xeroContactId),
+		tenantIdx: index("xero_contacts_tenant_idx").on(table.xeroTenantId),
+	}),
+);
+
+export type XeroContact = InferSelectModel<typeof xeroContacts>;
+
+export const xeroInvoices = pgTable(
+	"xero_invoices",
+	{
+		id: uuid("id").primaryKey().notNull().defaultRandom(),
+		xeroTenantId: text("xero_tenant_id").notNull(),
+		xeroInvoiceId: text("xero_invoice_id").notNull(),
+		contactId: uuid("contact_id").references(() => xeroContacts.id),
+		type: varchar("type", { length: 50 }),
+		status: varchar("status", { length: 50 }),
+		date: timestamp("date"),
+		dueDate: timestamp("due_date"),
+		amountDue: numeric("amount_due", { precision: 19, scale: 4 }),
+		amountPaid: numeric("amount_paid", { precision: 19, scale: 4 }),
+		total: numeric("total", { precision: 19, scale: 4 }),
+		currencyCode: varchar("currency_code", { length: 10 }),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => ({
+		unq: unique().on(table.xeroTenantId, table.xeroInvoiceId),
+		tenantIdx: index("xero_invoices_tenant_idx").on(table.xeroTenantId),
+		contactIdx: index("xero_invoices_contact_idx").on(table.contactId),
+		dueDateIdx: index("xero_invoices_due_date_idx").on(table.dueDate),
+	}),
+);
+
+export type XeroInvoice = InferSelectModel<typeof xeroInvoices>;
