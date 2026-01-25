@@ -6,8 +6,10 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import {
 	integrationTenantBindings,
+	xeroBills,
 	xeroContacts,
 	xeroInvoices,
+	xeroSuppliers,
 } from "@/lib/db/schema";
 import { withTokenRefreshRetry } from "./retry-helper";
 
@@ -33,6 +35,7 @@ interface XeroInvoiceResponse {
 		AmountPaid: number;
 		Total: number;
 		CurrencyCode: string;
+		LineItems?: Array<{ Description?: string; LineAmount?: number }>;
 	}>;
 }
 
@@ -165,6 +168,144 @@ export async function syncXeroData() {
 			counts: {
 				contacts: contactsData.Contacts.length,
 				invoices: totalInvoices,
+			},
+		};
+	});
+}
+
+export async function syncXeroBills() {
+	const { orgId } = await auth();
+	if (!orgId) {
+		throw new Error("No organization selected");
+	}
+
+	const binding = await db.query.integrationTenantBindings.findFirst({
+		where: (table, { and, eq }) =>
+			and(
+				eq(table.clerkOrgId, orgId),
+				eq(table.status, "active"),
+				eq(table.provider, "xero"),
+			),
+	});
+
+	if (!binding) {
+		throw new Error("No active Xero connection found");
+	}
+
+	return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
+		// 1. Fetch Suppliers (Contacts)
+		// We sync all contacts to suppliers table for simplicity, or we can assume contacts are shared.
+		// Given separate tables requirement, we upsert to xeroSuppliers.
+		const contactsRes = await client.fetch("/Contacts");
+		if (!contactsRes.ok)
+			throw new Error(`Failed to fetch contacts: ${contactsRes.statusText}`);
+		const contactsData = (await contactsRes.json()) as XeroContactResponse;
+
+		for (const contact of contactsData.Contacts) {
+			await db
+				.insert(xeroSuppliers)
+				.values({
+					xeroTenantId: binding.externalTenantId,
+					xeroContactId: contact.ContactID,
+					name: contact.Name,
+					email: contact.EmailAddress,
+					phone: contact.Phones?.find(
+						(p) => p.PhoneType === "DEFAULT" || p.PhoneType === "MOBILE",
+					)?.PhoneNumber,
+				})
+				.onConflictDoUpdate({
+					target: [xeroSuppliers.xeroTenantId, xeroSuppliers.xeroContactId],
+					set: {
+						name: contact.Name,
+						email: contact.EmailAddress,
+						phone: contact.Phones?.find(
+							(p) => p.PhoneType === "DEFAULT" || p.PhoneType === "MOBILE",
+						)?.PhoneNumber,
+						updatedAt: new Date(),
+					},
+				});
+		}
+
+		// Load internal Supplier Map
+		const internalSuppliers = await db.query.xeroSuppliers.findMany({
+			where: and(eq(xeroSuppliers.xeroTenantId, binding.externalTenantId)),
+			columns: {
+				id: true,
+				xeroContactId: true,
+			},
+		});
+		const supplierMap = new Map(
+			internalSuppliers.map((s) => [s.xeroContactId, s.id]),
+		);
+
+		// 2. Fetch Bills (ACCPAY)
+		const whereClause =
+			'Type=="ACCPAY" AND (Status=="AUTHORISED" OR Status=="PAID")';
+		let page = 1;
+		let totalBills = 0;
+
+		while (true) {
+			const billsRes = await client.fetch(
+				`/Invoices?where=${encodeURIComponent(whereClause)}&page=${page}`,
+			);
+			if (!billsRes.ok)
+				throw new Error(`Failed to fetch bills: ${billsRes.statusText}`);
+			const billsData = (await billsRes.json()) as XeroInvoiceResponse;
+
+			if (billsData.Invoices.length === 0) break;
+			totalBills += billsData.Invoices.length;
+
+			for (const bill of billsData.Invoices) {
+				const supplierId = supplierMap.get(bill.Contact.ContactID);
+
+				const date = bill.DateString ? new Date(bill.DateString) : null;
+				const dueDate = bill.DueDateString
+					? new Date(bill.DueDateString)
+					: null;
+
+				const lineItemsSummary =
+					bill.LineItems?.map(
+						(l) => `${l.Description || "Item"} ($${l.LineAmount})`,
+					).join("; ") || "";
+
+				await db
+					.insert(xeroBills)
+					.values({
+						xeroTenantId: binding.externalTenantId,
+						xeroBillId: bill.InvoiceID,
+						supplierId: supplierId || null,
+						type: bill.Type,
+						status: bill.Status,
+						date: date,
+						dueDate: dueDate,
+						amountDue: bill.AmountDue.toString(),
+						amountPaid: bill.AmountPaid.toString(),
+						total: bill.Total.toString(),
+						currencyCode: bill.CurrencyCode,
+						lineItemsSummary: lineItemsSummary,
+					})
+					.onConflictDoUpdate({
+						target: [xeroBills.xeroTenantId, xeroBills.xeroBillId],
+						set: {
+							status: bill.Status,
+							amountDue: bill.AmountDue.toString(),
+							amountPaid: bill.AmountPaid.toString(),
+							total: bill.Total.toString(),
+							lineItemsSummary: lineItemsSummary,
+							updatedAt: new Date(),
+						},
+					});
+			}
+			page++;
+		}
+
+		console.log(`Synced ${totalBills} bills`);
+		revalidatePath("/agents/ap");
+		return {
+			success: true,
+			counts: {
+				suppliers: contactsData.Contacts.length,
+				bills: totalBills,
 			},
 		};
 	});

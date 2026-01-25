@@ -347,3 +347,50 @@ export const xeroInvoices = pgTable(
 );
 
 export type XeroInvoice = InferSelectModel<typeof xeroInvoices>;
+
+export const xeroSuppliers = pgTable(
+	"xero_suppliers",
+	{
+		id: uuid("id").primaryKey().notNull().defaultRandom(),
+		xeroTenantId: text("xero_tenant_id").notNull(),
+		xeroContactId: text("xero_contact_id").notNull(),
+		name: text("name").notNull(),
+		email: text("email"),
+		phone: text("phone"),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => ({
+		unq: unique().on(table.xeroTenantId, table.xeroContactId),
+		tenantIdx: index("xero_suppliers_tenant_idx").on(table.xeroTenantId),
+	}),
+);
+
+export type XeroSupplier = InferSelectModel<typeof xeroSuppliers>;
+
+export const xeroBills = pgTable(
+	"xero_bills",
+	{
+		id: uuid("id").primaryKey().notNull().defaultRandom(),
+		xeroTenantId: text("xero_tenant_id").notNull(),
+		xeroBillId: text("xero_bill_id").notNull(),
+		supplierId: uuid("supplier_id").references(() => xeroSuppliers.id),
+		type: varchar("type", { length: 50 }),
+		status: varchar("status", { length: 50 }),
+		date: timestamp("date"),
+		dueDate: timestamp("due_date"),
+		amountDue: numeric("amount_due", { precision: 19, scale: 4 }),
+		amountPaid: numeric("amount_paid", { precision: 19, scale: 4 }),
+		total: numeric("total", { precision: 19, scale: 4 }),
+		currencyCode: varchar("currency_code", { length: 10 }),
+		lineItemsSummary: text("line_items_summary"),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => ({
+		unq: unique().on(table.xeroTenantId, table.xeroBillId),
+		tenantIdx: index("xero_bills_tenant_idx").on(table.xeroTenantId),
+		supplierIdx: index("xero_bills_supplier_idx").on(table.supplierId),
+		dueDateIdx: index("xero_bills_due_date_idx").on(table.dueDate),
+	}),
+);
+
+export type XeroBill = InferSelectModel<typeof xeroBills>;
