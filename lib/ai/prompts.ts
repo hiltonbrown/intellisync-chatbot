@@ -435,3 +435,26 @@ export const createIntellisyncContext = (partial: {
 	requestHints: partial.requestHints,
 	customPrompt: partial.customPrompt,
 });
+
+export const collectionEmailPrompt = (
+	contactName: string,
+	companyName: string,
+	overdueInvoices: Array<{
+		date: string;
+		dueDate: string;
+		amount: string;
+		number: string;
+	}>,
+) => `
+You are drafting a collections email for ${companyName} to ${contactName}.
+There are ${overdueInvoices.length} overdue invoices.
+
+Invoices:
+${overdueInvoices.map((i) => `- Invoice ${i.number} (Due: ${i.dueDate}): $${i.amount}`).join("\n")}
+
+Task: Write a polite but firm email requesting payment.
+Tone: Professional, Australian business English.
+Include a table or list of the overdue invoices.
+Ask them to contact us if there are any issues.
+Subject line should be included.
+`;

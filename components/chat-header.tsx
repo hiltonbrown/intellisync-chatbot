@@ -1,14 +1,12 @@
 "use client";
 
-import { OrganizationSwitcher } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { memo } from "react";
 import { useWindowSize } from "usehooks-ts";
+import { AgentNavDropdown } from "@/components/agent-nav-dropdown";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { Button } from "@/components/ui/button";
-import { getOrganizationSwitcherAppearance } from "@/lib/clerk/organization-switcher-config";
 import { PlusIcon, VercelIcon } from "./icons";
 import { useSidebar } from "./ui/sidebar";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
@@ -24,8 +22,6 @@ function PureChatHeader({
 }) {
 	const router = useRouter();
 	const { open } = useSidebar();
-	const { resolvedTheme } = useTheme();
-
 	const { width: windowWidth } = useWindowSize();
 
 	return (
@@ -46,10 +42,7 @@ function PureChatHeader({
 				</Button>
 			)}
 
-			<OrganizationSwitcher
-				hidePersonal
-				appearance={getOrganizationSwitcherAppearance(resolvedTheme)}
-			/>
+			<AgentNavDropdown />
 
 			{!isReadonly && (
 				<VisibilitySelector
