@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AgentHeader } from "@/components/agent-header";
 import { CashflowCards } from "./cashflow-cards";
 import { CashflowChart, type CashflowChartDataPoint } from "./cashflow-chart";
 import { CashflowSchedule } from "./cashflow-schedule";
@@ -36,13 +37,15 @@ export function CashflowDashboard({
 
 	return (
 		<div className="flex flex-col h-full w-full">
-			<header className="flex items-center justify-between px-6 py-4 border-b">
-				<h1 className="text-xl font-semibold">Cashflow Agent</h1>
-				<div className="flex gap-2">
-					<CashflowSheet />
-					<SyncTransactionsButton />
-				</div>
-			</header>
+			<AgentHeader
+				title="Cashflow Agent"
+				actions={
+					<>
+						<CashflowSheet />
+						<SyncTransactionsButton />
+					</>
+				}
+			/>
 
 			<main className="flex-1 overflow-y-auto p-6 space-y-6">
 				<CashflowCards

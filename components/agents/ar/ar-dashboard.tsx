@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AgentHeader } from "@/components/agent-header";
 import { AgeingChart } from "./ageing-chart";
 import { CustomerSheet } from "./customer-sheet";
 import { CustomerTable } from "./customer-table";
@@ -54,10 +55,10 @@ export function ArDashboard({
 
 	return (
 		<div className="flex flex-col h-full w-full">
-			<header className="flex items-center justify-between px-6 py-4 border-b">
-				<h1 className="text-xl font-semibold">Accounts Receivable Agent</h1>
-				<SyncButton />
-			</header>
+			<AgentHeader
+				title="Accounts Receivable Agent"
+				actions={<SyncButton />}
+			/>
 
 			<main className="flex-1 overflow-y-auto p-6 space-y-6">
 				{initialData && (

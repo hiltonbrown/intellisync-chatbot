@@ -126,6 +126,7 @@ export async function getCashflowChartData() {
 			amount: xeroTransactions.amount,
 			type: xeroTransactions.type,
 			source: xeroTransactions.source,
+			xeroId: xeroTransactions.xeroId,
 		})
 		.from(xeroTransactions)
 		.where(

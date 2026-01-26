@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AgentHeader } from "@/components/agent-header";
 import { ApAgeingChart } from "./ap-ageing-chart";
 import { ApSummaryCards } from "./ap-summary-cards";
 import { SyncBillsButton } from "./sync-bills-button";
@@ -56,10 +57,10 @@ export function ApDashboard({ initialData, initialVendors }: ApDashboardProps) {
 
 	return (
 		<div className="flex flex-col h-full w-full">
-			<header className="flex items-center justify-between px-6 py-4 border-b">
-				<h1 className="text-xl font-semibold">Accounts Payable Agent</h1>
-				<SyncBillsButton />
-			</header>
+			<AgentHeader
+				title="Accounts Payable Agent"
+				actions={<SyncBillsButton />}
+			/>
 
 			<main className="flex-1 overflow-y-auto p-6 space-y-6">
 				{initialData && (
