@@ -12,8 +12,11 @@ export function parseXeroDate(dateString: string | undefined | null): Date | nul
 	// ISO format
 	try {
 		return parseISO(dateString);
-	} catch {
-		console.error(`Invalid Xero date format: ${dateString}`);
+	} catch (error) {
+		console.error(
+			`[parseXeroDate] Invalid date format: "${dateString}"`,
+			{ error: error instanceof Error ? error.message : String(error) },
+		);
 		return null;
 	}
 }

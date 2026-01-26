@@ -74,7 +74,6 @@ export function CustomerSheet({
 
 			const draft = await generateCollectionEmail(
 				data.contact.name,
-				"Our Company",
 				overdue,
 			);
 			setEmailDraft(draft);

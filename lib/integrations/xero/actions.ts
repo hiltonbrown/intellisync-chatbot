@@ -5,7 +5,6 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import {
-	integrationTenantBindings,
 	xeroBills,
 	xeroContacts,
 	xeroInvoices,
@@ -142,18 +141,23 @@ export async function syncXeroData() {
 			'Type=="ACCREC" AND (Status=="AUTHORISED" OR Status=="PAID")';
 		let page = 1;
 		let totalInvoices = 0;
+		const maxPages = 100; // Safety limit to prevent infinite loops
 
-		while (true) {
+		while (page <= maxPages) {
 			const invoicesRes = await client.fetch(
 				`/Invoices?where=${encodeURIComponent(whereClause)}&page=${page}`,
 			);
 			if (!invoicesRes.ok) {
 				const errorBody = await invoicesRes.text();
+				// Log partial success before throwing
+				console.error(
+					`Xero sync partial failure: Synced ${totalInvoices} invoices before error on page ${page}`,
+				);
 				throw new ExternalAPIError(
 					"Failed to fetch Xero invoices",
 					"xero",
 					invoicesRes.status,
-					{ endpoint: "/Invoices", response: errorBody },
+					{ endpoint: "/Invoices", response: errorBody, page, totalSynced: totalInvoices },
 				);
 			}
 			const invoicesData = (await invoicesRes.json()) as XeroInvoiceResponse;
@@ -289,18 +293,23 @@ export async function syncXeroBills() {
 			'Type=="ACCPAY" AND (Status=="AUTHORISED" OR Status=="PAID")';
 		let page = 1;
 		let totalBills = 0;
+		const maxPages = 100; // Safety limit to prevent infinite loops
 
-		while (true) {
+		while (page <= maxPages) {
 			const billsRes = await client.fetch(
 				`/Invoices?where=${encodeURIComponent(whereClause)}&page=${page}`,
 			);
 			if (!billsRes.ok) {
 				const errorBody = await billsRes.text();
+				// Log partial success before throwing
+				console.error(
+					`Xero AP sync partial failure: Synced ${totalBills} bills before error on page ${page}`,
+				);
 				throw new ExternalAPIError(
 					"Failed to fetch Xero bills",
 					"xero",
 					billsRes.status,
-					{ endpoint: "/Invoices", response: errorBody },
+					{ endpoint: "/Invoices", response: errorBody, page, totalSynced: totalBills },
 				);
 			}
 			const billsData = (await billsRes.json()) as XeroInvoiceResponse;
@@ -389,11 +398,18 @@ export async function syncXeroTransactions() {
 		const whereDate = oneYearAgo.toISOString().split("T")[0];
 
 		let page = 1;
-		while (true) {
+		const maxPages = 100; // Safety limit to prevent infinite loops
+		while (page <= maxPages) {
 			const btRes = await client.fetch(
 				`/BankTransactions?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`,
 			);
-			if (!btRes.ok) break; // Or throw but partial success might be ok for unrelated endpoints
+			if (!btRes.ok) {
+				// Log partial success for bank transactions
+				console.error(
+					`Xero cashflow sync partial failure: Synced ${transactionsCount} transactions before error on page ${page}`,
+				);
+				break; // Continue with payments sync even if bank transactions fail partially
+			}
 			const btData = (await btRes.json()) as XeroBankTransactionResponse;
 			if (btData.BankTransactions.length === 0) break;
 
@@ -432,11 +448,17 @@ export async function syncXeroTransactions() {
 
 		// 2. Sync Payments (Invoice Payments)
 		page = 1;
-		while (true) {
+		while (page <= maxPages) {
 			const payRes = await client.fetch(
 				`/Payments?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`,
 			);
-			if (!payRes.ok) break;
+			if (!payRes.ok) {
+				// Log partial success for payments
+				console.error(
+					`Xero payments sync partial failure: Synced ${paymentsCount} payments before error on page ${page}`,
+				);
+				break; // Partial success is acceptable for payments
+			}
 			const payData = (await payRes.json()) as XeroPaymentResponse;
 			if (payData.Payments.length === 0) break;
 

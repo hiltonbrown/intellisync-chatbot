@@ -1,11 +1,10 @@
 import "server-only";
 
 import { auth } from "@clerk/nextjs/server";
-import { and, asc, desc, eq, gte, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
 	cashflowAdjustments,
-	integrationTenantBindings,
 	xeroBills,
 	xeroInvoices,
 	xeroTransactions,
@@ -138,12 +137,15 @@ export async function getCashflowChartData() {
 		);
 
 	// Deduplication Logic: Prioritise BANK_TRANS over PAYMENT
-	// Group by Date + Amount + Type
+	// Group by Date + Amount + Type + XeroId (more robust key)
 	const uniqueTrans = new Map<string, (typeof rawTransactions)[0]>();
 
 	for (const t of rawTransactions) {
 		if (!t.date || !t.amount) continue;
-		const key = `${t.date.toISOString().split("T")[0]}_${t.amount}_${t.type}`;
+
+		// Enhanced key including xeroId for better uniqueness
+		const dateStr = t.date.toISOString().split("T")[0];
+		const key = `${dateStr}_${t.amount}_${t.type}_${t.xeroId || ""}`;
 
 		const existing = uniqueTrans.get(key);
 		if (existing) {

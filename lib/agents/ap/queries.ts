@@ -4,7 +4,6 @@ import { auth } from "@clerk/nextjs/server";
 import { and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
-	integrationTenantBindings,
 	xeroBills,
 	xeroSuppliers,
 } from "@/lib/db/schema";

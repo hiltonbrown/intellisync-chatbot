@@ -12,7 +12,6 @@ import { getLanguageModel } from "@/lib/ai/providers";
 import { db } from "@/lib/db";
 import {
 	cashflowAdjustments,
-	integrationTenantBindings,
 	xeroTransactions,
 } from "@/lib/db/schema";
 
@@ -58,13 +57,31 @@ export async function generateCashflowSuggestions() {
 	});
 
 	try {
-		// Extract JSON
-		const jsonMatch = text.match(/\[.*\]/s);
-		if (!jsonMatch) return [];
-		const suggestions = JSON.parse(jsonMatch[0]);
+		// Safely extract JSON array from the model output
+		const jsonStart = text.indexOf("[");
+		const jsonEnd = text.lastIndexOf("]");
+
+		if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+			console.error("[generateCashflowSuggestions] No valid JSON array found in response");
+			return [];
+		}
+
+		const jsonString = text.slice(jsonStart, jsonEnd + 1);
+		const parsed = JSON.parse(jsonString);
+
+		// Basic structural validation: expect an array of plain objects
+		if (!Array.isArray(parsed)) {
+			console.error("[generateCashflowSuggestions] Parsed result is not an array");
+			return [];
+		}
+
+		const suggestions = parsed.filter(
+			(item) => item !== null && typeof item === "object" && !Array.isArray(item),
+		);
+
 		return suggestions;
 	} catch (e) {
-		console.error("Failed to parse AI suggestions", e);
+		console.error("[generateCashflowSuggestions] Failed to parse AI suggestions", e);
 		return [];
 	}
 }
