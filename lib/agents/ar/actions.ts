@@ -15,6 +15,7 @@ import {
 	xeroContacts,
 	xeroInvoices,
 } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 const uuidSchema = z.string().uuid();
 
