@@ -20,6 +20,7 @@ import {
 import { useArtifactSelector } from "@/hooks/use-artifact";
 import { useAutoResume } from "@/hooks/use-auto-resume";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
+import { useXeroTokenRefresh } from "@/hooks/use-xero-token-refresh";
 import type { Vote } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { Attachment, ChatMessage } from "@/lib/types";
@@ -55,6 +56,17 @@ export function Chat({
 	});
 
 	const { mutate } = useSWRConfig();
+
+	// Proactively refresh Xero tokens on page load to prevent disconnections
+	// This runs in the background and doesn't block chat functionality
+	useXeroTokenRefresh({
+		autoRefresh: true,
+		onError: (error) => {
+			// Log error but don't disrupt user experience
+			// Users will get specific errors when they try to use Xero tools if tokens are invalid
+			console.warn("[Chat] Xero token refresh failed:", error.message);
+		},
+	});
 
 	// Handle browser back/forward navigation
 	useEffect(() => {

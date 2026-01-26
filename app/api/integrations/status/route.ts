@@ -27,6 +27,7 @@ export async function GET(req: Request) {
 			grantUpdatedAt: integrationGrants.updatedAt,
 			grantExpiresAt: integrationGrants.expiresAt,
 			grantLastUsedAt: integrationGrants.lastUsedAt,
+			grantRefreshTokenIssuedAt: integrationGrants.refreshTokenIssuedAt,
 		})
 		.from(integrationTenantBindings)
 		.innerJoin(
