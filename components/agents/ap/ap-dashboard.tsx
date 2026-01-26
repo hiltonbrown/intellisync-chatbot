@@ -31,13 +31,13 @@ interface Vendor {
 	name: string;
 	totalDue: number;
 	billCount: number;
-    buckets: {
-        current: number;
-        days30: number;
-        days60: number;
-        days90: number;
-        days90plus: number;
-    };
+	buckets: {
+		current: number;
+		days30: number;
+		days60: number;
+		days90: number;
+		days90plus: number;
+	};
 }
 
 interface ApDashboardProps {
@@ -45,13 +45,8 @@ interface ApDashboardProps {
 	initialVendors: Vendor[];
 }
 
-export function ApDashboard({
-	initialData,
-	initialVendors,
-}: ApDashboardProps) {
-	const [selectedVendorId, setSelectedVendorId] = useState<string | null>(
-		null,
-	);
+export function ApDashboard({ initialData, initialVendors }: ApDashboardProps) {
+	const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
 	const [isSheetOpen, setIsSheetOpen] = useState(false);
 
 	const handleVendorClick = (id: string) => {

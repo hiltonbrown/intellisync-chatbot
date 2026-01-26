@@ -16,7 +16,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { generateCollectionEmail, getCustomerDetails } from "@/lib/agents/ar/actions";
+import {
+	generateCollectionEmail,
+	getCustomerDetails,
+} from "@/lib/agents/ar/actions";
 
 interface CustomerSheetProps {
 	customerId: string | null;

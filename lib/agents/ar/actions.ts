@@ -1,13 +1,19 @@
 "use server";
 
+import "server-only";
+
+import { auth } from "@clerk/nextjs/server";
 import { generateText } from "ai";
+import { and, desc, eq } from "drizzle-orm";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { collectionEmailPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
-import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { integrationTenantBindings, xeroContacts, xeroInvoices } from "@/lib/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import {
+	integrationTenantBindings,
+	xeroContacts,
+	xeroInvoices,
+} from "@/lib/db/schema";
 
 export async function generateCollectionEmail(
 	contactName: string,

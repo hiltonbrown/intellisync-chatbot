@@ -421,7 +421,9 @@ export const cashflowAdjustments = pgTable(
 	"cashflow_adjustments",
 	{
 		id: uuid("id").primaryKey().notNull().defaultRandom(),
-		userId: text("user_id").notNull().references(() => user.id),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id),
 		xeroTenantId: text("xero_tenant_id").notNull(),
 		date: timestamp("date").notNull(),
 		amount: numeric("amount", { precision: 19, scale: 4 }).notNull(),
@@ -431,7 +433,10 @@ export const cashflowAdjustments = pgTable(
 		createdAt: timestamp("created_at").notNull().defaultNow(),
 	},
 	(table) => ({
-		tenantDateIdx: index("cashflow_adjustments_tenant_date_idx").on(table.xeroTenantId, table.date),
+		tenantDateIdx: index("cashflow_adjustments_tenant_date_idx").on(
+			table.xeroTenantId,
+			table.date,
+		),
 	}),
 );
 

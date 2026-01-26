@@ -41,24 +41,24 @@ interface XeroInvoiceResponse {
 }
 
 interface XeroBankTransactionResponse {
-    BankTransactions: Array<{
-        BankTransactionID: string;
-        Type: string; // SPEND or RECEIVE
-        Total: number;
-        DateString?: string;
-        LineItems?: Array<{ Description?: string; LineAmount?: number }>;
-    }>;
+	BankTransactions: Array<{
+		BankTransactionID: string;
+		Type: string; // SPEND or RECEIVE
+		Total: number;
+		DateString?: string;
+		LineItems?: Array<{ Description?: string; LineAmount?: number }>;
+	}>;
 }
 
 interface XeroPaymentResponse {
-    Payments: Array<{
-        PaymentID: string;
-        Date: string; // Typically YYYY-MM-DD
-        Amount: number;
-        PaymentType: string; // ACCREC PAYMENT or ACCPAY PAYMENT
-        Reference?: string;
-        Invoice?: { InvoiceID: string; Type: string }; // Depending on endpoint details
-    }>;
+	Payments: Array<{
+		PaymentID: string;
+		Date: string; // Typically YYYY-MM-DD
+		Amount: number;
+		PaymentType: string; // ACCREC PAYMENT or ACCPAY PAYMENT
+		Reference?: string;
+		Invoice?: { InvoiceID: string; Type: string }; // Depending on endpoint details
+	}>;
 }
 
 export async function syncXeroData() {
@@ -91,30 +91,30 @@ export async function syncXeroData() {
 		console.log(`Synced ${contactsData.Contacts.length} contacts`);
 
 		// Batch Upsert Contacts
-        if (contactsData.Contacts.length > 0) {
-            await db
-                .insert(xeroContacts)
-                .values(
-                    contactsData.Contacts.map((contact) => ({
-                        xeroTenantId: binding.externalTenantId,
-                        xeroContactId: contact.ContactID,
-                        name: contact.Name,
-                        email: contact.EmailAddress,
-                        phone: contact.Phones?.find(
-                            (p) => p.PhoneType === "DEFAULT" || p.PhoneType === "MOBILE",
-                        )?.PhoneNumber,
-                    }))
-                )
-                .onConflictDoUpdate({
-                    target: [xeroContacts.xeroTenantId, xeroContacts.xeroContactId],
-                    set: {
-                        name: sql`excluded.name`,
-                        email: sql`excluded.email`,
-                        phone: sql`excluded.phone`,
-                        updatedAt: new Date(),
-                    },
-                });
-        }
+		if (contactsData.Contacts.length > 0) {
+			await db
+				.insert(xeroContacts)
+				.values(
+					contactsData.Contacts.map((contact) => ({
+						xeroTenantId: binding.externalTenantId,
+						xeroContactId: contact.ContactID,
+						name: contact.Name,
+						email: contact.EmailAddress,
+						phone: contact.Phones?.find(
+							(p) => p.PhoneType === "DEFAULT" || p.PhoneType === "MOBILE",
+						)?.PhoneNumber,
+					})),
+				)
+				.onConflictDoUpdate({
+					target: [xeroContacts.xeroTenantId, xeroContacts.xeroContactId],
+					set: {
+						name: sql`excluded.name`,
+						email: sql`excluded.email`,
+						phone: sql`excluded.phone`,
+						updatedAt: new Date(),
+					},
+				});
+		}
 
 		// Load internal Contact Map for linking
 		const internalContacts = await db.query.xeroContacts.findMany({
@@ -145,31 +145,31 @@ export async function syncXeroData() {
 			if (invoicesData.Invoices.length === 0) break;
 			totalInvoices += invoicesData.Invoices.length;
 
-            // Prepare Invoice Data
-            const invoiceValues = invoicesData.Invoices.map(invoice => {
-                const contactId = contactMap.get(invoice.Contact.ContactID);
+			// Prepare Invoice Data
+			const invoiceValues = invoicesData.Invoices.map((invoice) => {
+				const contactId = contactMap.get(invoice.Contact.ContactID);
 				const date = invoice.DateString ? new Date(invoice.DateString) : null;
 				const dueDate = invoice.DueDateString
 					? new Date(invoice.DueDateString)
 					: null;
 
-                return {
-                    xeroTenantId: binding.externalTenantId,
-                    xeroInvoiceId: invoice.InvoiceID,
-                    contactId: contactId || null,
-                    type: invoice.Type,
-                    status: invoice.Status,
-                    date: date,
-                    dueDate: dueDate,
-                    amountDue: invoice.AmountDue.toString(),
-                    amountPaid: invoice.AmountPaid.toString(),
-                    total: invoice.Total.toString(),
-                    currencyCode: invoice.CurrencyCode,
-                };
-            });
+				return {
+					xeroTenantId: binding.externalTenantId,
+					xeroInvoiceId: invoice.InvoiceID,
+					contactId: contactId || null,
+					type: invoice.Type,
+					status: invoice.Status,
+					date: date,
+					dueDate: dueDate,
+					amountDue: invoice.AmountDue.toString(),
+					amountPaid: invoice.AmountPaid.toString(),
+					total: invoice.Total.toString(),
+					currencyCode: invoice.CurrencyCode,
+				};
+			});
 
-            if (invoiceValues.length > 0) {
-                await db
+			if (invoiceValues.length > 0) {
+				await db
 					.insert(xeroInvoices)
 					.values(invoiceValues)
 					.onConflictDoUpdate({
@@ -182,7 +182,7 @@ export async function syncXeroData() {
 							updatedAt: new Date(),
 						},
 					});
-            }
+			}
 			page++;
 		}
 
@@ -226,20 +226,20 @@ export async function syncXeroBills() {
 			throw new Error(`Failed to fetch contacts: ${contactsRes.statusText}`);
 		const contactsData = (await contactsRes.json()) as XeroContactResponse;
 
-        if (contactsData.Contacts.length > 0) {
-            await db
+		if (contactsData.Contacts.length > 0) {
+			await db
 				.insert(xeroSuppliers)
 				.values(
-                    contactsData.Contacts.map(contact => ({
-                        xeroTenantId: binding.externalTenantId,
-                        xeroContactId: contact.ContactID,
-                        name: contact.Name,
-                        email: contact.EmailAddress,
-                        phone: contact.Phones?.find(
-                            (p) => p.PhoneType === "DEFAULT" || p.PhoneType === "MOBILE",
-                        )?.PhoneNumber,
-                    }))
-                )
+					contactsData.Contacts.map((contact) => ({
+						xeroTenantId: binding.externalTenantId,
+						xeroContactId: contact.ContactID,
+						name: contact.Name,
+						email: contact.EmailAddress,
+						phone: contact.Phones?.find(
+							(p) => p.PhoneType === "DEFAULT" || p.PhoneType === "MOBILE",
+						)?.PhoneNumber,
+					})),
+				)
 				.onConflictDoUpdate({
 					target: [xeroSuppliers.xeroTenantId, xeroSuppliers.xeroContactId],
 					set: {
@@ -249,7 +249,7 @@ export async function syncXeroBills() {
 						updatedAt: new Date(),
 					},
 				});
-        }
+		}
 
 		// Load internal Supplier Map
 		const internalSuppliers = await db.query.xeroSuppliers.findMany({
@@ -280,8 +280,8 @@ export async function syncXeroBills() {
 			if (billsData.Invoices.length === 0) break;
 			totalBills += billsData.Invoices.length;
 
-            const billValues = billsData.Invoices.map(bill => {
-                const supplierId = supplierMap.get(bill.Contact.ContactID);
+			const billValues = billsData.Invoices.map((bill) => {
+				const supplierId = supplierMap.get(bill.Contact.ContactID);
 				const date = bill.DateString ? new Date(bill.DateString) : null;
 				const dueDate = bill.DueDateString
 					? new Date(bill.DueDateString)
@@ -291,24 +291,24 @@ export async function syncXeroBills() {
 						(l) => `${l.Description || "Item"} ($${l.LineAmount})`,
 					).join("; ") || "";
 
-                return {
-                    xeroTenantId: binding.externalTenantId,
-                    xeroBillId: bill.InvoiceID,
-                    supplierId: supplierId || null,
-                    type: bill.Type,
-                    status: bill.Status,
-                    date: date,
-                    dueDate: dueDate,
-                    amountDue: bill.AmountDue.toString(),
-                    amountPaid: bill.AmountPaid.toString(),
-                    total: bill.Total.toString(),
-                    currencyCode: bill.CurrencyCode,
-                    lineItemsSummary: lineItemsSummary,
-                };
-            });
+				return {
+					xeroTenantId: binding.externalTenantId,
+					xeroBillId: bill.InvoiceID,
+					supplierId: supplierId || null,
+					type: bill.Type,
+					status: bill.Status,
+					date: date,
+					dueDate: dueDate,
+					amountDue: bill.AmountDue.toString(),
+					amountPaid: bill.AmountPaid.toString(),
+					total: bill.Total.toString(),
+					currencyCode: bill.CurrencyCode,
+					lineItemsSummary: lineItemsSummary,
+				};
+			});
 
-            if (billValues.length > 0) {
-                await db
+			if (billValues.length > 0) {
+				await db
 					.insert(xeroBills)
 					.values(billValues)
 					.onConflictDoUpdate({
@@ -322,7 +322,7 @@ export async function syncXeroBills() {
 							updatedAt: new Date(),
 						},
 					});
-            }
+			}
 			page++;
 		}
 
@@ -339,7 +339,7 @@ export async function syncXeroBills() {
 }
 
 export async function syncXeroTransactions() {
-    const { orgId } = await auth();
+	const { orgId } = await auth();
 	if (!orgId) throw new Error("No organization selected");
 
 	const binding = await db.query.integrationTenantBindings.findFirst({
@@ -353,88 +353,103 @@ export async function syncXeroTransactions() {
 
 	if (!binding) throw new Error("No active Xero connection found");
 
-    return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
-        let transactionsCount = 0;
-        let paymentsCount = 0;
+	return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
+		let transactionsCount = 0;
+		let paymentsCount = 0;
 
-        // 1. Sync Bank Transactions (Spend/Receive Money)
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const whereDate = oneYearAgo.toISOString().split('T')[0];
+		// 1. Sync Bank Transactions (Spend/Receive Money)
+		const oneYearAgo = new Date();
+		oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+		const whereDate = oneYearAgo.toISOString().split("T")[0];
 
-        let page = 1;
-        while(true) {
-            const btRes = await client.fetch(`/BankTransactions?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`);
-            if (!btRes.ok) break;
-            const btData = await btRes.json() as XeroBankTransactionResponse;
-            if (btData.BankTransactions.length === 0) break;
+		let page = 1;
+		while (true) {
+			const btRes = await client.fetch(
+				`/BankTransactions?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`,
+			);
+			if (!btRes.ok) break;
+			const btData = (await btRes.json()) as XeroBankTransactionResponse;
+			if (btData.BankTransactions.length === 0) break;
 
-            const btValues = btData.BankTransactions.map(bt => {
-                const date = bt.DateString ? new Date(bt.DateString) : null;
-                const desc = bt.LineItems?.map(l => l.Description).join('; ') || "Bank Transaction";
-                return {
-                    xeroTenantId: binding.externalTenantId,
-                    xeroId: bt.BankTransactionID,
-                    type: bt.Type,
-                    amount: bt.Total.toString(),
-                    date: date,
-                    description: desc,
-                    source: "BANK_TRANS",
-                };
-            });
+			const btValues = btData.BankTransactions.map((bt) => {
+				const date = bt.DateString ? new Date(bt.DateString) : null;
+				const desc =
+					bt.LineItems?.map((l) => l.Description).join("; ") ||
+					"Bank Transaction";
+				return {
+					xeroTenantId: binding.externalTenantId,
+					xeroId: bt.BankTransactionID,
+					type: bt.Type,
+					amount: bt.Total.toString(),
+					date: date,
+					description: desc,
+					source: "BANK_TRANS",
+				};
+			});
 
-            if (btValues.length > 0) {
-                await db.insert(xeroTransactions).values(btValues).onConflictDoUpdate({
-                    target: [xeroTransactions.xeroTenantId, xeroTransactions.xeroId],
-                    set: {
-                        amount: sql`excluded.amount`,
-                        description: sql`excluded.description`,
-                        updatedAt: new Date(),
-                    }
-                });
-            }
-            transactionsCount += btData.BankTransactions.length;
-            page++;
-        }
+			if (btValues.length > 0) {
+				await db
+					.insert(xeroTransactions)
+					.values(btValues)
+					.onConflictDoUpdate({
+						target: [xeroTransactions.xeroTenantId, xeroTransactions.xeroId],
+						set: {
+							amount: sql`excluded.amount`,
+							description: sql`excluded.description`,
+							updatedAt: new Date(),
+						},
+					});
+			}
+			transactionsCount += btData.BankTransactions.length;
+			page++;
+		}
 
-        // 2. Sync Payments (Invoice Payments)
-        page = 1;
-        while(true) {
-            const payRes = await client.fetch(`/Payments?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`);
-            if (!payRes.ok) break;
-            const payData = await payRes.json() as XeroPaymentResponse;
-            if (payData.Payments.length === 0) break;
+		// 2. Sync Payments (Invoice Payments)
+		page = 1;
+		while (true) {
+			const payRes = await client.fetch(
+				`/Payments?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`,
+			);
+			if (!payRes.ok) break;
+			const payData = (await payRes.json()) as XeroPaymentResponse;
+			if (payData.Payments.length === 0) break;
 
-            const payValues = payData.Payments.map(pay => {
-                const type = pay.PaymentType === "ACCREC PAYMENT" ? "RECEIVE" : "SPEND";
-                const date = pay.Date ? new Date(pay.Date) : null;
-                const desc = `${pay.PaymentType} - Ref: ${pay.Reference || 'N/A'}`;
+			const payValues = payData.Payments.map((pay) => {
+				const type = pay.PaymentType === "ACCREC PAYMENT" ? "RECEIVE" : "SPEND";
+				const date = pay.Date ? new Date(pay.Date) : null;
+				const desc = `${pay.PaymentType} - Ref: ${pay.Reference || "N/A"}`;
 
-                return {
-                    xeroTenantId: binding.externalTenantId,
-                    xeroId: pay.PaymentID,
-                    type: type,
-                    amount: pay.Amount.toString(),
-                    date: date,
-                    description: desc,
-                    source: "PAYMENT",
-                };
-            });
+				return {
+					xeroTenantId: binding.externalTenantId,
+					xeroId: pay.PaymentID,
+					type: type,
+					amount: pay.Amount.toString(),
+					date: date,
+					description: desc,
+					source: "PAYMENT",
+				};
+			});
 
-            if (payValues.length > 0) {
-                await db.insert(xeroTransactions).values(payValues).onConflictDoUpdate({
-                    target: [xeroTransactions.xeroTenantId, xeroTransactions.xeroId],
-                    set: {
-                        amount: sql`excluded.amount`,
-                        updatedAt: new Date(),
-                    }
-                });
-            }
-            paymentsCount += payData.Payments.length;
-            page++;
-        }
+			if (payValues.length > 0) {
+				await db
+					.insert(xeroTransactions)
+					.values(payValues)
+					.onConflictDoUpdate({
+						target: [xeroTransactions.xeroTenantId, xeroTransactions.xeroId],
+						set: {
+							amount: sql`excluded.amount`,
+							updatedAt: new Date(),
+						},
+					});
+			}
+			paymentsCount += payData.Payments.length;
+			page++;
+		}
 
-        revalidatePath("/agents/cashflow");
-        return { success: true, counts: { transactions: transactionsCount, payments: paymentsCount } };
-    });
+		revalidatePath("/agents/cashflow");
+		return {
+			success: true,
+			counts: { transactions: transactionsCount, payments: paymentsCount },
+		};
+	});
 }

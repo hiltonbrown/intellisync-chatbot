@@ -1,3 +1,5 @@
+import "server-only";
+
 import { auth } from "@clerk/nextjs/server";
 import { and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -120,8 +122,8 @@ export async function getVendorList() {
 			supplierName: xeroSuppliers.name,
 			totalDue: sql<number>`sum(cast(${xeroBills.amountDue} as numeric))`,
 			billCount: count(xeroBills.id),
-            // Buckets per vendor for possible table display
-            current: sql<number>`sum(case when ${xeroBills.dueDate} >= now() then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
+			// Buckets per vendor for possible table display
+			current: sql<number>`sum(case when ${xeroBills.dueDate} >= now() then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
 			overdue1to30: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '1 day' and interval '30 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
 			overdue31to60: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '31 days' and interval '60 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
 			overdue61to90: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '61 days' and interval '90 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
@@ -134,7 +136,7 @@ export async function getVendorList() {
 				eq(xeroBills.xeroTenantId, binding.externalTenantId),
 				sql`cast(${xeroBills.amountDue} as numeric) > 0`,
 				eq(xeroBills.status, "AUTHORISED"),
-                isNotNull(xeroBills.supplierId)
+				isNotNull(xeroBills.supplierId),
 			),
 		)
 		.groupBy(xeroBills.supplierId, xeroSuppliers.name)
@@ -145,54 +147,12 @@ export async function getVendorList() {
 		name: r.supplierName || "Unknown",
 		totalDue: Number(r.totalDue),
 		billCount: Number(r.billCount),
-        buckets: {
-            current: Number(r.current),
-            days30: Number(r.overdue1to30),
-            days60: Number(r.overdue31to60),
-            days90: Number(r.overdue61to90),
-            days90plus: Number(r.overdue90plus),
-        }
+		buckets: {
+			current: Number(r.current),
+			days30: Number(r.overdue1to30),
+			days60: Number(r.overdue31to60),
+			days90: Number(r.overdue61to90),
+			days90plus: Number(r.overdue90plus),
+		},
 	}));
-}
-
-export async function getVendorDetails(supplierId: string) {
-	const { orgId } = await auth();
-	if (!orgId) return null;
-
-	const binding = await db.query.integrationTenantBindings.findFirst({
-		where: (t, { and, eq }) =>
-			and(
-				eq(t.clerkOrgId, orgId),
-				eq(t.status, "active"),
-				eq(t.provider, "xero"),
-			),
-	});
-	if (!binding) return null;
-
-	const supplier = await db.query.xeroSuppliers.findFirst({
-		where: (t, { and, eq }) =>
-			and(eq(t.id, supplierId), eq(t.xeroTenantId, binding.externalTenantId)),
-	});
-
-	if (!supplier) return null;
-
-	const bills = await db.query.xeroBills.findMany({
-		where: (t, { and, eq }) =>
-			and(
-				eq(t.supplierId, supplierId),
-				eq(t.xeroTenantId, binding.externalTenantId),
-			),
-		orderBy: (t, { desc }) => [desc(t.date)],
-	});
-
-	return {
-		supplier,
-		bills: bills.map((b) => ({
-			...b,
-			amountDue: Number(b.amountDue),
-			amountPaid: Number(b.amountPaid),
-			total: Number(b.total),
-		})),
-		risk: "TBD", // Placeholder as requested
-	};
 }

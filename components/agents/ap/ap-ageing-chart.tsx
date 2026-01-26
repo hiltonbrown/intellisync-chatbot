@@ -55,10 +55,14 @@ export function ApAgeingChart({ data }: ApAgeingChartProps) {
 							cursor={{ fill: "transparent" }}
 						/>
 						<Bar dataKey="value" radius={[0, 4, 4, 0]}>
-							{chartData.map((entry, index) => (
+							{chartData.map((entry) => (
 								<Cell
-									key={`cell-${index}`}
-									fill={index > 1 ? "#ef4444" : "#2563eb"}
+									key={entry.name}
+									fill={
+										["Current", "1-30 Days"].includes(entry.name)
+											? "#2563eb"
+											: "#ef4444"
+									}
 								/>
 							))}
 						</Bar>

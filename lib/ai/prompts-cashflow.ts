@@ -1,6 +1,4 @@
-export const cashflowSuggestionPrompt = (
-  recurringTransactions: string
-) => `
+export const cashflowSuggestionPrompt = (recurringTransactions: string) => `
 You are a cashflow analyst.
 Analyze the following recurring transactions (Description, Amount, Date):
 ${recurringTransactions}

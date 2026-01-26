@@ -1,8 +1,8 @@
 export const billCommentaryPrompt = (
-  vendorName: string,
-  lineItemsSummary: string,
-  amount: string,
-  dueDate: string
+	vendorName: string,
+	lineItemsSummary: string,
+	amount: string,
+	dueDate: string,
 ) => `
 You are an accounts payable assistant.
 Vendor: ${vendorName}

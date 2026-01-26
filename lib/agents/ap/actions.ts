@@ -1,29 +1,35 @@
 "use server";
 
-import { generateText } from "ai";
-import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
-import { getLanguageModel } from "@/lib/ai/providers";
-import { billCommentaryPrompt } from "@/lib/ai/prompts-ap";
+import "server-only";
+
 import { auth } from "@clerk/nextjs/server";
+import { generateText } from "ai";
+import { and, desc, eq } from "drizzle-orm";
+import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import { billCommentaryPrompt } from "@/lib/ai/prompts-ap";
+import { getLanguageModel } from "@/lib/ai/providers";
 import { db } from "@/lib/db";
-import { integrationTenantBindings, xeroBills, xeroSuppliers } from "@/lib/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import {
+	integrationTenantBindings,
+	xeroBills,
+	xeroSuppliers,
+} from "@/lib/db/schema";
 
 export async function generateBillCommentary(
-    vendorName: string,
-    lineItemsSummary: string,
-    amount: string,
-    dueDate: string
+	vendorName: string,
+	lineItemsSummary: string,
+	amount: string,
+	dueDate: string,
 ) {
-    const model = getLanguageModel(DEFAULT_CHAT_MODEL);
+	const model = getLanguageModel(DEFAULT_CHAT_MODEL);
 
-    const { text } = await generateText({
-        model,
-        prompt: billCommentaryPrompt(vendorName, lineItemsSummary, amount, dueDate),
-        temperature: 0.3,
-    });
+	const { text } = await generateText({
+		model,
+		prompt: billCommentaryPrompt(vendorName, lineItemsSummary, amount, dueDate),
+		temperature: 0.3,
+	});
 
-    return text;
+	return text;
 }
 
 export async function getVendorDetails(supplierId: string) {
