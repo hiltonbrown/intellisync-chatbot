@@ -1,7 +1,9 @@
 "use client";
 
+import { OrganizationSwitcher } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -21,6 +23,7 @@ import {
 	SidebarMenu,
 	useSidebar,
 } from "@/components/ui/sidebar";
+import { getOrganizationSwitcherAppearance } from "@/lib/clerk/organization-switcher-config";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -41,6 +44,7 @@ export function AppSidebar({
 	const router = useRouter();
 	const { setOpenMobile } = useSidebar();
 	const { mutate } = useSWRConfig();
+	const { resolvedTheme } = useTheme();
 	const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
 	const handleDeleteAll = () => {
@@ -117,6 +121,14 @@ export function AppSidebar({
 								</Tooltip>
 							</div>
 						</div>
+						{user && (
+							<div className="px-2 pt-2">
+								<OrganizationSwitcher
+									hidePersonal
+									appearance={getOrganizationSwitcherAppearance(resolvedTheme)}
+								/>
+							</div>
+						)}
 					</SidebarMenu>
 				</SidebarHeader>
 				<SidebarContent>
