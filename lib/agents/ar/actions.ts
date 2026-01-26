@@ -3,7 +3,6 @@
 import "server-only";
 
 import { generateText } from "ai";
-import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { collectionEmailPrompt } from "@/lib/ai/prompts";
@@ -11,7 +10,8 @@ import { getLanguageModel } from "@/lib/ai/providers";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import {
-	integrationTenantBindings,
+	user,
+	userSettings,
 	xeroContacts,
 	xeroInvoices,
 } from "@/lib/db/schema";
@@ -20,7 +20,6 @@ const uuidSchema = z.string().uuid();
 
 export async function generateCollectionEmail(
 	contactName: string,
-	companyName: string,
 	overdueInvoices: Array<{
 		date: string;
 		dueDate: string;
@@ -28,6 +27,17 @@ export async function generateCollectionEmail(
 		number: string;
 	}>,
 ) {
+	const { userId } = await auth();
+	if (!userId) throw new Error("Not authenticated");
+
+	// Fetch company name from user settings
+	const [settings] = await db
+		.select()
+		.from(userSettings)
+		.where(eq(userSettings.userId, userId));
+
+	const companyName = settings?.companyName || "Your Company";
+
 	const model = getLanguageModel(DEFAULT_CHAT_MODEL);
 
 	const { text } = await generateText({

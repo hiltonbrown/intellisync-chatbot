@@ -423,7 +423,7 @@ export const cashflowAdjustments = pgTable(
 		id: uuid("id").primaryKey().notNull().defaultRandom(),
 		userId: text("user_id")
 			.notNull()
-			.references(() => user.id),
+			.references(() => user.id, { onDelete: "cascade" }),
 		xeroTenantId: text("xero_tenant_id").notNull(),
 		date: timestamp("date").notNull(),
 		amount: numeric("amount", { precision: 19, scale: 4 }).notNull(),

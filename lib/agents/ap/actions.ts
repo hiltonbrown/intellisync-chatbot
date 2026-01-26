@@ -3,7 +3,6 @@
 import "server-only";
 
 import { generateText } from "ai";
-import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { billCommentaryPrompt } from "@/lib/ai/prompts-ap";
@@ -11,7 +10,6 @@ import { getLanguageModel } from "@/lib/ai/providers";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import {
-	integrationTenantBindings,
 	xeroBills,
 	xeroSuppliers,
 } from "@/lib/db/schema";

@@ -1,10 +1,9 @@
 import "server-only";
 
 import { auth } from "@clerk/nextjs/server";
-import { and, count, desc, eq, gte, isNotNull, sql, sum } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
-	integrationTenantBindings,
 	xeroContacts,
 	xeroInvoices,
 } from "@/lib/db/schema";
@@ -66,7 +65,6 @@ export async function getArDashboardData() {
 	const dso = totalSales > 0 ? (totalOutstanding / totalSales) * 90 : 0;
 
 	// 3. Ageing Breakdown
-	const now = new Date();
 	const buckets = await db
 		.select({
 			current: sql<number>`sum(case when ${xeroInvoices.dueDate} >= now() then cast(${xeroInvoices.amountDue} as numeric) else 0 end)`,
