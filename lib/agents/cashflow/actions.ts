@@ -4,7 +4,7 @@ import "server-only";
 
 import { auth } from "@clerk/nextjs/server";
 import { generateText } from "ai";
-import { desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { cashflowSuggestionPrompt } from "@/lib/ai/prompts-cashflow";

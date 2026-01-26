@@ -3,6 +3,7 @@
 import "server-only";
 
 import { generateText } from "ai";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { collectionEmailPrompt } from "@/lib/ai/prompts";
@@ -10,7 +11,6 @@ import { getLanguageModel } from "@/lib/ai/providers";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import {
-	user,
 	userSettings,
 	xeroContacts,
 	xeroInvoices,
