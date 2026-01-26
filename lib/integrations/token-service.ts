@@ -15,7 +15,9 @@ import { decryptToken, encryptToken } from "@/lib/utils/encryption";
 
 const xeroAdapter = new XeroAdapter();
 
-const TOKEN_REFRESH_BUFFER_MINUTES = 5;
+// Refresh tokens 10 minutes before expiry (was 5) for better safety margin
+// This ensures even with network delays, we have valid tokens
+const TOKEN_REFRESH_BUFFER_MINUTES = 10;
 
 // In-memory locks to prevent multiple identical refresh requests within the same process
 const tokenRefreshLocks = new Map<string, Promise<IntegrationGrant>>();
@@ -23,6 +25,125 @@ const tokenRefreshLocks = new Map<string, Promise<IntegrationGrant>>();
 const lastRefreshTimestamps = new Map<string, number>();
 
 export class TokenService {
+	/**
+	 * Proactively checks and refreshes tokens for an organization.
+	 * This should be called on page loads to ensure tokens are fresh.
+	 *
+	 * @param orgId - The Clerk organization ID
+	 * @returns Object containing connection status and any errors
+	 */
+	static async proactiveRefreshForOrg(orgId: string): Promise<{
+		success: boolean;
+		hasActiveBindings: boolean;
+		refreshedCount: number;
+		errors: Array<{ bindingId: string; error: string }>;
+	}> {
+		console.log(
+			`[TokenService] Proactive refresh check for org ${orgId.substring(0, 8)}...`,
+		);
+
+		// Get all active bindings for this org
+		const bindings = await db.query.integrationTenantBindings.findMany({
+			where: and(
+				eq(integrationTenantBindings.clerkOrgId, orgId),
+				eq(integrationTenantBindings.status, "active"),
+				eq(integrationTenantBindings.provider, "xero"),
+			),
+		});
+
+		if (bindings.length === 0) {
+			console.log(`[TokenService] No active Xero bindings for org ${orgId}`);
+			return {
+				success: true,
+				hasActiveBindings: false,
+				refreshedCount: 0,
+				errors: [],
+			};
+		}
+
+		console.log(
+			`[TokenService] Found ${bindings.length} active binding(s) for org`,
+		);
+
+		let refreshedCount = 0;
+		const errors: Array<{ bindingId: string; error: string }> = [];
+
+		// Check and refresh each binding
+		for (const binding of bindings) {
+			try {
+				// Load the grant
+				const grant = await db.query.integrationGrants.findFirst({
+					where: eq(integrationGrants.id, binding.activeGrantId),
+				});
+
+				if (!grant) {
+					console.warn(
+						`[TokenService] Grant not found for binding ${binding.id}`,
+					);
+					errors.push({
+						bindingId: binding.id,
+						error: "Grant not found",
+					});
+					continue;
+				}
+
+				// Check if refresh is needed
+				let needsRefresh =
+					isPast(addMinutes(grant.expiresAt, -TOKEN_REFRESH_BUFFER_MINUTES)) ||
+					(grant.refreshTokenIssuedAt &&
+						differenceInDays(new Date(), grant.refreshTokenIssuedAt) > 45);
+
+				if (needsRefresh) {
+					console.log(
+						`[TokenService] Proactively refreshing token for binding ${binding.id.substring(0, 8)}... (expires: ${grant.expiresAt.toISOString()})`,
+					);
+
+					try {
+						await TokenService.refreshGrantSingleFlight(grant.id);
+						refreshedCount++;
+						console.log(
+							`[TokenService] Successfully refreshed token for binding ${binding.id.substring(0, 8)}`,
+						);
+					} catch (error) {
+						console.error(
+							`[TokenService] Failed to refresh token for binding ${binding.id}:`,
+							error,
+						);
+						errors.push({
+							bindingId: binding.id,
+							error:
+								error instanceof Error ? error.message : "Unknown refresh error",
+						});
+					}
+				} else {
+					console.log(
+						`[TokenService] Token for binding ${binding.id.substring(0, 8)} is fresh (expires: ${grant.expiresAt.toISOString()})`,
+					);
+				}
+			} catch (error) {
+				console.error(
+					`[TokenService] Error checking binding ${binding.id}:`,
+					error,
+				);
+				errors.push({
+					bindingId: binding.id,
+					error: error instanceof Error ? error.message : "Unknown error",
+				});
+			}
+		}
+
+		console.log(
+			`[TokenService] Proactive refresh complete: ${refreshedCount} refreshed, ${errors.length} errors`,
+		);
+
+		return {
+			success: errors.length === 0,
+			hasActiveBindings: true,
+			refreshedCount,
+			errors,
+		};
+	}
+
 	/**
 	 * Gets an authenticated Xero API client for a specific tenant binding.
 	 * Automatically refreshes the token if it's expiring soon.
@@ -65,13 +186,14 @@ export class TokenService {
 			forceRefresh ||
 			isPast(addMinutes(grant.expiresAt, -TOKEN_REFRESH_BUFFER_MINUTES));
 
-		// Proactively refresh if refresh token is > 50 days old (limit is 60 days)
+		// Proactively refresh if refresh token is > 45 days old (limit is 60 days)
+		// More aggressive threshold (was 50) to ensure we never hit the 60-day limit
 		if (grant.refreshTokenIssuedAt) {
 			const refreshTokenAgeDays = differenceInDays(
 				new Date(),
 				grant.refreshTokenIssuedAt,
 			);
-			if (refreshTokenAgeDays > 50) {
+			if (refreshTokenAgeDays > 45) {
 				console.log(
 					`[TokenService] Grant ${grant.id} refresh token is ${refreshTokenAgeDays} days old. Proactively refreshing to reset rolling 60-day expiry.`,
 				);
@@ -91,6 +213,16 @@ export class TokenService {
 				console.log(
 					`Returning client with refreshed token for tenant ${binding.externalTenantId.substring(0, 8)}...`,
 				);
+
+				// Update last used timestamp (fire and forget)
+				db.update(integrationGrants)
+					.set({ lastUsedAt: new Date() })
+					.where(eq(integrationGrants.id, refreshedGrant.id))
+					.execute()
+					.catch((err) => {
+						console.warn(`Failed to update lastUsedAt for grant ${refreshedGrant.id}:`, err);
+					});
+
 				return xeroAdapter.getApiClient(
 					decryptToken(refreshedGrant.accessTokenEnc),
 					binding.externalTenantId,
@@ -116,6 +248,16 @@ export class TokenService {
 		console.log(
 			`Using existing token for grant ${grant.id} (expires: ${grant.expiresAt.toISOString()})`,
 		);
+
+		// Update last used timestamp (fire and forget - don't block)
+		db.update(integrationGrants)
+			.set({ lastUsedAt: new Date() })
+			.where(eq(integrationGrants.id, grant.id))
+			.execute()
+			.catch((err) => {
+				console.warn(`Failed to update lastUsedAt for grant ${grant.id}:`, err);
+			});
+
 		return xeroAdapter.getApiClient(
 			decryptToken(grant.accessTokenEnc),
 			binding.externalTenantId,
