@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useWindowSize } from "usehooks-ts";
+import { AgentNavDropdown } from "@/components/agent-nav-dropdown";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -34,6 +35,8 @@ export function AgentHeader({ title, actions }: AgentHeaderProps) {
 					<span className="md:sr-only">New Chat</span>
 				</Button>
 			)}
+
+			<AgentNavDropdown />
 
 			<div className="ml-auto flex items-center gap-2">
 				<h1 className="text-base font-semibold hidden md:block">{title}</h1>
