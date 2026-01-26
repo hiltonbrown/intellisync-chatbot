@@ -12,7 +12,9 @@ import {
 	xeroSuppliers,
 	xeroTransactions,
 } from "@/lib/db/schema";
+import { ExternalAPIError } from "@/lib/integrations/errors";
 import { withTokenRefreshRetry } from "./retry-helper";
+import { parseXeroDate } from "./utils";
 
 // Define simplified Xero types
 interface XeroContactResponse {
@@ -84,8 +86,15 @@ export async function syncXeroData() {
 	return await withTokenRefreshRetry(binding.id, orgId, async (client) => {
 		// 1. Fetch Contacts
 		const contactsRes = await client.fetch("/Contacts");
-		if (!contactsRes.ok)
-			throw new Error(`Failed to fetch contacts: ${contactsRes.statusText}`);
+		if (!contactsRes.ok) {
+			const errorBody = await contactsRes.text();
+			throw new ExternalAPIError(
+				"Failed to fetch Xero contacts",
+				"xero",
+				contactsRes.status,
+				{ endpoint: "/Contacts", response: errorBody },
+			);
+		}
 		const contactsData = (await contactsRes.json()) as XeroContactResponse;
 
 		console.log(`Synced ${contactsData.Contacts.length} contacts`);
@@ -138,8 +147,15 @@ export async function syncXeroData() {
 			const invoicesRes = await client.fetch(
 				`/Invoices?where=${encodeURIComponent(whereClause)}&page=${page}`,
 			);
-			if (!invoicesRes.ok)
-				throw new Error(`Failed to fetch invoices: ${invoicesRes.statusText}`);
+			if (!invoicesRes.ok) {
+				const errorBody = await invoicesRes.text();
+				throw new ExternalAPIError(
+					"Failed to fetch Xero invoices",
+					"xero",
+					invoicesRes.status,
+					{ endpoint: "/Invoices", response: errorBody },
+				);
+			}
 			const invoicesData = (await invoicesRes.json()) as XeroInvoiceResponse;
 
 			if (invoicesData.Invoices.length === 0) break;
@@ -148,10 +164,8 @@ export async function syncXeroData() {
 			// Prepare Invoice Data
 			const invoiceValues = invoicesData.Invoices.map((invoice) => {
 				const contactId = contactMap.get(invoice.Contact.ContactID);
-				const date = invoice.DateString ? new Date(invoice.DateString) : null;
-				const dueDate = invoice.DueDateString
-					? new Date(invoice.DueDateString)
-					: null;
+				const date = parseXeroDate(invoice.DateString);
+				const dueDate = parseXeroDate(invoice.DueDateString);
 
 				return {
 					xeroTenantId: binding.externalTenantId,
@@ -222,8 +236,15 @@ export async function syncXeroBills() {
 		// We sync all contacts to suppliers table for simplicity, or we can assume contacts are shared.
 		// Given separate tables requirement, we upsert to xeroSuppliers.
 		const contactsRes = await client.fetch("/Contacts");
-		if (!contactsRes.ok)
-			throw new Error(`Failed to fetch contacts: ${contactsRes.statusText}`);
+		if (!contactsRes.ok) {
+			const errorBody = await contactsRes.text();
+			throw new ExternalAPIError(
+				"Failed to fetch Xero contacts/suppliers",
+				"xero",
+				contactsRes.status,
+				{ endpoint: "/Contacts", response: errorBody },
+			);
+		}
 		const contactsData = (await contactsRes.json()) as XeroContactResponse;
 
 		if (contactsData.Contacts.length > 0) {
@@ -273,8 +294,15 @@ export async function syncXeroBills() {
 			const billsRes = await client.fetch(
 				`/Invoices?where=${encodeURIComponent(whereClause)}&page=${page}`,
 			);
-			if (!billsRes.ok)
-				throw new Error(`Failed to fetch bills: ${billsRes.statusText}`);
+			if (!billsRes.ok) {
+				const errorBody = await billsRes.text();
+				throw new ExternalAPIError(
+					"Failed to fetch Xero bills",
+					"xero",
+					billsRes.status,
+					{ endpoint: "/Invoices", response: errorBody },
+				);
+			}
 			const billsData = (await billsRes.json()) as XeroInvoiceResponse;
 
 			if (billsData.Invoices.length === 0) break;
@@ -282,10 +310,8 @@ export async function syncXeroBills() {
 
 			const billValues = billsData.Invoices.map((bill) => {
 				const supplierId = supplierMap.get(bill.Contact.ContactID);
-				const date = bill.DateString ? new Date(bill.DateString) : null;
-				const dueDate = bill.DueDateString
-					? new Date(bill.DueDateString)
-					: null;
+				const date = parseXeroDate(bill.DateString);
+				const dueDate = parseXeroDate(bill.DueDateString);
 				const lineItemsSummary =
 					bill.LineItems?.map(
 						(l) => `${l.Description || "Item"} ($${l.LineAmount})`,
@@ -367,12 +393,12 @@ export async function syncXeroTransactions() {
 			const btRes = await client.fetch(
 				`/BankTransactions?where=Date>=DateTime.Parse("${whereDate}")&page=${page}`,
 			);
-			if (!btRes.ok) break;
+			if (!btRes.ok) break; // Or throw but partial success might be ok for unrelated endpoints
 			const btData = (await btRes.json()) as XeroBankTransactionResponse;
 			if (btData.BankTransactions.length === 0) break;
 
 			const btValues = btData.BankTransactions.map((bt) => {
-				const date = bt.DateString ? new Date(bt.DateString) : null;
+				const date = parseXeroDate(bt.DateString);
 				const desc =
 					bt.LineItems?.map((l) => l.Description).join("; ") ||
 					"Bank Transaction";
@@ -416,7 +442,7 @@ export async function syncXeroTransactions() {
 
 			const payValues = payData.Payments.map((pay) => {
 				const type = pay.PaymentType === "ACCREC PAYMENT" ? "RECEIVE" : "SPEND";
-				const date = pay.Date ? new Date(pay.Date) : null;
+				const date = parseXeroDate(pay.Date);
 				const desc = `${pay.PaymentType} - Ref: ${pay.Reference || "N/A"}`;
 
 				return {

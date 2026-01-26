@@ -2,18 +2,21 @@
 
 import "server-only";
 
-import { auth } from "@clerk/nextjs/server";
 import { generateText } from "ai";
 import { and, desc, eq } from "drizzle-orm";
+import { z } from "zod";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { billCommentaryPrompt } from "@/lib/ai/prompts-ap";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import {
 	integrationTenantBindings,
 	xeroBills,
 	xeroSuppliers,
 } from "@/lib/db/schema";
+
+const uuidSchema = z.string().uuid();
 
 export async function generateBillCommentary(
 	vendorName: string,
@@ -35,6 +38,11 @@ export async function generateBillCommentary(
 export async function getVendorDetails(supplierId: string) {
 	const { orgId } = await auth();
 	if (!orgId) return null;
+
+	const validation = uuidSchema.safeParse(supplierId);
+	if (!validation.success) {
+		throw new Error("Invalid supplier ID format");
+	}
 
 	const binding = await db.query.integrationTenantBindings.findFirst({
 		where: (t, { and, eq }) =>

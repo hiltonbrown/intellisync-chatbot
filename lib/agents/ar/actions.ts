@@ -2,18 +2,21 @@
 
 import "server-only";
 
-import { auth } from "@clerk/nextjs/server";
 import { generateText } from "ai";
 import { and, desc, eq } from "drizzle-orm";
+import { z } from "zod";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { collectionEmailPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import {
 	integrationTenantBindings,
 	xeroContacts,
 	xeroInvoices,
 } from "@/lib/db/schema";
+
+const uuidSchema = z.string().uuid();
 
 export async function generateCollectionEmail(
 	contactName: string,
@@ -39,6 +42,11 @@ export async function generateCollectionEmail(
 export async function getCustomerDetails(contactId: string) {
 	const { orgId } = await auth();
 	if (!orgId) return null;
+
+	const validation = uuidSchema.safeParse(contactId);
+	if (!validation.success) {
+		throw new Error("Invalid contact ID format");
+	}
 
 	const binding = await db.query.integrationTenantBindings.findFirst({
 		where: (t, { and, eq }) =>
