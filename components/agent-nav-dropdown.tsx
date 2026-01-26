@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronDownIcon } from "@/components/icons";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -37,23 +38,8 @@ export function AgentNavDropdown() {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button variant="outline" size="sm" className="h-8 px-2 md:h-fit md:px-3">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					>
-						<rect width="7" height="7" x="3" y="3" rx="1" />
-						<rect width="7" height="7" x="14" y="3" rx="1" />
-						<rect width="7" height="7" x="14" y="14" rx="1" />
-						<rect width="7" height="7" x="3" y="14" rx="1" />
-					</svg>
-					<span className="ml-2 hidden md:inline">Agents</span>
+					<span className="hidden md:inline">Agents</span>
+					<ChevronDownIcon size={16} />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-64">
