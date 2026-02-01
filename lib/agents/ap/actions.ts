@@ -13,6 +13,7 @@ import {
 	xeroBills,
 	xeroSuppliers,
 } from "@/lib/db/schema";
+import { aggregateVendorRisk, calculateVendorRisk } from "./risk-scoring";
 
 const uuidSchema = z.string().uuid();
 
@@ -68,6 +69,31 @@ export async function getVendorDetails(supplierId: string) {
 		orderBy: (t, { desc }) => [desc(t.date)],
 	});
 
+	// Calculate risk for each unpaid bill
+	const billRisks = bills
+		.filter((b) => Number(b.amountDue) > 0)
+		.map((bill) =>
+			calculateVendorRisk({
+				taxNumber: supplier.taxNumber,
+				invoiceNumber: bill.invoiceNumber,
+				billStatus: bill.status,
+				contactStatus: supplier.contactStatus,
+				supplierBankAccount: supplier.bankAccountNumber,
+				billBankAccount: bill.billBankAccountNumber,
+			}),
+		);
+
+	// Aggregate risk across all unpaid bills
+	const vendorRisk =
+		billRisks.length > 0
+			? aggregateVendorRisk(billRisks)
+			: {
+					riskScore: 0,
+					riskLevel: "Low" as const,
+					hasBankChange: false,
+					riskFactors: [],
+				};
+
 	return {
 		supplier,
 		bills: bills.map((b) => ({
@@ -76,6 +102,9 @@ export async function getVendorDetails(supplierId: string) {
 			amountPaid: Number(b.amountPaid),
 			total: Number(b.total),
 		})),
-		risk: "TBD", // Placeholder as requested
+		riskScore: vendorRisk.riskScore,
+		riskLevel: vendorRisk.riskLevel,
+		hasBankChange: vendorRisk.hasBankChange,
+		riskFactors: vendorRisk.riskFactors,
 	};
 }

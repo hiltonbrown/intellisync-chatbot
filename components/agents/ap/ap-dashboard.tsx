@@ -42,6 +42,10 @@ interface Vendor {
 	days60: number;
 	days90: number;
 	days90plus: number;
+	riskScore: number;
+	riskLevel: "Low" | "Medium" | "High" | "Critical";
+	hasBankChange: boolean;
+	riskFactors: string[];
 }
 
 interface ApDashboardProps {

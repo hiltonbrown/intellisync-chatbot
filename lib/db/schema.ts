@@ -357,11 +357,16 @@ export const xeroSuppliers = pgTable(
 		name: text("name").notNull(),
 		email: text("email"),
 		phone: text("phone"),
+		taxNumber: text("tax_number"),
+		contactStatus: varchar("contact_status", { length: 50 }),
+		bankAccountNumber: text("bank_account_number"),
+		bankAccountName: text("bank_account_name"),
 		updatedAt: timestamp("updated_at").notNull().defaultNow(),
 	},
 	(table) => ({
 		unq: unique().on(table.xeroTenantId, table.xeroContactId),
 		tenantIdx: index("xero_suppliers_tenant_idx").on(table.xeroTenantId),
+		statusIdx: index("xero_suppliers_status_idx").on(table.contactStatus),
 	}),
 );
 
@@ -383,6 +388,9 @@ export const xeroBills = pgTable(
 		total: numeric("total", { precision: 19, scale: 4 }),
 		currencyCode: varchar("currency_code", { length: 10 }),
 		lineItemsSummary: text("line_items_summary"),
+		invoiceNumber: text("invoice_number"),
+		billBankAccountNumber: text("bill_bank_account_number"),
+		billBankAccountName: text("bill_bank_account_name"),
 		updatedAt: timestamp("updated_at").notNull().defaultNow(),
 	},
 	(table) => ({
@@ -390,6 +398,9 @@ export const xeroBills = pgTable(
 		tenantIdx: index("xero_bills_tenant_idx").on(table.xeroTenantId),
 		supplierIdx: index("xero_bills_supplier_idx").on(table.supplierId),
 		dueDateIdx: index("xero_bills_due_date_idx").on(table.dueDate),
+		invoiceNumberIdx: index("xero_bills_invoice_number_idx").on(
+			table.invoiceNumber,
+		),
 	}),
 );
 

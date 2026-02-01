@@ -1,0 +1,106 @@
+feat: Implement AP Risk Rating System with vendor risk scoring
+
+Adds comprehensive risk assessment for Accounts Payable vendors with
+automated scoring, visual indicators, and filtering capabilities.
+
+## Features
+
+**Risk Scoring (0-100 points):**
+- Missing ABN/Tax Number: +25 points
+- Missing Tax Invoice: +20 points
+- Unapproved Bill: +30 points
+- Blocked Supplier: +60 points
+
+**Risk Levels:**
+- Low (0-19): Green badge
+- Medium (20-44): Yellow badge
+- High (45-69): Orange badge
+- Critical (≥70): Red badge
+
+**Bank Change Detection:**
+- Separate flag for bank account changes
+- AlertTriangle icon with tooltip
+- Helps identify potential fraud
+
+## Database Changes
+
+**xero_suppliers table:**
+- Added tax_number (ABN/Tax ID)
+- Added contact_status (ACTIVE/ARCHIVED/GDPRREQUEST)
+- Added bank_account_number
+- Added bank_account_name (null due to API limitation)
+- Index on contact_status
+
+**xero_bills table:**
+- Added invoice_number (tax invoice)
+- Added bill_bank_account_number (null due to API limitation)
+- Added bill_bank_account_name (null due to API limitation)
+- Index on invoice_number
+
+## Code Changes
+
+**New Files:**
+- lib/agents/ap/risk-scoring.ts - Core risk calculation logic
+- lib/agents/ap/__tests__/risk-scoring.test.ts - Unit tests
+- scripts/apply-ap-risk-migration.ts - Migration helper
+- docs/AP_RISK_SCORING.md - Feature documentation
+- IMPLEMENTATION_SUMMARY.md - Implementation details
+
+**Modified Files:**
+- lib/db/schema.ts - Added risk fields to xero tables
+- lib/integrations/xero/actions.ts - Extract risk fields from Xero API
+- lib/agents/ap/queries.ts - Calculate risk scores in queries
+- components/agents/ap/vendor-table.tsx - Display risk badges & filters
+- components/agents/ap/ap-dashboard.tsx - Updated Vendor interface
+
+## UI Enhancements
+
+- Risk badge column with color-coded levels
+- Risk level filter tabs (All/Low/Medium/High/Critical)
+- Risk score sorting
+- Tooltips showing detailed risk factors
+- Bank change alert icon with explanation
+
+## Testing
+
+- 20+ unit tests covering all risk scenarios
+- Edge case handling (null values, case sensitivity, whitespace)
+- Bank account change detection tests
+- Risk aggregation tests
+
+## Known Limitations
+
+**Xero API Constraints:**
+- Bank account names NOT available (only numbers)
+- Bill-specific bank accounts NOT available
+- Tax number type not exposed (ABN vs EIN/SSN)
+
+Documented in code comments and user documentation.
+
+## Migration
+
+Applied via: `npx tsx scripts/apply-ap-risk-migration.ts`
+
+Migration: lib/db/migrations/0002_skinny_multiple_man.sql
+
+## Documentation
+
+- Full feature docs in docs/AP_RISK_SCORING.md
+- Implementation summary in IMPLEMENTATION_SUMMARY.md
+- Inline code comments explaining limitations
+- Visual flow diagram in /tmp/ap_risk_flow.txt
+
+## Verification
+
+All checks pass:
+```bash
+bash scripts/verify-ap-risk-implementation.sh
+```
+
+## Next Steps
+
+1. Sync Xero data to populate new fields
+2. User testing of risk filters and sorting
+3. Monitor query performance in production
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>

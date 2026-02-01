@@ -25,7 +25,17 @@
       "Bash(gh auth:*)",
       "Bash(gh repo view:*)",
       "Bash(gh api:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebSearch",
+      "Bash(pnpm db:generate:*)",
+      "Bash(pnpm db:migrate:*)",
+      "Bash(pnpm db:push:*)",
+      "Bash(source .env.local)",
+      "Bash(psql:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx tsc:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)"
     ]
   }
 }

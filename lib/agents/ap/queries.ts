@@ -4,6 +4,8 @@ import { auth } from "@clerk/nextjs/server";
 import { and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { xeroBills, xeroSuppliers } from "@/lib/db/schema";
+import { calculateVendorRisk } from "./risk-scoring";
+import type { RiskLevel } from "./risk-scoring";
 
 export async function getApDashboardData() {
 	const { orgId } = await auth();
@@ -134,6 +136,14 @@ export async function getVendorList() {
 			overdue31to60: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '31 days' and interval '60 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
 			overdue61to90: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '61 days' and interval '90 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
 			overdue90plus: sql<number>`sum(case when now() - ${xeroBills.dueDate} > interval '90 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
+			// Risk scoring fields
+			taxNumber: xeroSuppliers.taxNumber,
+			contactStatus: xeroSuppliers.contactStatus,
+			supplierBankAccount: xeroSuppliers.bankAccountNumber,
+			// Aggregate bill-level fields (using MAX to get any value since we're grouping)
+			invoiceNumber: sql<string>`MAX(${xeroBills.invoiceNumber})`,
+			billStatus: sql<string>`MAX(${xeroBills.status})`,
+			billBankAccount: sql<string>`MAX(${xeroBills.billBankAccountNumber})`,
 		})
 		.from(xeroBills)
 		.leftJoin(xeroSuppliers, eq(xeroBills.supplierId, xeroSuppliers.id))
@@ -145,20 +155,42 @@ export async function getVendorList() {
 				isNotNull(xeroBills.supplierId),
 			),
 		)
-		.groupBy(xeroBills.supplierId, xeroSuppliers.name)
+		.groupBy(
+			xeroBills.supplierId,
+			xeroSuppliers.name,
+			xeroSuppliers.taxNumber,
+			xeroSuppliers.contactStatus,
+			xeroSuppliers.bankAccountNumber,
+		)
 		.orderBy(desc(sql`sum(cast(${xeroBills.amountDue} as numeric))`));
 
 	return rows
 		.filter((r) => r.supplierId !== null)
-		.map((r) => ({
-			id: r.supplierId,
-			name: r.supplierName || "Unknown",
-			totalDue: Number(r.totalDue),
-			billCount: Number(r.billCount),
-			current: Number(r.current || 0),
-			days30: Number(r.overdue1to30 || 0),
-			days60: Number(r.overdue31to60 || 0),
-			days90: Number(r.overdue61to90 || 0),
-			days90plus: Number(r.overdue90plus || 0),
-		}));
+		.map((r) => {
+			// Calculate risk for this vendor
+			const risk = calculateVendorRisk({
+				taxNumber: r.taxNumber,
+				invoiceNumber: r.invoiceNumber,
+				billStatus: r.billStatus,
+				contactStatus: r.contactStatus,
+				supplierBankAccount: r.supplierBankAccount,
+				billBankAccount: r.billBankAccount,
+			});
+
+			return {
+				id: r.supplierId as string, // Already filtered for non-null
+				name: r.supplierName || "Unknown",
+				totalDue: Number(r.totalDue),
+				billCount: Number(r.billCount),
+				current: Number(r.current || 0),
+				days30: Number(r.overdue1to30 || 0),
+				days60: Number(r.overdue31to60 || 0),
+				days90: Number(r.overdue61to90 || 0),
+				days90plus: Number(r.overdue90plus || 0),
+				riskScore: risk.riskScore,
+				riskLevel: risk.riskLevel,
+				hasBankChange: risk.hasBankChange,
+				riskFactors: risk.riskFactors,
+			};
+		});
 }

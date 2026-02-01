@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowUpDown, Search } from "lucide-react";
+import { AlertTriangle, ArrowUpDown, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,12 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Vendor {
 	id: string;
@@ -25,6 +32,10 @@ interface Vendor {
 	days60: number;
 	days90: number;
 	days90plus: number;
+	riskScore: number;
+	riskLevel: "Low" | "Medium" | "High" | "Critical";
+	hasBankChange: boolean;
+	riskFactors: string[];
 }
 
 interface VendorTableProps {
@@ -39,7 +50,8 @@ type SortField =
 	| "days30"
 	| "days60"
 	| "days90"
-	| "days90plus";
+	| "days90plus"
+	| "riskScore";
 type SortOrder = "asc" | "desc";
 type FilterTab =
 	| "all"
@@ -47,7 +59,8 @@ type FilterTab =
 	| "days30"
 	| "days60"
 	| "days90"
-	| "days90plus";
+	| "days90plus"
+	| "high-risk";
 
 export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 	const [searchQuery, setSearchQuery] = useState("");
@@ -58,6 +71,22 @@ export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 	// Format currency
 	const formatCurrency = (value: number) =>
 		`$${value.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+	// Get risk badge color
+	const getRiskBadgeColor = (level: Vendor["riskLevel"]): string => {
+		switch (level) {
+			case "Low":
+				return "bg-green-600 hover:bg-green-600 text-white";
+			case "Medium":
+				return "bg-yellow-600 hover:bg-yellow-600 text-white";
+			case "High":
+				return "bg-orange-600 hover:bg-orange-600 text-white";
+			case "Critical":
+				return "bg-red-600 hover:bg-red-600 text-white";
+			default:
+				return "bg-gray-600 hover:bg-gray-600 text-white";
+		}
+	};
 
 	// Handle sorting
 	const handleSort = (field: SortField) => {
@@ -81,7 +110,10 @@ export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 		}
 
 		// Apply tab filter
-		if (filterTab === "current") {
+		if (filterTab === "high-risk") {
+			// High risk = score >= 45 (High and Critical levels)
+			filtered = filtered.filter((v) => v.riskScore >= 45);
+		} else if (filterTab === "current") {
 			filtered = filtered.filter((v) => v.current > 0);
 		} else if (filterTab === "days30") {
 			filtered = filtered.filter((v) => v.days30 > 0);
@@ -126,13 +158,14 @@ export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 					value={filterTab}
 					onValueChange={(v) => setFilterTab(v as FilterTab)}
 				>
-					<TabsList className="grid w-1/2 grid-cols-3 lg:grid-cols-6">
+					<TabsList className="grid w-1/2 grid-cols-4 lg:grid-cols-7">
 						<TabsTrigger value="all">All</TabsTrigger>
 						<TabsTrigger value="current">Current</TabsTrigger>
 						<TabsTrigger value="days30">1-30</TabsTrigger>
 						<TabsTrigger value="days60">31-60</TabsTrigger>
 						<TabsTrigger value="days90">61-90</TabsTrigger>
 						<TabsTrigger value="days90plus">90+</TabsTrigger>
+						<TabsTrigger value="high-risk">High Risk</TabsTrigger>
 					</TabsList>
 				</Tabs>
 			</CardHeader>
@@ -211,12 +244,22 @@ export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 										<ArrowUpDown className="ml-2 h-4 w-4" />
 									</Button>
 								</TableHead>
+								<TableHead className="text-center">
+									<Button
+										variant="ghost"
+										onClick={() => handleSort("riskScore")}
+										className="h-8 px-2 hover:bg-transparent"
+									>
+										Risk
+										<ArrowUpDown className="ml-2 h-4 w-4" />
+									</Button>
+								</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{filteredVendors.length === 0 ? (
 								<TableRow>
-									<TableCell colSpan={7} className="text-center">
+									<TableCell colSpan={8} className="text-center">
 										{searchQuery || filterTab !== "all"
 											? "No vendors match the current filters."
 											: "No outstanding bills found."}
@@ -247,6 +290,48 @@ export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 										</TableCell>
 										<TableCell className="text-right text-red-800 font-medium">
 											{formatCurrency(vendor.days90plus)}
+										</TableCell>
+										<TableCell className="text-center">
+											<TooltipProvider>
+												<div className="flex flex-col items-center gap-1">
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Badge
+																className={getRiskBadgeColor(vendor.riskLevel)}
+															>
+																{vendor.riskLevel}
+															</Badge>
+														</TooltipTrigger>
+														<TooltipContent className="max-w-xs">
+															<p className="font-semibold mb-1">
+																Risk Score: {vendor.riskScore}
+															</p>
+															{vendor.riskFactors.length > 0 && (
+																<ul className="text-xs space-y-1">
+																	{vendor.riskFactors.map((factor, i) => (
+																		<li key={i}>• {factor}</li>
+																	))}
+																</ul>
+															)}
+														</TooltipContent>
+													</Tooltip>
+													{vendor.hasBankChange && (
+														<Tooltip>
+															<TooltipTrigger asChild>
+																<div className="flex items-center gap-1 text-red-600 text-xs cursor-help">
+																	<AlertTriangle className="h-3 w-3" />
+																	<span>Bank Change</span>
+																</div>
+															</TooltipTrigger>
+															<TooltipContent>
+																<p className="text-xs">
+																	Bank account differs from supplier record
+																</p>
+															</TooltipContent>
+														</Tooltip>
+													)}
+												</div>
+											</TooltipProvider>
 										</TableCell>
 									</TableRow>
 								))

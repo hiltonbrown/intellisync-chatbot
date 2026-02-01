@@ -22,6 +22,9 @@ interface XeroContactResponse {
 		Name: string;
 		EmailAddress?: string;
 		Phones?: Array<{ PhoneType: string; PhoneNumber: string }>;
+		TaxNumber?: string;
+		ContactStatus?: string; // ACTIVE, ARCHIVED, GDPRREQUEST
+		BankAccountDetails?: string; // Account number (name not available in API)
 	}>;
 }
 
@@ -38,6 +41,8 @@ interface XeroInvoiceResponse {
 		Total: number;
 		CurrencyCode: string;
 		LineItems?: Array<{ Description?: string; LineAmount?: number }>;
+		InvoiceNumber?: string; // Tax invoice number
+		BankAccountNumber?: string; // Bank account for this specific bill (NOTE: Xero API limitation - not available)
 	}>;
 }
 
@@ -263,6 +268,10 @@ export async function syncXeroBills() {
 						phone: contact.Phones?.find(
 							(p) => p.PhoneType === "DEFAULT" || p.PhoneType === "MOBILE",
 						)?.PhoneNumber,
+						taxNumber: contact.TaxNumber || null,
+						contactStatus: contact.ContactStatus || null,
+						bankAccountNumber: contact.BankAccountDetails || null,
+						bankAccountName: null, // NOTE: Not available in Xero API
 					})),
 				)
 				.onConflictDoUpdate({
@@ -271,6 +280,10 @@ export async function syncXeroBills() {
 						name: sql`excluded.name`,
 						email: sql`excluded.email`,
 						phone: sql`excluded.phone`,
+						taxNumber: sql`excluded.tax_number`,
+						contactStatus: sql`excluded.contact_status`,
+						bankAccountNumber: sql`excluded.bank_account_number`,
+						bankAccountName: sql`excluded.bank_account_name`,
 						updatedAt: new Date(),
 					},
 				});
@@ -339,6 +352,9 @@ export async function syncXeroBills() {
 					total: bill.Total.toString(),
 					currencyCode: bill.CurrencyCode,
 					lineItemsSummary: lineItemsSummary,
+					invoiceNumber: bill.InvoiceNumber || null,
+					billBankAccountNumber: bill.BankAccountNumber || null, // NOTE: Not available in Xero API
+					billBankAccountName: null, // NOTE: Not available in Xero API
 				};
 			});
 
@@ -354,6 +370,9 @@ export async function syncXeroBills() {
 							amountPaid: sql`excluded.amount_paid`,
 							total: sql`excluded.total`,
 							lineItemsSummary: sql`excluded.line_items_summary`,
+							invoiceNumber: sql`excluded.invoice_number`,
+							billBankAccountNumber: sql`excluded.bill_bank_account_number`,
+							billBankAccountName: sql`excluded.bill_bank_account_name`,
 							updatedAt: new Date(),
 						},
 					});

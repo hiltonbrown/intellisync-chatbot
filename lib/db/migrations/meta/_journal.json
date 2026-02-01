@@ -1,20 +1,27 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1769409696597,
-			"tag": "0000_hot_junta",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1737877377746,
-			"tag": "0001_update_cashflow_cascade",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1769409696597,
+      "tag": "0000_hot_junta",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1737877377746,
+      "tag": "0001_update_cashflow_cascade",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769946466400,
+      "tag": "0002_skinny_multiple_man",
+      "breakpoints": true
+    }
+  ]
 }

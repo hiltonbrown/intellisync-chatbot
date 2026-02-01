@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { AlertTriangle, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +75,24 @@ export function VendorSheet({
 		}
 	};
 
+	// Get risk badge color
+	const getRiskBadgeColor = (
+		level: "Low" | "Medium" | "High" | "Critical",
+	): string => {
+		switch (level) {
+			case "Low":
+				return "bg-green-600 hover:bg-green-600 text-white";
+			case "Medium":
+				return "bg-yellow-600 hover:bg-yellow-600 text-white";
+			case "High":
+				return "bg-orange-600 hover:bg-orange-600 text-white";
+			case "Critical":
+				return "bg-red-600 hover:bg-red-600 text-white";
+			default:
+				return "bg-gray-600 hover:bg-gray-600 text-white";
+		}
+	};
+
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent className="sm:max-w-xl overflow-y-auto">
@@ -92,9 +110,41 @@ export function VendorSheet({
 					</div>
 				) : data ? (
 					<div className="space-y-6 py-4">
-						<div className="flex items-center justify-between">
-							<h3 className="text-lg font-bold">{data.supplier.name}</h3>
-							<Badge variant="outline">Risk: {data.risk}</Badge>
+						<div className="space-y-3">
+							<div className="flex items-center justify-between">
+								<h3 className="text-lg font-bold">{data.supplier.name}</h3>
+								<Badge className={getRiskBadgeColor(data.riskLevel)}>
+									{data.riskLevel} Risk
+								</Badge>
+							</div>
+
+							{/* Risk Explanation */}
+							{data.riskFactors && data.riskFactors.length > 0 && (
+								<div className="bg-muted/50 p-3 rounded-md space-y-2">
+									<div className="flex items-center gap-2">
+										<AlertTriangle className="h-4 w-4 text-orange-600" />
+										<p className="text-sm font-medium">
+											Risk Score: {data.riskScore}/100
+										</p>
+									</div>
+									<div className="text-sm text-muted-foreground">
+										<p className="font-medium mb-1">Risk Factors:</p>
+										<ul className="list-disc list-inside space-y-0.5">
+											{data.riskFactors.map((factor, i) => (
+												<li key={i}>{factor}</li>
+											))}
+										</ul>
+									</div>
+								</div>
+							)}
+
+							{data.riskScore === 0 && (
+								<div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-md">
+									<p className="text-sm text-green-700 dark:text-green-400">
+										✓ All compliance factors present - No risk identified
+									</p>
+								</div>
+							)}
 						</div>
 
 						<div className="text-sm text-muted-foreground space-y-1">
