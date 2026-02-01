@@ -156,6 +156,7 @@ export class TokenService {
 		tenantBindingId: string,
 		orgId: string,
 		forceRefresh = false,
+		baseUrl?: string,
 	) {
 		const binding = await db.query.integrationTenantBindings.findFirst({
 			where: and(
@@ -226,6 +227,7 @@ export class TokenService {
 				return xeroAdapter.getApiClient(
 					decryptToken(refreshedGrant.accessTokenEnc),
 					binding.externalTenantId,
+					baseUrl,
 				);
 			} catch (error) {
 				console.error("Failed to refresh token:", {
@@ -261,6 +263,7 @@ export class TokenService {
 		return xeroAdapter.getApiClient(
 			decryptToken(grant.accessTokenEnc),
 			binding.externalTenantId,
+			baseUrl,
 		);
 	}
 

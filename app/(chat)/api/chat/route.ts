@@ -22,18 +22,43 @@ import {
 import { getLanguageModel } from "@/lib/ai/providers";
 import { buildRagContext } from "@/lib/ai/rag";
 import { createDocument } from "@/lib/ai/tools/create-document";
+import { createXeroContact } from "@/lib/ai/tools/create-xero-contact";
+import { createXeroCreditNote } from "@/lib/ai/tools/create-xero-credit-note";
 import { createXeroInvoice } from "@/lib/ai/tools/create-xero-invoice";
+import { createXeroPayment } from "@/lib/ai/tools/create-xero-payment";
+import { createXeroPayrollTimesheet } from "@/lib/ai/tools/create-xero-payroll-timesheet";
+import { createXeroQuote } from "@/lib/ai/tools/create-xero-quote";
 import { getABNDetails } from "@/lib/ai/tools/get-abn-details";
 import { getWeather } from "@/lib/ai/tools/get-weather";
+import { getXeroPayrollTimesheet } from "@/lib/ai/tools/get-xero-payroll-timesheet";
 import { listXeroAccounts } from "@/lib/ai/tools/list-xero-accounts";
+import { listXeroAgedPayables } from "@/lib/ai/tools/list-xero-aged-payables";
+import { listXeroAgedReceivables } from "@/lib/ai/tools/list-xero-aged-receivables";
 import { listXeroBalanceSheet } from "@/lib/ai/tools/list-xero-balance-sheet";
+import { listXeroBankTransactions } from "@/lib/ai/tools/list-xero-bank-transactions";
+import { listXeroContactGroups } from "@/lib/ai/tools/list-xero-contact-groups";
 import { listXeroContacts } from "@/lib/ai/tools/list-xero-contacts";
+import { listXeroCreditNotes } from "@/lib/ai/tools/list-xero-credit-notes";
 import { listXeroInvoices } from "@/lib/ai/tools/list-xero-invoices";
+import { listXeroItems } from "@/lib/ai/tools/list-xero-items";
 import { listXeroOrganisation } from "@/lib/ai/tools/list-xero-organisation";
+import { listXeroPayments } from "@/lib/ai/tools/list-xero-payments";
+import { listXeroPayrollCalendars } from "@/lib/ai/tools/list-xero-payroll-calendars";
+import { listXeroPayrollEmployees } from "@/lib/ai/tools/list-xero-payroll-employees";
+import { listXeroPayrollLeaveApplications } from "@/lib/ai/tools/list-xero-payroll-leave-applications";
+import { listXeroPayrollLeaveTypes } from "@/lib/ai/tools/list-xero-payroll-leave-types";
 import { listXeroProfitAndLoss } from "@/lib/ai/tools/list-xero-profit-and-loss";
+import { listXeroQuotes } from "@/lib/ai/tools/list-xero-quotes";
+import { listXeroTaxRates } from "@/lib/ai/tools/list-xero-tax-rates";
+import { listXeroTrialBalance } from "@/lib/ai/tools/list-xero-trial-balance";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { searchABNByName } from "@/lib/ai/tools/search-abn-by-name";
 import { updateDocument } from "@/lib/ai/tools/update-document";
+import { updateXeroContact } from "@/lib/ai/tools/update-xero-contact";
+import { updateXeroCreditNote } from "@/lib/ai/tools/update-xero-credit-note";
+import { updateXeroInvoice } from "@/lib/ai/tools/update-xero-invoice";
+import { updateXeroPayrollTimesheet } from "@/lib/ai/tools/update-xero-payroll-timesheet";
+import { updateXeroQuote } from "@/lib/ai/tools/update-xero-quote";
 import { DEFAULT_CHAT_TITLE, isProductionEnvironment } from "@/lib/constants";
 import {
 	createStreamId,
@@ -388,6 +413,31 @@ ${file!.content}
 						"listXeroContacts",
 						"listXeroAccounts",
 						"createXeroInvoice",
+						"listXeroCreditNotes",
+						"listXeroQuotes",
+						"listXeroBankTransactions",
+						"listXeroPayments",
+						"listXeroItems",
+						"listXeroTaxRates",
+						"listXeroTrialBalance",
+						"listXeroAgedReceivables",
+						"listXeroAgedPayables",
+						"createXeroContact",
+						"updateXeroContact",
+						"createXeroQuote",
+						"updateXeroQuote",
+						"createXeroCreditNote",
+						"updateXeroCreditNote",
+						"createXeroPayment",
+						"updateXeroInvoice",
+						"listXeroPayrollEmployees",
+						"listXeroPayrollLeaveApplications",
+						"listXeroPayrollLeaveTypes",
+						"createXeroPayrollTimesheet",
+						"getXeroPayrollTimesheet",
+						"updateXeroPayrollTimesheet",
+						"listXeroContactGroups",
+						"listXeroPayrollCalendars",
 					],
 					experimental_transform: smoothStream({ chunking: "word" }),
 					providerOptions: isReasoningModel
@@ -416,6 +466,31 @@ ${file!.content}
 						listXeroContacts,
 						listXeroAccounts,
 						createXeroInvoice,
+						listXeroCreditNotes,
+						listXeroQuotes,
+						listXeroBankTransactions,
+						listXeroPayments,
+						listXeroItems,
+						listXeroTaxRates,
+						listXeroTrialBalance,
+						listXeroAgedReceivables,
+						listXeroAgedPayables,
+						createXeroContact,
+						updateXeroContact,
+						createXeroQuote,
+						updateXeroQuote,
+						createXeroCreditNote,
+						updateXeroCreditNote,
+						createXeroPayment,
+						updateXeroInvoice,
+						listXeroPayrollEmployees,
+						listXeroPayrollLeaveApplications,
+						listXeroPayrollLeaveTypes,
+						createXeroPayrollTimesheet,
+						getXeroPayrollTimesheet,
+						updateXeroPayrollTimesheet,
+						listXeroContactGroups,
+						listXeroPayrollCalendars,
 					},
 					experimental_telemetry: {
 						isEnabled: isProductionEnvironment,

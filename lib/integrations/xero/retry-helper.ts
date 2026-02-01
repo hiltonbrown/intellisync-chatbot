@@ -18,6 +18,7 @@ export async function withTokenRefreshRetry<T>(
 	operation: (
 		client: Awaited<ReturnType<typeof TokenService.getClientForTenantBinding>>,
 	) => Promise<T>,
+	baseUrl?: string,
 ): Promise<T> {
 	try {
 		// First attempt with normal token check
@@ -28,6 +29,7 @@ export async function withTokenRefreshRetry<T>(
 			tenantBindingId,
 			orgId,
 			false,
+			baseUrl,
 		);
 		return await operation(client);
 	} catch (error) {
@@ -58,6 +60,7 @@ export async function withTokenRefreshRetry<T>(
 					tenantBindingId,
 					orgId,
 					true,
+					baseUrl,
 				);
 				console.log(
 					"[Retry Helper] Retrying operation with refreshed token...",

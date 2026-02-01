@@ -262,12 +262,12 @@ export class XeroAdapter {
 		}
 	}
 
-	getApiClient(accessToken: string, tenantId: string) {
+	getApiClient(accessToken: string, tenantId: string, baseUrl = "https://api.xero.com/api.xro/2.0") {
 		return {
 			// Basic fetch wrapper with injected headers
 			fetch: async (path: string, init?: RequestInit) => {
 				try {
-					const url = `https://api.xero.com/api.xro/2.0${path}`;
+					const url = `${baseUrl}${path}`;
 					const headers = new Headers(init?.headers);
 					headers.set("Authorization", `Bearer ${accessToken}`);
 					headers.set("Xero-tenant-id", tenantId);
