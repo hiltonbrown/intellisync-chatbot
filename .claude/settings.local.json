@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm build:*)",
+      "Bash(pnpm install)",
+      "mcp__ide__getDiagnostics",
+      "Bash(pnpm db:check:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(wait)",
+      "Bash(npx @biomejs/biome@2.3.11 check:*)",
+      "Bash(pnpm format:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(pnpm audit:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm info:*)",
+      "Bash(pnpm add:*)",
+      "Bash(XERO_CLIENT_ID=\"\" XERO_CLIENT_SECRET=\"\" XERO_REDIRECT_URI=\"\" pnpm build:*)",
+      "Bash(npx vercel:*)",
+      "Bash(vercel env:*)",
+      "Bash(vercel project:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(git remote:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh api:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

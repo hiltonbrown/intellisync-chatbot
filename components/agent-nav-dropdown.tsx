@@ -37,7 +37,7 @@ export function AgentNavDropdown() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline" size="sm" className="h-8 px-2 md:h-fit md:px-3">
+				<Button variant="outline" className="h-8 px-2">
 					<span className="hidden md:inline">Agents</span>
 					<ChevronDownIcon size={16} />
 				</Button>

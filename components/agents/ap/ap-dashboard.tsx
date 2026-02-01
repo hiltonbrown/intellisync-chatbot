@@ -16,10 +16,15 @@ interface DashboardSummary {
 
 interface AgeingData {
 	current: number;
+	currentCount: number;
 	days30: number;
+	days30Count: number;
 	days60: number;
+	days60Count: number;
 	days90: number;
+	days90Count: number;
 	days90plus: number;
+	days90plusCount: number;
 }
 
 interface DashboardData {
@@ -32,13 +37,11 @@ interface Vendor {
 	name: string;
 	totalDue: number;
 	billCount: number;
-	buckets: {
-		current: number;
-		days30: number;
-		days60: number;
-		days90: number;
-		days90plus: number;
-	};
+	current: number;
+	days30: number;
+	days60: number;
+	days90: number;
+	days90plus: number;
 }
 
 interface ApDashboardProps {

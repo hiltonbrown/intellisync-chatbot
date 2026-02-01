@@ -3,7 +3,6 @@
 import {
 	Bar,
 	BarChart,
-	Cell,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -14,60 +13,157 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface AgeingChartProps {
 	data: {
 		current: number;
+		currentCount: number;
 		days30: number;
+		days30Count: number;
 		days60: number;
+		days60Count: number;
 		days90: number;
+		days90Count: number;
 		days90plus: number;
+		days90plusCount: number;
 	};
 }
 
 export function AgeingChart({ data }: AgeingChartProps) {
-	const chartData = [
-		{ name: "Current", value: data.current },
-		{ name: "1-30 Days", value: data.days30 },
-		{ name: "31-60 Days", value: data.days60 },
-		{ name: "61-90 Days", value: data.days90 },
-		{ name: "90+ Days", value: data.days90plus },
+	const categories = [
+		{
+			name: "Current",
+			value: data.current,
+			count: data.currentCount,
+			color: "#22c55e", // Green
+		},
+		{
+			name: "1-30",
+			value: data.days30,
+			count: data.days30Count,
+			color: "#eab308", // Yellow
+		},
+		{
+			name: "31-60",
+			value: data.days60,
+			count: data.days60Count,
+			color: "#f97316", // Orange
+		},
+		{
+			name: "61-90",
+			value: data.days90,
+			count: data.days90Count,
+			color: "#ef4444", // Red
+		},
+		{
+			name: "90+",
+			value: data.days90plus,
+			count: data.days90plusCount,
+			color: "#991b1b", // Dark Red
+		},
 	];
+
+	// Calculate total outstanding for percentage calculations
+	const totalOutstanding =
+		data.current + data.days30 + data.days60 + data.days90 + data.days90plus;
+
+	// Prepare data for stacked bar chart (single bar with all segments)
+	const chartData = [
+		{
+			name: "Aged Receivables",
+			current: data.current,
+			days30: data.days30,
+			days60: data.days60,
+			days90: data.days90,
+			days90plus: data.days90plus,
+		},
+	];
+
+	const formatCurrency = (value: number) =>
+		`$${value.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 	return (
 		<Card className="col-span-4">
 			<CardHeader>
 				<CardTitle>Aged Receivables</CardTitle>
 			</CardHeader>
-			<CardContent className="pl-2">
-				<ResponsiveContainer width="100%" height={350}>
+			<CardContent className="space-y-6">
+				<ResponsiveContainer width="100%" height={90}>
 					<BarChart
 						data={chartData}
 						layout="vertical"
-						margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+						margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
 					>
-						<XAxis
-							type="number"
-							tickFormatter={(value) => `$${value.toLocaleString()}`}
-						/>
-						<YAxis dataKey="name" type="category" width={100} />
+						<XAxis type="number" hide />
+						<YAxis type="category" dataKey="name" hide />
 						<Tooltip
-							formatter={(value: any) => [
-								`$${Number(value).toLocaleString("en-AU", { minimumFractionDigits: 2 })}`,
-								"Amount",
-							]}
-							cursor={{ fill: "transparent" }}
+							formatter={(value: number, name: string) => {
+								const category = categories.find((c) => {
+									if (name === "current") return c.name === "Current";
+									if (name === "days30") return c.name === "1-30";
+									if (name === "days60") return c.name === "31-60";
+									if (name === "days90") return c.name === "61-90";
+									if (name === "days90plus") return c.name === "90+";
+									return false;
+								});
+								return [formatCurrency(value), category?.name || name];
+							}}
+							cursor={false}
 						/>
-						<Bar dataKey="value" radius={[0, 4, 4, 0]}>
-							{chartData.map((entry) => (
-								<Cell
-									key={entry.name}
-									fill={
-										["Current", "1-30 Days"].includes(entry.name)
-											? "#2563eb"
-											: "#ef4444"
-									}
-								/>
-							))}
-						</Bar>
+						<Bar
+							dataKey="current"
+							stackId="a"
+							fill={categories[0].color}
+							radius={[4, 0, 0, 4]}
+						/>
+						<Bar dataKey="days30" stackId="a" fill={categories[1].color} />
+						<Bar dataKey="days60" stackId="a" fill={categories[2].color} />
+						<Bar dataKey="days90" stackId="a" fill={categories[3].color} />
+						<Bar
+							dataKey="days90plus"
+							stackId="a"
+							fill={categories[4].color}
+							radius={[0, 4, 4, 0]}
+						/>
 					</BarChart>
 				</ResponsiveContainer>
+
+				{/* Legend with invoice counts and values */}
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+					{categories.map((category) => {
+						const percentage =
+							totalOutstanding > 0
+								? (category.value / totalOutstanding) * 100
+								: 0;
+
+						return (
+							<div
+								key={category.name}
+								className="flex flex-col gap-1 rounded-lg border p-3"
+							>
+								<div className="flex items-center gap-2">
+									<div
+										className="h-3 w-3 rounded-sm"
+										style={{ backgroundColor: category.color }}
+									/>
+									<span className="text-xs font-medium text-muted-foreground">
+										{category.name}
+									</span>
+								</div>
+								<div className="mt-1 space-y-0.5">
+									<div className="flex items-baseline gap-2">
+										<p className="text-sm font-semibold">
+											{formatCurrency(category.value)}
+										</p>
+										<span className="text-xs font-medium text-muted-foreground">
+											{percentage.toFixed(1)}%
+										</span>
+									</div>
+									<p className="text-xs text-muted-foreground">
+										{category.count}{" "}
+										{category.count === 1 ? "invoice" : "invoices"}
+									</p>
+								</div>
+							</div>
+						);
+					})}
+				</div>
 			</CardContent>
 		</Card>
 	);

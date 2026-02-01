@@ -16,10 +16,15 @@ interface DashboardSummary {
 
 interface AgeingData {
 	current: number;
+	currentCount: number;
 	days30: number;
+	days30Count: number;
 	days60: number;
+	days60Count: number;
 	days90: number;
+	days90Count: number;
 	days90plus: number;
+	days90plusCount: number;
 }
 
 interface DashboardData {
@@ -32,6 +37,13 @@ interface Customer {
 	name: string;
 	totalDue: number;
 	invoiceCount: number;
+	current: number;
+	days30: number;
+	days60: number;
+	days90: number;
+	days90plus: number;
+	riskScore: number;
+	followUpTone: string;
 }
 
 interface ArDashboardProps {
@@ -55,10 +67,7 @@ export function ArDashboard({
 
 	return (
 		<div className="flex flex-col h-full w-full">
-			<AgentHeader
-				title="Accounts Receivable Agent"
-				actions={<SyncButton />}
-			/>
+			<AgentHeader title="Accounts Receivable Agent" actions={<SyncButton />} />
 
 			<main className="flex-1 overflow-y-auto p-6 space-y-6">
 				{initialData && (

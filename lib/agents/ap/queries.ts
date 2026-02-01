@@ -3,10 +3,7 @@ import "server-only";
 import { auth } from "@clerk/nextjs/server";
 import { and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import {
-	xeroBills,
-	xeroSuppliers,
-} from "@/lib/db/schema";
+import { xeroBills, xeroSuppliers } from "@/lib/db/schema";
 
 export async function getApDashboardData() {
 	const { orgId } = await auth();
@@ -68,10 +65,15 @@ export async function getApDashboardData() {
 	const buckets = await db
 		.select({
 			current: sql<number>`sum(case when ${xeroBills.dueDate} >= now() then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
+			currentCount: sql<number>`sum(case when ${xeroBills.dueDate} >= now() then 1 else 0 end)`,
 			overdue1to30: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '1 day' and interval '30 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
+			overdue1to30Count: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '1 day' and interval '30 days' then 1 else 0 end)`,
 			overdue31to60: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '31 days' and interval '60 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
+			overdue31to60Count: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '31 days' and interval '60 days' then 1 else 0 end)`,
 			overdue61to90: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '61 days' and interval '90 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
+			overdue61to90Count: sql<number>`sum(case when now() - ${xeroBills.dueDate} between interval '61 days' and interval '90 days' then 1 else 0 end)`,
 			overdue90plus: sql<number>`sum(case when now() - ${xeroBills.dueDate} > interval '90 days' then cast(${xeroBills.amountDue} as numeric) else 0 end)`,
+			overdue90plusCount: sql<number>`sum(case when now() - ${xeroBills.dueDate} > interval '90 days' then 1 else 0 end)`,
 		})
 		.from(xeroBills)
 		.where(
@@ -84,10 +86,15 @@ export async function getApDashboardData() {
 
 	const ageing = {
 		current: Number(buckets[0]?.current || 0),
+		currentCount: Number(buckets[0]?.currentCount || 0),
 		days30: Number(buckets[0]?.overdue1to30 || 0),
+		days30Count: Number(buckets[0]?.overdue1to30Count || 0),
 		days60: Number(buckets[0]?.overdue31to60 || 0),
+		days60Count: Number(buckets[0]?.overdue31to60Count || 0),
 		days90: Number(buckets[0]?.overdue61to90 || 0),
+		days90Count: Number(buckets[0]?.overdue61to90Count || 0),
 		days90plus: Number(buckets[0]?.overdue90plus || 0),
+		days90plusCount: Number(buckets[0]?.overdue90plusCount || 0),
 	};
 
 	return {
@@ -141,17 +148,17 @@ export async function getVendorList() {
 		.groupBy(xeroBills.supplierId, xeroSuppliers.name)
 		.orderBy(desc(sql`sum(cast(${xeroBills.amountDue} as numeric))`));
 
-	return rows.map((r) => ({
-		id: r.supplierId!,
-		name: r.supplierName || "Unknown",
-		totalDue: Number(r.totalDue),
-		billCount: Number(r.billCount),
-		buckets: {
-			current: Number(r.current),
-			days30: Number(r.overdue1to30),
-			days60: Number(r.overdue31to60),
-			days90: Number(r.overdue61to90),
-			days90plus: Number(r.overdue90plus),
-		},
-	}));
+	return rows
+		.filter((r) => r.supplierId !== null)
+		.map((r) => ({
+			id: r.supplierId,
+			name: r.supplierName || "Unknown",
+			totalDue: Number(r.totalDue),
+			billCount: Number(r.billCount),
+			current: Number(r.current || 0),
+			days30: Number(r.overdue1to30 || 0),
+			days60: Number(r.overdue31to60 || 0),
+			days90: Number(r.overdue61to90 || 0),
+			days90plus: Number(r.overdue90plus || 0),
+		}));
 }
