@@ -70,7 +70,7 @@ export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 
 	// Format currency
 	const formatCurrency = (value: number) =>
-		`$${value.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+		`$${value.toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 	// Get risk badge color
 	const getRiskBadgeColor = (level: Vendor["riskLevel"]): string => {

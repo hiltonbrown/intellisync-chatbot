@@ -65,7 +65,7 @@ export function CustomerTable({
 
 	// Format currency
 	const formatCurrency = (value: number) =>
-		`$${value.toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+		`$${value.toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 	// Risk badge color based on follow-up tone
 	const getToneBadgeVariant = (tone: string) => {
