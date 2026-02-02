@@ -64,6 +64,7 @@ export function CustomerSheet({
 						i.amountDue > 0 && i.dueDate && new Date(i.dueDate) < new Date(),
 				)
 				.map((i) => ({
+					id: i.xeroInvoiceId,
 					date: i.date ? new Date(i.date).toLocaleDateString("en-AU") : "",
 					dueDate: i.dueDate
 						? new Date(i.dueDate).toLocaleDateString("en-AU")
@@ -74,6 +75,7 @@ export function CustomerSheet({
 
 			const draft = await generateCollectionEmail(
 				data.contact.name,
+				data.contact.xeroContactId,
 				overdue,
 			);
 			setEmailDraft(draft);

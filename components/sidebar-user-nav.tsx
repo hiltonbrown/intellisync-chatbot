@@ -8,6 +8,7 @@ import { PersonalizationPage } from "@/components/personalization-page";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { UsagePage } from "@/components/usage-page";
+import { getUserButtonAppearance } from "@/lib/clerk/organization-switcher-config";
 
 export function SidebarUserNav({
 	user,
@@ -22,16 +23,7 @@ export function SidebarUserNav({
 			<SidebarMenuItem className="flex items-center gap-2">
 				<UserButton
 					showName
-					appearance={{
-						elements: {
-							rootBox: "w-full",
-							userButtonTrigger: "w-full justify-start",
-							userButtonBox: "flex-row-reverse",
-						},
-						variables: {
-							colorText: resolvedTheme === "dark" ? "#e5e7eb" : undefined,
-						},
-					}}
+					appearance={getUserButtonAppearance(resolvedTheme)}
 				>
 					<UserButton.UserProfilePage
 						label="Usage"

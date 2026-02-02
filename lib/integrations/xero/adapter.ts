@@ -335,11 +335,18 @@ export class XeroAdapter {
 					}
 
 					if (!response.ok) {
+						const errorBody = await response.text();
+						console.error("Xero API Error:", {
+							status: response.status,
+							body: errorBody,
+							path,
+						});
+
 						throw new ExternalAPIError(
 							"Xero API request failed",
 							"xero",
 							response.status,
-							{ path },
+							{ path, body: errorBody },
 						);
 					}
 

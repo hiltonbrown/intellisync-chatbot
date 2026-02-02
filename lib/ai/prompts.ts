@@ -437,24 +437,50 @@ export const createIntellisyncContext = (partial: {
 });
 
 export const collectionEmailPrompt = (
-	contactName: string,
-	companyName: string,
-	overdueInvoices: Array<{
-		date: string;
-		dueDate: string;
-		amount: string;
-		number: string;
-	}>,
+	ctx: {
+		contactName: string;
+		companyName: string;
+		userFirstName: string;
+		userLastName: string;
+		userLocation?: string;
+		overdueInvoices: Array<{
+			date: string;
+			dueDate: string;
+			amount: string;
+			number: string;
+		}>;
+		historyContext?: string;
+	}
 ) => `
-You are drafting a collections email for ${companyName} to ${contactName}.
-There are ${overdueInvoices.length} overdue invoices.
+You are ${ctx.userFirstName} ${ctx.userLastName} from ${ctx.companyName}${ctx.userLocation ? ` located in ${ctx.userLocation}` : ""}.
+You are drafting a collections email to ${ctx.contactName}.
+There are ${ctx.overdueInvoices.length} overdue invoices.
 
 Invoices:
-${overdueInvoices.map((i) => `- Invoice ${i.number} (Due: ${i.dueDate}): $${i.amount}`).join("\n")}
+${ctx.overdueInvoices.map((i) => `- Invoice ${i.number} (Due: ${i.dueDate}): $${i.amount}`).join("\n")}
 
-Task: Write a polite but firm email requesting payment.
-Tone: Professional, Australian business English.
-Include a table or list of the overdue invoices.
-Ask them to contact us if there are any issues.
-Subject line should be included.
+${ctx.historyContext ? `**History & Notes Context:**\n${ctx.historyContext}\n` : ""}
+
+Task: Write a professional and natural email requesting payment.
+If the history context contains relevant previous promises or interactions, acknowledge them appropriately (e.g., "As discussed on [date]...").
+
+**Tone & Style Rules (Australian Business English):**
+1. **Natural & Human:** Write exactly as a human would speak to a colleague or client. Avoid "AI" sentence structures.
+2. **No Filler Openings:** Strictly BAN phrases like "I am writing to...", "I wanted to reach out...", "Just checking in...", "Please be advised", or "I hope this email finds you well".
+3. **Direct Start:** Start immediately with the context.
+   - *Bad:* "I am writing to inform you that you have overdue invoices."
+   - *Good:* "We noticed the following invoices are now overdue on your account."
+   - *Good:* "Could you please update us on the payment status for the invoices listed below?"
+   - *Good:* "Just a quick reminder that we haven't received payment for the following yet:"
+4. **Firm but Polite:** Be clear about the outstanding debt without being aggressive. Use "Please" instead of "Kindly".
+5. **Formatting:** Use a clean list or table format for the invoices.
+
+**Structure:**
+- **Subject:** Short and relevant (e.g., "Overdue Account", "Outstanding Invoices").
+- **Body:**
+  - Open with a direct, conversational statement about the overdue items.
+  - List the invoices.
+  - Request payment or a remittance advice.
+  - Offer a contact method for queries.
+- **Sign-off:** Professional closing (e.g., "Regards", "Thanks").
 `;

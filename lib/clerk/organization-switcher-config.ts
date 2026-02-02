@@ -1,8 +1,13 @@
-import type { OrganizationSwitcher } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
+import type { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 import type { ComponentProps } from "react";
 
-type AppearanceConfig = NonNullable<
+type OrganizationSwitcherAppearance = NonNullable<
 	ComponentProps<typeof OrganizationSwitcher>["appearance"]
+>;
+
+type UserButtonAppearance = NonNullable<
+	ComponentProps<typeof UserButton>["appearance"]
 >;
 
 /**
@@ -11,21 +16,34 @@ type AppearanceConfig = NonNullable<
  */
 export function getOrganizationSwitcherAppearance(
 	resolvedTheme: string | undefined,
-): AppearanceConfig {
+): OrganizationSwitcherAppearance {
 	const isDark = resolvedTheme === "dark";
 
 	return {
+		baseTheme: isDark ? dark : undefined,
 		elements: {
 			rootBox: "flex-shrink-0",
 			organizationSwitcherTrigger: "px-2 h-8 md:h-fit",
-			organizationSwitcherTriggerIcon: isDark ? "text-gray-200" : "",
-			organizationPreviewTextContainer: isDark ? "text-gray-200" : "",
-			organizationPreviewMainIdentifier: isDark ? "text-gray-200" : "",
-			organizationPreviewSecondaryIdentifier: isDark ? "text-gray-400" : "",
 		},
-		variables: {
-			colorText: isDark ? "#e5e7eb" : undefined,
-			colorTextSecondary: isDark ? "#9ca3af" : undefined,
+	};
+}
+
+/**
+ * Shared appearance configuration for UserButton components.
+ * Use this in sidebar and header components to maintain consistent styling.
+ * Also applies to UserProfile modal (account settings).
+ */
+export function getUserButtonAppearance(
+	resolvedTheme: string | undefined,
+): UserButtonAppearance {
+	const isDark = resolvedTheme === "dark";
+
+	return {
+		baseTheme: isDark ? dark : undefined,
+		elements: {
+			rootBox: "w-full",
+			userButtonTrigger: "w-full justify-start",
+			userButtonBox: "flex-row-reverse",
 		},
 	};
 }

@@ -37,7 +37,6 @@ export const listXeroAgedPayables = tool({
 				if (toDate) params.append("toDate", toDate);
 
 				const response = await client.fetch(`/Reports/AgedPayablesByContact?${params.toString()}`);
-				if (!response.ok) return { error: await response.text() };
 
 				const data = await response.json();
 				return {

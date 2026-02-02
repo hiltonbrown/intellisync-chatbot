@@ -1,6 +1,4 @@
-import "server-only";
-
-import { TokenError } from "@/lib/integrations/errors";
+import { ExternalAPIError, TokenError } from "@/lib/integrations/errors";
 
 /**
  * Standard error response for Xero integration tools
@@ -86,6 +84,19 @@ export function handleXeroToolError(
 				...error.context,
 			},
 			needsReauth: true,
+		};
+	}
+
+	// Handle ExternalAPIError (Xero API errors)
+	if (error instanceof ExternalAPIError) {
+		return {
+			error: `Xero API error: ${error.message}`,
+			hint: "The request to Xero failed. Please check your inputs.",
+			details: {
+				provider: error.provider,
+				statusCode: error.apiStatusCode,
+				...error.context,
+			},
 		};
 	}
 

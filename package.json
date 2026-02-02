@@ -22,6 +22,7 @@
 		"@ai-sdk/provider": "3.0.2",
 		"@ai-sdk/react": "3.0.14",
 		"@clerk/nextjs": "^6.36.5",
+		"@clerk/themes": "^2.4.51",
 		"@codemirror/lang-javascript": "^6.2.4",
 		"@codemirror/lang-python": "^6.2.1",
 		"@codemirror/state": "^6.5.3",
