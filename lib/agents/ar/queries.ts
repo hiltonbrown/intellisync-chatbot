@@ -257,6 +257,7 @@ export async function getCustomerList() {
 	return ageingRows
 		.filter((r) => r.contactId !== null)
 		.map((r) => {
+			const contactId = r.contactId!;
 			const totalDue = Number(r.totalDue);
 			const current = Number(r.current || 0);
 			const days30 = Number(r.days30 || 0);
@@ -265,7 +266,7 @@ export async function getCustomerList() {
 			const days90plus = Number(r.days90plus || 0);
 
 			// Get invoices for this customer
-			const customerInvoices = invoicesByContact.get(r.contactId) || [];
+			const customerInvoices = invoicesByContact.get(contactId) || [];
 
 			// Calculate risk score using the new formula
 			const riskScore = calculateRiskScore(customerInvoices);
@@ -274,7 +275,7 @@ export async function getCustomerList() {
 			const followUpTone = getFollowUpTone(customerInvoices);
 
 			return {
-				id: r.contactId,
+				id: contactId,
 				name: r.contactName || "Unknown",
 				totalDue,
 				invoiceCount: Number(r.invoiceCount),

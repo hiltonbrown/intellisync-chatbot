@@ -93,7 +93,11 @@ export function AgeingChart({ data }: AgeingChartProps) {
 						<XAxis type="number" hide />
 						<YAxis type="category" dataKey="name" hide />
 						<Tooltip
-							formatter={(value: number, name: string) => {
+							formatter={(
+								value: number | undefined,
+								name: string | undefined,
+							) => {
+								if (value === undefined) return ["", name || ""];
 								const category = categories.find((c) => {
 									if (name === "current") return c.name === "Current";
 									if (name === "days30") return c.name === "1-30";

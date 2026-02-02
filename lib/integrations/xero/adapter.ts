@@ -336,11 +336,15 @@ export class XeroAdapter {
 
 					if (!response.ok) {
 						const errorBody = await response.text();
-						console.error("Xero API Error:", {
-							status: response.status,
-							body: errorBody,
-							path,
-						});
+						
+						// Only log non-404 errors as errors, 404s are often expected
+						if (response.status !== 404) {
+							console.error("Xero API Error:", {
+								status: response.status,
+								body: errorBody,
+								path,
+							});
+						}
 
 						throw new ExternalAPIError(
 							"Xero API request failed",

@@ -16,6 +16,7 @@ import {
 	xeroContacts,
 	xeroInvoices,
 } from "@/lib/db/schema";
+import { ExternalAPIError } from "@/lib/integrations/errors";
 import { withTokenRefreshRetry } from "@/lib/integrations/xero/retry-helper";
 
 const uuidSchema = z.string().uuid();
@@ -58,6 +59,13 @@ async function fetchXeroHistory(
 				});
 		});
 	} catch (error) {
+		// 404 means no history found or invalid ID, which is fine
+		if (
+			error instanceof ExternalAPIError &&
+			error.statusCode === 404
+		) {
+			return [];
+		}
 		console.warn(`Failed to fetch history for ${relatedId}`, error);
 		return [];
 	}

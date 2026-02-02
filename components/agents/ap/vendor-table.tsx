@@ -143,7 +143,20 @@ export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 		<Card className="col-span-4">
 			<CardHeader>
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<CardTitle>Vendor Overview</CardTitle>
+					<Tabs
+						value={filterTab}
+						onValueChange={(v) => setFilterTab(v as FilterTab)}
+					>
+						<TabsList className="grid grid-cols-4 lg:grid-cols-7">
+							<TabsTrigger value="all">All</TabsTrigger>
+							<TabsTrigger value="current">Current</TabsTrigger>
+							<TabsTrigger value="days30">1-30</TabsTrigger>
+							<TabsTrigger value="days60">31-60</TabsTrigger>
+							<TabsTrigger value="days90">61-90</TabsTrigger>
+							<TabsTrigger value="days90plus">90+</TabsTrigger>
+							<TabsTrigger value="high-risk">High Risk</TabsTrigger>
+						</TabsList>
+					</Tabs>
 					<div className="relative w-full sm:w-64">
 						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						<Input
@@ -154,20 +167,6 @@ export function VendorTable({ vendors, onVendorClick }: VendorTableProps) {
 						/>
 					</div>
 				</div>
-				<Tabs
-					value={filterTab}
-					onValueChange={(v) => setFilterTab(v as FilterTab)}
-				>
-					<TabsList className="grid w-1/2 grid-cols-4 lg:grid-cols-7">
-						<TabsTrigger value="all">All</TabsTrigger>
-						<TabsTrigger value="current">Current</TabsTrigger>
-						<TabsTrigger value="days30">1-30</TabsTrigger>
-						<TabsTrigger value="days60">31-60</TabsTrigger>
-						<TabsTrigger value="days90">61-90</TabsTrigger>
-						<TabsTrigger value="days90plus">90+</TabsTrigger>
-						<TabsTrigger value="high-risk">High Risk</TabsTrigger>
-					</TabsList>
-				</Tabs>
 			</CardHeader>
 			<CardContent>
 				<div className="overflow-x-auto">
