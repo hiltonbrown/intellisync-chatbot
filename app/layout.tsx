@@ -9,9 +9,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-	metadataBase: new URL("https://chat.vercel.ai"),
-	title: "Next.js Chatbot Template",
-	description: "Next.js chatbot template using the AI SDK.",
+	metadataBase: new URL("https://intellisync.app/"),
+	title: "intellisync",
+	description:
+		"intellisync - AI-powered assistant for Bookkeepers, Accountants & Small Businesses.",
 };
 
 export const viewport = {
